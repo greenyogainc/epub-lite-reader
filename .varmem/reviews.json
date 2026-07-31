@@ -1,0 +1,17 @@
+{
+ "packaging/Build-Msix.ps1||root||tools/make_icons.py||ROOT": {
+  "note": "Two unrelated, unconnected scripts (PS1 build script vs Python icon generator) each with their own locally-scoped \"repo root\" variable; common idiomatic naming, no shared state, different languages.",
+  "ts": "2026-07-31T03:39:02.692197-06:00",
+  "verdict": "not_duplicate"
+ },
+ "src/EpubLiteReader/EpubDoc.cs||pathToSpine||src/EpubLiteReader/EpubDoc.cs||spinePaths": {
+  "note": "Different types and roles: pathToSpine is a Dictionary<string,int> for path/filename -> spine-index lookup (used by BuildChapters); spinePaths is the ordered List<string> of spine paths. Token overlap only, not a duplicate.",
+  "ts": "2026-07-31T03:39:12.138229-06:00",
+  "verdict": "not_duplicate"
+ },
+ "src/EpubLiteReader/EpubDoc.cs||spinePaths||src/EpubLiteReader/EpubDoc.cs||spineText": {
+  "note": "Both init as new List<string>() but hold different content: spinePaths=normalized relative file paths, spineText=extracted plain text per spine item (-> SpinePlainText). Distinct purposes, not a duplicate.",
+  "ts": "2026-07-31T03:38:53.340585-06:00",
+  "verdict": "not_duplicate"
+ }
+}

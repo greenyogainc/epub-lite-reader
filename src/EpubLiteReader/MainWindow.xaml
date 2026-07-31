@@ -1,0 +1,329 @@
+﻿<Window x:Class="EpubLiteReader.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:EpubLiteReader"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="{local:Loc AppTitle}"
+        Width="1100" Height="850"
+        Background="#FF404040"
+        AllowDrop="True"
+        Drop="Window_Drop"
+        DragOver="Window_DragOver"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        Closing="Window_Closing">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="BarBg" Color="#FF2B2B2B"/>
+        <SolidColorBrush x:Key="BarFg" Color="#FFDDDDDD"/>
+
+        <Style TargetType="Button" x:Key="BarButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource BarFg}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Margin" Value="1,0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#FF3D3D3D"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#FF505050"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="RadioButton" x:Key="ModeButton">
+            <Setter Property="Foreground" Value="{StaticResource BarFg}"/>
+            <Setter Property="Margin" Value="1,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="bd" Background="Transparent" CornerRadius="4" Padding="10,4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#FF3D3D3D"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#FF1F5B94"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ToggleButton" x:Key="BarToggle">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource BarFg}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Margin" Value="1,0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#FF3D3D3D"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#FF1F5B94"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ToggleButton" x:Key="ExpandToggle">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Width="16" Height="16" Background="{TemplateBinding Background}">
+                            <TextBlock x:Name="Glyph" Text="▸" FontSize="10" Foreground="{StaticResource BarFg}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       RenderTransformOrigin="0.5,0.5">
+                                <TextBlock.RenderTransform>
+                                    <RotateTransform Angle="0"/>
+                                </TextBlock.RenderTransform>
+                            </TextBlock>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Glyph" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="90"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <HierarchicalDataTemplate x:Key="ChapterTemplate" DataType="{x:Type local:ChapterItem}"
+                                  ItemsSource="{Binding Children}">
+            <TextBlock x:Name="ChapterTitle" Text="{Binding Title}" TextTrimming="CharacterEllipsis"
+                       ToolTip="{Binding Title}"/>
+            <HierarchicalDataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsNavigable}" Value="False">
+                    <Setter TargetName="ChapterTitle" Property="Foreground" Value="#FF9A9A9A"/>
+                </DataTrigger>
+            </HierarchicalDataTemplate.Triggers>
+        </HierarchicalDataTemplate>
+
+        <Style TargetType="TreeViewItem" x:Key="DarkTreeViewItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource BarFg}"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel/>
+                    </ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TreeViewItem">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="19"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <ToggleButton x:Name="Expander" Style="{StaticResource ExpandToggle}"
+                                          ClickMode="Press"
+                                          IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <Border x:Name="Bd" Grid.Column="1" CornerRadius="3"
+                                    Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter x:Name="PART_Header" ContentSource="Header" HorizontalAlignment="Stretch"/>
+                            </Border>
+                            <ItemsPresenter x:Name="ItemsHost" Grid.Row="1" Grid.Column="1"
+                                            VirtualizingPanel.IsVirtualizing="True"
+                                            VirtualizingPanel.VirtualizationMode="Recycling"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
+                            </Trigger>
+                            <Trigger Property="IsExpanded" Value="False">
+                                <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#FF3D3D3D"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#FF1F5B94"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="MenuItem">
+            <Setter Property="Foreground" Value="#FF1A1A1A"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <Border x:Name="ToolbarHost" DockPanel.Dock="Top" Background="{StaticResource BarBg}">
+            <DockPanel Margin="8,5" LastChildFill="False">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button Style="{StaticResource BarButton}" Content="{local:Loc Open}" Click="Open_Click" ToolTip="{local:Loc OpenTooltip}"/>
+                    <ToggleButton x:Name="ChapterToggle" Style="{StaticResource BarToggle}" Content="☰"
+                                  Checked="ChapterToggle_Changed" Unchecked="ChapterToggle_Changed"
+                                  ToolTip="{local:Loc ChaptersTooltip}"
+                                  AutomationProperties.Name="{local:Loc Chapters}"/>
+                    <Rectangle Width="1" Fill="#FF4A4A4A" Margin="6,2"/>
+                    <StackPanel Orientation="Horizontal" Style="{StaticResource NoMirror}">
+                        <Button Style="{StaticResource BarButton}" Content="◀" Click="Prev_Click" ToolTip="{local:Loc PrevPageTooltip}"/>
+                        <TextBox x:Name="PageBox" Width="44" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                 Background="#FF1E1E1E" Foreground="{StaticResource BarFg}" BorderBrush="#FF4A4A4A"
+                                 KeyDown="PageBox_KeyDown" FontSize="13"/>
+                        <TextBlock x:Name="PageCountText" Foreground="{StaticResource BarFg}"
+                                   VerticalAlignment="Center" Margin="6,0" FontSize="13"/>
+                        <Button Style="{StaticResource BarButton}" Content="▶" Click="Next_Click" ToolTip="{local:Loc NextPageTooltip}"/>
+                    </StackPanel>
+                    <Rectangle Width="1" Fill="#FF4A4A4A" Margin="6,2"/>
+                    <RadioButton x:Name="ModeSingle" Style="{StaticResource ModeButton}" Content="{local:Loc Single}" GroupName="mode"
+                                 IsChecked="True" Checked="Mode_Checked" ToolTip="{local:Loc SingleTooltip}"/>
+                    <RadioButton x:Name="ModeFacing" Style="{StaticResource ModeButton}" Content="{local:Loc Facing}" GroupName="mode"
+                                 Checked="Mode_Checked" ToolTip="{local:Loc FacingTooltip}"/>
+                    <RadioButton x:Name="ModeContinuous" Style="{StaticResource ModeButton}" Content="{local:Loc Scroll}" GroupName="mode"
+                                 Checked="Mode_Checked" ToolTip="{local:Loc ScrollTooltip}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                    <Button Style="{StaticResource BarButton}" Content="A−" Click="FontOut_Click" ToolTip="{local:Loc FontOutTooltip}"/>
+                    <Button Style="{StaticResource BarButton}" Content="A+" Click="FontIn_Click" ToolTip="{local:Loc FontInTooltip}"/>
+                    <Button Style="{StaticResource BarButton}" Content="{local:Loc Theme}" Click="Theme_Click" ToolTip="{local:Loc ThemeTooltip}"/>
+                    <ToggleButton x:Name="SearchToggle" Style="{StaticResource BarToggle}" Content="{local:Loc Search}"
+                                  Checked="SearchToggle_Changed" Unchecked="SearchToggle_Changed"
+                                  ToolTip="{local:Loc SearchTooltip}"/>
+                    <Rectangle Width="1" Fill="#FF4A4A4A" Margin="6,2"/>
+                    <Button Style="{StaticResource BarButton}" Content="⚙" Click="Settings_Click" ToolTip="{local:Loc SettingsTooltip}"/>
+                    <Button Style="{StaticResource BarButton}" Content="{local:Loc Print}" Click="Print_Click" ToolTip="{local:Loc PrintTooltip}"/>
+                    <Button Style="{StaticResource BarButton}" Content="⛶" Click="Fullscreen_Click" ToolTip="{local:Loc FullscreenTooltip}"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Border x:Name="SearchBar" DockPanel.Dock="Top" Background="#FF333333" Padding="8,4" Visibility="Collapsed">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                    <TextBlock x:Name="SearchStatus" Foreground="#FFAAAAAA" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
+                    <Button Style="{StaticResource BarButton}" Content="▲" Click="FindPrev_Click" ToolTip="{local:Loc FindPrev}"/>
+                    <Button Style="{StaticResource BarButton}" Content="▼" Click="FindNext_Click" ToolTip="{local:Loc FindNext}"/>
+                    <Button Style="{StaticResource BarButton}" Content="✕" Click="CloseSearch_Click" ToolTip="{local:Loc CloseSearch}"/>
+                </StackPanel>
+                <TextBox x:Name="SearchBox" Height="26" VerticalContentAlignment="Center"
+                         Background="#FF1E1E1E" Foreground="{StaticResource BarFg}" BorderBrush="#FF4A4A4A"
+                         FontSize="13" KeyDown="SearchBox_KeyDown"/>
+            </DockPanel>
+        </Border>
+
+        <Border x:Name="StatusBar" DockPanel.Dock="Bottom" Background="{StaticResource BarBg}" Padding="10,3">
+            <DockPanel>
+                <TextBlock x:Name="ProgressText" DockPanel.Dock="Right" Foreground="#FFAAAAAA" FontSize="12"/>
+                <TextBlock x:Name="MetaText" Foreground="{StaticResource BarFg}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+            </DockPanel>
+        </Border>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="ChapterColumn" Width="0" MinWidth="0" MaxWidth="520"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border x:Name="ChapterPane" Grid.Column="0" Background="{StaticResource BarBg}" Visibility="Collapsed">
+                <DockPanel>
+                    <Grid DockPanel.Dock="Top" Margin="8,6">
+                        <TextBlock Text="{local:Loc Chapters}" Foreground="{StaticResource BarFg}"
+                                   FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <Button Style="{StaticResource BarButton}" Content="✕" Padding="6,2"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Click="ChapterClose_Click"
+                                ToolTip="{local:Loc CloseChaptersTooltip}"/>
+                    </Grid>
+                    <Expander DockPanel.Dock="Bottom" Header="{local:Loc Bookmarks}" Foreground="{StaticResource BarFg}"
+                              Margin="8,4" IsExpanded="False">
+                        <ListBox x:Name="BookmarkList" Background="Transparent" BorderThickness="0"
+                                 Foreground="{StaticResource BarFg}" MaxHeight="160"
+                                 MouseDoubleClick="BookmarkList_DoubleClick"/>
+                    </Expander>
+                    <Grid Margin="4,0,4,4">
+                        <TreeView x:Name="ChapterTree" Background="Transparent" BorderThickness="0"
+                                  Foreground="{StaticResource BarFg}"
+                                  ItemContainerStyle="{StaticResource DarkTreeViewItem}"
+                                  ItemTemplate="{StaticResource ChapterTemplate}"
+                                  SelectedItemChanged="ChapterTree_SelectedItemChanged"
+                                  VirtualizingStackPanel.IsVirtualizing="True"
+                                  Visibility="Collapsed"/>
+                        <TextBlock x:Name="ChapterLoadingText" Text="{local:Loc LoadingChapters}"
+                                   Foreground="#FF9A9A9A" FontSize="13" Margin="8,4"
+                                   TextWrapping="Wrap" Visibility="Collapsed"/>
+                        <TextBlock x:Name="ChapterEmptyText" Text="{local:Loc NoChapters}"
+                                   Foreground="#FF9A9A9A" FontSize="13" Margin="8,4"
+                                   TextWrapping="Wrap" Visibility="Collapsed"/>
+                        <TextBlock x:Name="ChapterFailedText" Text="{local:Loc ChapterLoadFailed}"
+                                   Foreground="#FF9A9A9A" FontSize="13" Margin="8,4"
+                                   TextWrapping="Wrap" Visibility="Collapsed"/>
+                    </Grid>
+                </DockPanel>
+            </Border>
+
+            <GridSplitter x:Name="ChapterSplitter" Grid.Column="1" Width="4"
+                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          Background="Transparent" ShowsPreview="False" Visibility="Collapsed"/>
+
+            <Grid Grid.Column="2" Style="{StaticResource NoMirror}">
+                <Grid x:Name="ReaderGrid" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition x:Name="LeftCol" Width="*"/>
+                        <ColumnDefinition x:Name="RightCol" Width="0"/>
+                    </Grid.ColumnDefinitions>
+                    <wv2:WebView2 x:Name="WebLeft" Grid.Column="0" DefaultBackgroundColor="Transparent"/>
+                    <wv2:WebView2 x:Name="WebRight" Grid.Column="1" DefaultBackgroundColor="Transparent" Visibility="Collapsed"/>
+                </Grid>
+
+                <TextBlock x:Name="EmptyHint"
+                           Text="{local:Loc EmptyHint}"
+                           Foreground="#FF9A9A9A" FontSize="16"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>

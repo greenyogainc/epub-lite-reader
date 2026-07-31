@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         IgnorableNamespaces="uap rescap">
+
+  <!-- Identity: replace Name/Publisher with Partner Center values before Store submission. -->
+  <Identity Name="GreenYogaInc.EPUBLiteReader"
+            Publisher="CN=1F15826A-1F07-4E59-AC9A-622A84CC59FF"
+            Version="1.0.0.0" />
+
+  <Properties>
+    <DisplayName>EPUB Lite Reader</DisplayName>
+    <PublisherDisplayName>Green Yoga Inc</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>A free, lightweight EPUB reader for Windows. Paged, facing, and continuous reading — no library, no account, no ads.</Description>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-US" />
+  </Resources>
+
+  <Applications>
+    <Application Id="EpubLiteReader" Executable="EpubLiteReader.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="EPUB Lite Reader"
+                          Description="A free, lightweight EPUB reader for Windows."
+                          BackgroundColor="transparent"
+                          Square150x150Logo="Assets\Square150x150Logo.png"
+                          Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"
+                         Square310x310Logo="Assets\Square310x310Logo.png" />
+      </uap:VisualElements>
+      <Extensions>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="epub">
+            <uap:DisplayName>EPUB Book</uap:DisplayName>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.epub</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

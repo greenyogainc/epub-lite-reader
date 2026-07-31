@@ -1,0 +1,12 @@
+## Ignore
+bin/
+obj/
+dist/
+packaging/out/
+*.user
+*.suo
+.vs/
+.idea/
+*.log
+*.epub
+!tools/fixtures/*.epub
