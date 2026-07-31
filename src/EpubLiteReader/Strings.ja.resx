@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve"><value>EPUB Lite Reader</value></data>
+  <data name="MainWindowTitleFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="Open" xml:space="preserve"><value>開く…</value></data>
+  <data name="OpenTooltip" xml:space="preserve"><value>EPUBを開く (Ctrl+O)</value></data>
+  <data name="Facing" xml:space="preserve"><value>見開き</value></data>
+  <data name="FacingTooltip" xml:space="preserve"><value>見開きページ表示 (2)</value></data>
+  <data name="Single" xml:space="preserve"><value>単一</value></data>
+  <data name="SingleTooltip" xml:space="preserve"><value>単一ページ (1) — F11キーで全画面表示</value></data>
+  <data name="Scroll" xml:space="preserve"><value>スクロール</value></data>
+  <data name="ScrollTooltip" xml:space="preserve"><value>章を連続スクロール (3)</value></data>
+  <data name="PrevPageTooltip" xml:space="preserve"><value>前のページ (Page Up)</value></data>
+  <data name="NextPageTooltip" xml:space="preserve"><value>次のページ (Page Down)</value></data>
+  <data name="FontOutTooltip" xml:space="preserve"><value>文字を縮小 (Ctrl+-)</value></data>
+  <data name="FontInTooltip" xml:space="preserve"><value>文字を拡大 (Ctrl++)</value></data>
+  <data name="Theme" xml:space="preserve"><value>テーマ</value></data>
+  <data name="ThemeTooltip" xml:space="preserve"><value>読書テーマ</value></data>
+  <data name="Search" xml:space="preserve"><value>検索</value></data>
+  <data name="SearchTooltip" xml:space="preserve"><value>本を検索 (Ctrl+F)</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>本の中を検索…</value></data>
+  <data name="Settings" xml:space="preserve"><value>設定</value></data>
+  <data name="SettingsTooltip" xml:space="preserve"><value>文字組みとオプション</value></data>
+  <data name="Print" xml:space="preserve"><value>印刷…</value></data>
+  <data name="PrintTooltip" xml:space="preserve"><value>現在の章を印刷 (Ctrl+P)</value></data>
+  <data name="FullscreenTooltip" xml:space="preserve"><value>全画面表示 (F11)</value></data>
+  <data name="EmptyHint" xml:space="preserve"><value>EPUBを開く (Ctrl+O)  —  またはファイルをここにドロップ</value></data>
+  <data name="ChapterCountFormat" xml:space="preserve"><value>/ {0}</value></data>
+  <data name="ProgressFormat" xml:space="preserve"><value>{0}%</value></data>
+  <data name="OpenFileDialogFilter" xml:space="preserve"><value>EPUBファイル (*.epub)|*.epub</value></data>
+  <data name="OpenFileDialogTitle" xml:space="preserve"><value>EPUBを開く</value></data>
+  <data name="OpenFileErrorMessage" xml:space="preserve"><value>"{0}" を開けませんでした。
+
+{1}</value></data>
+  <data name="UnhandledErrorMessage" xml:space="preserve"><value>予期しないエラー:
+
+{0}
+
+詳細はログに記録されました:
+{1}</value></data>
+  <data name="Chapters" xml:space="preserve"><value>章</value></data>
+  <data name="ChaptersTooltip" xml:space="preserve"><value>章を表示または非表示にします (F4)</value></data>
+  <data name="CloseChaptersTooltip" xml:space="preserve"><value>章を閉じる</value></data>
+  <data name="LoadingChapters" xml:space="preserve"><value>章を読み込んでいます…</value></data>
+  <data name="NoChapters" xml:space="preserve"><value>この本には目次がありません。</value></data>
+  <data name="UntitledChapter" xml:space="preserve"><value>無題の章</value></data>
+  <data name="ChapterLoadFailed" xml:space="preserve"><value>章を読み込めませんでした。</value></data>
+  <data name="Bookmarks" xml:space="preserve"><value>しおり</value></data>
+  <data name="NoBookmarks" xml:space="preserve"><value>しおりはまだありません。Bキーで追加できます。</value></data>
+  <data name="FontPublisher" xml:space="preserve"><value>出版社指定のフォント</value></data>
+  <data name="FontSerif" xml:space="preserve"><value>セリフ体</value></data>
+  <data name="FontSans" xml:space="preserve"><value>サンセリフ体</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>ライト</value></data>
+  <data name="ThemeSepia" xml:space="preserve"><value>セピア</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>ダーク</value></data>
+  <data name="LineSpacing" xml:space="preserve"><value>行間</value></data>
+  <data name="Margins" xml:space="preserve"><value>余白</value></data>
+  <data name="ResetText" xml:space="preserve"><value>テキスト設定をリセット</value></data>
+  <data name="About" xml:space="preserve"><value>EPUB Lite Readerについて</value></data>
+  <data name="AboutMessage" xml:space="preserve"><value>EPUB Lite Reader
+Windows向けの高速でシンプルなEPUBリーダー。
+ライブラリなし、アカウントなし、気の散る要素なし。
+
+© 2026 Green Yoga Inc
+フリーウェア — MITライセンス</value></data>
+  <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="BookmarkAdded" xml:space="preserve"><value>しおりを追加しました</value></data>
+  <data name="BookmarkRemoved" xml:space="preserve"><value>しおりを削除しました</value></data>
+  <data name="FindNext" xml:space="preserve"><value>次を検索</value></data>
+  <data name="FindPrev" xml:space="preserve"><value>前を検索</value></data>
+  <data name="CloseSearch" xml:space="preserve"><value>閉じる</value></data>
+  <data name="NoSearchResults" xml:space="preserve"><value>一致なし</value></data>
+  <data name="SearchResultsFormat" xml:space="preserve"><value>{0} 件一致</value></data>
+</root>

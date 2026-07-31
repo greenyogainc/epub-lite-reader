@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve"><value>EPUB Lite Reader</value></data>
+  <data name="MainWindowTitleFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="Open" xml:space="preserve"><value>فتح…</value></data>
+  <data name="OpenTooltip" xml:space="preserve"><value>فتح ملف EPUB (Ctrl+O)</value></data>
+  <data name="Facing" xml:space="preserve"><value>صفحتان</value></data>
+  <data name="FacingTooltip" xml:space="preserve"><value>تخطيط كتاب بصفحتين (2)</value></data>
+  <data name="Single" xml:space="preserve"><value>صفحة واحدة</value></data>
+  <data name="SingleTooltip" xml:space="preserve"><value>صفحة واحدة (1) — اضغط F11 لملء الشاشة</value></data>
+  <data name="Scroll" xml:space="preserve"><value>تمرير</value></data>
+  <data name="ScrollTooltip" xml:space="preserve"><value>تمرير متواصل للفصول (3)</value></data>
+  <data name="PrevPageTooltip" xml:space="preserve"><value>الصفحة السابقة (Page Up)</value></data>
+  <data name="NextPageTooltip" xml:space="preserve"><value>الصفحة التالية (Page Down)</value></data>
+  <data name="FontOutTooltip" xml:space="preserve"><value>تصغير حجم النص (Ctrl+-)</value></data>
+  <data name="FontInTooltip" xml:space="preserve"><value>تكبير حجم النص (Ctrl++)</value></data>
+  <data name="Theme" xml:space="preserve"><value>المظهر</value></data>
+  <data name="ThemeTooltip" xml:space="preserve"><value>مظهر القراءة</value></data>
+  <data name="Search" xml:space="preserve"><value>بحث</value></data>
+  <data name="SearchTooltip" xml:space="preserve"><value>البحث في الكتاب (Ctrl+F)</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>البحث في الكتاب…</value></data>
+  <data name="Settings" xml:space="preserve"><value>الإعدادات</value></data>
+  <data name="SettingsTooltip" xml:space="preserve"><value>التنسيق الطباعي والخيارات</value></data>
+  <data name="Print" xml:space="preserve"><value>طباعة…</value></data>
+  <data name="PrintTooltip" xml:space="preserve"><value>طباعة الفصل الحالي (Ctrl+P)</value></data>
+  <data name="FullscreenTooltip" xml:space="preserve"><value>ملء الشاشة (F11)</value></data>
+  <data name="EmptyHint" xml:space="preserve"><value>افتح ملف EPUB (Ctrl+O)  —  أو اسحب ملفًا إلى هنا</value></data>
+  <data name="ChapterCountFormat" xml:space="preserve"><value>/ {0}</value></data>
+  <data name="ProgressFormat" xml:space="preserve"><value>{0}%</value></data>
+  <data name="OpenFileDialogFilter" xml:space="preserve"><value>ملفات EPUB (*.epub)|*.epub</value></data>
+  <data name="OpenFileDialogTitle" xml:space="preserve"><value>فتح ملف EPUB</value></data>
+  <data name="OpenFileErrorMessage" xml:space="preserve"><value>تعذّر فتح "{0}".
+
+{1}</value></data>
+  <data name="UnhandledErrorMessage" xml:space="preserve"><value>خطأ غير متوقع:
+
+{0}
+
+تم تسجيل التفاصيل في:
+{1}</value></data>
+  <data name="Chapters" xml:space="preserve"><value>الفصول</value></data>
+  <data name="ChaptersTooltip" xml:space="preserve"><value>إظهار الفصول أو إخفاؤها (F4)</value></data>
+  <data name="CloseChaptersTooltip" xml:space="preserve"><value>إغلاق الفصول</value></data>
+  <data name="LoadingChapters" xml:space="preserve"><value>جارٍ تحميل الفصول…</value></data>
+  <data name="NoChapters" xml:space="preserve"><value>لا يحتوي هذا الكتاب على فهرس محتويات.</value></data>
+  <data name="UntitledChapter" xml:space="preserve"><value>فصل بلا عنوان</value></data>
+  <data name="ChapterLoadFailed" xml:space="preserve"><value>تعذر تحميل الفصول.</value></data>
+  <data name="Bookmarks" xml:space="preserve"><value>الإشارات المرجعية</value></data>
+  <data name="NoBookmarks" xml:space="preserve"><value>لا توجد إشارات مرجعية بعد. اضغط B لإضافة واحدة.</value></data>
+  <data name="FontPublisher" xml:space="preserve"><value>خط الناشر</value></data>
+  <data name="FontSerif" xml:space="preserve"><value>بأطراف زخرفية</value></data>
+  <data name="FontSans" xml:space="preserve"><value>بلا أطراف زخرفية</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>فاتح</value></data>
+  <data name="ThemeSepia" xml:space="preserve"><value>بني داكن</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>داكن</value></data>
+  <data name="LineSpacing" xml:space="preserve"><value>تباعد الأسطر</value></data>
+  <data name="Margins" xml:space="preserve"><value>الهوامش</value></data>
+  <data name="ResetText" xml:space="preserve"><value>إعادة ضبط إعدادات النص</value></data>
+  <data name="About" xml:space="preserve"><value>حول EPUB Lite Reader</value></data>
+  <data name="AboutMessage" xml:space="preserve"><value>EPUB Lite Reader
+قراءة EPUB سريعة ونظيفة على ويندوز.
+بلا مكتبة، بلا حساب، بلا تشتيت.
+
+© 2026 Green Yoga Inc
+برنامج مجاني — رخصة MIT</value></data>
+  <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="BookmarkAdded" xml:space="preserve"><value>تمت إضافة الإشارة المرجعية</value></data>
+  <data name="BookmarkRemoved" xml:space="preserve"><value>تمت إزالة الإشارة المرجعية</value></data>
+  <data name="FindNext" xml:space="preserve"><value>البحث عن التالي</value></data>
+  <data name="FindPrev" xml:space="preserve"><value>البحث عن السابق</value></data>
+  <data name="CloseSearch" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="NoSearchResults" xml:space="preserve"><value>لا توجد نتائج</value></data>
+  <data name="SearchResultsFormat" xml:space="preserve"><value>{0} نتيجة مطابقة</value></data>
+</root>

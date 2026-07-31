@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve"><value>EPUB Lite Reader</value></data>
+  <data name="MainWindowTitleFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="Open" xml:space="preserve"><value>打开…</value></data>
+  <data name="OpenTooltip" xml:space="preserve"><value>打开 EPUB (Ctrl+O)</value></data>
+  <data name="Facing" xml:space="preserve"><value>双页</value></data>
+  <data name="FacingTooltip" xml:space="preserve"><value>双页对照版式 (2)</value></data>
+  <data name="Single" xml:space="preserve"><value>单页</value></data>
+  <data name="SingleTooltip" xml:space="preserve"><value>单页 (1) — 按 F11 全屏</value></data>
+  <data name="Scroll" xml:space="preserve"><value>滚动</value></data>
+  <data name="ScrollTooltip" xml:space="preserve"><value>连续滚动章节 (3)</value></data>
+  <data name="PrevPageTooltip" xml:space="preserve"><value>上一页 (Page Up)</value></data>
+  <data name="NextPageTooltip" xml:space="preserve"><value>下一页 (Page Down)</value></data>
+  <data name="FontOutTooltip" xml:space="preserve"><value>缩小文字 (Ctrl+-)</value></data>
+  <data name="FontInTooltip" xml:space="preserve"><value>放大文字 (Ctrl++)</value></data>
+  <data name="Theme" xml:space="preserve"><value>主题</value></data>
+  <data name="ThemeTooltip" xml:space="preserve"><value>阅读主题</value></data>
+  <data name="Search" xml:space="preserve"><value>搜索</value></data>
+  <data name="SearchTooltip" xml:space="preserve"><value>搜索书籍 (Ctrl+F)</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>在书中查找…</value></data>
+  <data name="Settings" xml:space="preserve"><value>设置</value></data>
+  <data name="SettingsTooltip" xml:space="preserve"><value>排版和选项</value></data>
+  <data name="Print" xml:space="preserve"><value>打印…</value></data>
+  <data name="PrintTooltip" xml:space="preserve"><value>打印当前章节 (Ctrl+P)</value></data>
+  <data name="FullscreenTooltip" xml:space="preserve"><value>全屏 (F11)</value></data>
+  <data name="EmptyHint" xml:space="preserve"><value>打开 EPUB  (Ctrl+O)  — 或将文件拖到此处</value></data>
+  <data name="ChapterCountFormat" xml:space="preserve"><value>/ {0}</value></data>
+  <data name="ProgressFormat" xml:space="preserve"><value>{0}%</value></data>
+  <data name="OpenFileDialogFilter" xml:space="preserve"><value>EPUB 文件 (*.epub)|*.epub</value></data>
+  <data name="OpenFileDialogTitle" xml:space="preserve"><value>打开 EPUB</value></data>
+  <data name="OpenFileErrorMessage" xml:space="preserve"><value>无法打开"{0}"。
+
+{1}</value></data>
+  <data name="UnhandledErrorMessage" xml:space="preserve"><value>意外错误:
+
+{0}
+
+详细信息已记录到:
+{1}</value></data>
+  <data name="Chapters" xml:space="preserve"><value>章节</value></data>
+  <data name="ChaptersTooltip" xml:space="preserve"><value>显示或隐藏章节 (F4)</value></data>
+  <data name="CloseChaptersTooltip" xml:space="preserve"><value>关闭章节</value></data>
+  <data name="LoadingChapters" xml:space="preserve"><value>正在加载章节…</value></data>
+  <data name="NoChapters" xml:space="preserve"><value>此书没有目录。</value></data>
+  <data name="UntitledChapter" xml:space="preserve"><value>无标题章节</value></data>
+  <data name="ChapterLoadFailed" xml:space="preserve"><value>无法加载章节。</value></data>
+  <data name="Bookmarks" xml:space="preserve"><value>书签</value></data>
+  <data name="NoBookmarks" xml:space="preserve"><value>还没有书签。按 B 添加一个。</value></data>
+  <data name="FontPublisher" xml:space="preserve"><value>出版商字体</value></data>
+  <data name="FontSerif" xml:space="preserve"><value>衬线体</value></data>
+  <data name="FontSans" xml:space="preserve"><value>无衬线体</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>浅色</value></data>
+  <data name="ThemeSepia" xml:space="preserve"><value>护眼</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>深色</value></data>
+  <data name="LineSpacing" xml:space="preserve"><value>行距</value></data>
+  <data name="Margins" xml:space="preserve"><value>页边距</value></data>
+  <data name="ResetText" xml:space="preserve"><value>重置文字设置</value></data>
+  <data name="About" xml:space="preserve"><value>关于 EPUB Lite Reader</value></data>
+  <data name="AboutMessage" xml:space="preserve"><value>EPUB Lite Reader
+适用于 Windows 的快速、简洁的 EPUB 阅读器。
+无需书库，无需账户，没有干扰。
+
+© 2026 Green Yoga Inc
+免费软件 — MIT 许可证</value></data>
+  <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="BookmarkAdded" xml:space="preserve"><value>已添加书签</value></data>
+  <data name="BookmarkRemoved" xml:space="preserve"><value>已移除书签</value></data>
+  <data name="FindNext" xml:space="preserve"><value>查找下一个</value></data>
+  <data name="FindPrev" xml:space="preserve"><value>查找上一个</value></data>
+  <data name="CloseSearch" xml:space="preserve"><value>关闭</value></data>
+  <data name="NoSearchResults" xml:space="preserve"><value>无匹配项</value></data>
+  <data name="SearchResultsFormat" xml:space="preserve"><value>{0} 处匹配</value></data>
+</root>

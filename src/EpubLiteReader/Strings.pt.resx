@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve"><value>EPUB Lite Reader</value></data>
+  <data name="MainWindowTitleFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="Open" xml:space="preserve"><value>Abrir…</value></data>
+  <data name="OpenTooltip" xml:space="preserve"><value>Abrir um EPUB (Ctrl+O)</value></data>
+  <data name="Facing" xml:space="preserve"><value>Dupla</value></data>
+  <data name="FacingTooltip" xml:space="preserve"><value>Visualização de livro em página dupla (2)</value></data>
+  <data name="Single" xml:space="preserve"><value>Única</value></data>
+  <data name="SingleTooltip" xml:space="preserve"><value>Página única (1) — prima F11 para ecrã inteiro</value></data>
+  <data name="Scroll" xml:space="preserve"><value>Contínuo</value></data>
+  <data name="ScrollTooltip" xml:space="preserve"><value>Rolagem contínua de capítulos (3)</value></data>
+  <data name="PrevPageTooltip" xml:space="preserve"><value>Página anterior (Page Up)</value></data>
+  <data name="NextPageTooltip" xml:space="preserve"><value>Próxima página (Page Down)</value></data>
+  <data name="FontOutTooltip" xml:space="preserve"><value>Diminuir tamanho do texto (Ctrl+-)</value></data>
+  <data name="FontInTooltip" xml:space="preserve"><value>Aumentar tamanho do texto (Ctrl++)</value></data>
+  <data name="Theme" xml:space="preserve"><value>Tema</value></data>
+  <data name="ThemeTooltip" xml:space="preserve"><value>Tema de leitura</value></data>
+  <data name="Search" xml:space="preserve"><value>Pesquisar</value></data>
+  <data name="SearchTooltip" xml:space="preserve"><value>Pesquisar no livro (Ctrl+F)</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>Pesquisar no livro…</value></data>
+  <data name="Settings" xml:space="preserve"><value>Definições</value></data>
+  <data name="SettingsTooltip" xml:space="preserve"><value>Tipografia e opções</value></data>
+  <data name="Print" xml:space="preserve"><value>Imprimir…</value></data>
+  <data name="PrintTooltip" xml:space="preserve"><value>Imprimir capítulo atual (Ctrl+P)</value></data>
+  <data name="FullscreenTooltip" xml:space="preserve"><value>Ecrã inteiro (F11)</value></data>
+  <data name="EmptyHint" xml:space="preserve"><value>Abra um EPUB  (Ctrl+O)  —  ou largue um ficheiro aqui</value></data>
+  <data name="ChapterCountFormat" xml:space="preserve"><value>/ {0}</value></data>
+  <data name="ProgressFormat" xml:space="preserve"><value>{0}%</value></data>
+  <data name="OpenFileDialogFilter" xml:space="preserve"><value>Ficheiros EPUB (*.epub)|*.epub</value></data>
+  <data name="OpenFileDialogTitle" xml:space="preserve"><value>Abrir EPUB</value></data>
+  <data name="OpenFileErrorMessage" xml:space="preserve"><value>Não foi possível abrir "{0}".
+
+{1}</value></data>
+  <data name="UnhandledErrorMessage" xml:space="preserve"><value>Erro inesperado:
+
+{0}
+
+Detalhes registrados em:
+{1}</value></data>
+  <data name="Chapters" xml:space="preserve"><value>Capítulos</value></data>
+  <data name="ChaptersTooltip" xml:space="preserve"><value>Mostrar ou ocultar os capítulos (F4)</value></data>
+  <data name="CloseChaptersTooltip" xml:space="preserve"><value>Fechar capítulos</value></data>
+  <data name="LoadingChapters" xml:space="preserve"><value>A carregar capítulos…</value></data>
+  <data name="NoChapters" xml:space="preserve"><value>Este livro não tem sumário.</value></data>
+  <data name="UntitledChapter" xml:space="preserve"><value>Capítulo sem título</value></data>
+  <data name="ChapterLoadFailed" xml:space="preserve"><value>Não foi possível carregar os capítulos.</value></data>
+  <data name="Bookmarks" xml:space="preserve"><value>Marcadores</value></data>
+  <data name="NoBookmarks" xml:space="preserve"><value>Ainda não há marcadores. Prima B para adicionar um.</value></data>
+  <data name="FontPublisher" xml:space="preserve"><value>Fonte da editora</value></data>
+  <data name="FontSerif" xml:space="preserve"><value>Serif</value></data>
+  <data name="FontSans" xml:space="preserve"><value>Sans-serif</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Claro</value></data>
+  <data name="ThemeSepia" xml:space="preserve"><value>Sépia</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Escuro</value></data>
+  <data name="LineSpacing" xml:space="preserve"><value>Espaçamento entre linhas</value></data>
+  <data name="Margins" xml:space="preserve"><value>Margens</value></data>
+  <data name="ResetText" xml:space="preserve"><value>Repor definições de texto</value></data>
+  <data name="About" xml:space="preserve"><value>Sobre o EPUB Lite Reader</value></data>
+  <data name="AboutMessage" xml:space="preserve"><value>EPUB Lite Reader
+Leitura de EPUB rápida e limpa para Windows.
+Sem biblioteca, sem conta, sem distrações.
+
+© 2026 Green Yoga Inc
+Gratuito — Licença MIT</value></data>
+  <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="BookmarkAdded" xml:space="preserve"><value>Marcador adicionado</value></data>
+  <data name="BookmarkRemoved" xml:space="preserve"><value>Marcador removido</value></data>
+  <data name="FindNext" xml:space="preserve"><value>Buscar próxima</value></data>
+  <data name="FindPrev" xml:space="preserve"><value>Buscar anterior</value></data>
+  <data name="CloseSearch" xml:space="preserve"><value>Fechar</value></data>
+  <data name="NoSearchResults" xml:space="preserve"><value>Nenhum resultado</value></data>
+  <data name="SearchResultsFormat" xml:space="preserve"><value>{0} resultados</value></data>
+</root>

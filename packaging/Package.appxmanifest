@@ -22,6 +22,19 @@
 
   <Resources>
     <Resource Language="en-US" />
+    <Resource Language="es" />
+    <Resource Language="fr" />
+    <Resource Language="de" />
+    <Resource Language="it" />
+    <Resource Language="pt" />
+    <Resource Language="pt-BR" />
+    <Resource Language="ja" />
+    <Resource Language="ko" />
+    <Resource Language="zh-Hans" />
+    <Resource Language="zh-Hant" />
+    <Resource Language="ru" />
+    <Resource Language="uk" />
+    <Resource Language="ar" />
   </Resources>
 
   <Applications>

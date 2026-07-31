@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve"><value>EPUB Lite Reader</value></data>
+  <data name="MainWindowTitleFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="Open" xml:space="preserve"><value>Öffnen…</value></data>
+  <data name="OpenTooltip" xml:space="preserve"><value>EPUB öffnen (Strg+O)</value></data>
+  <data name="Facing" xml:space="preserve"><value>Doppel</value></data>
+  <data name="FacingTooltip" xml:space="preserve"><value>Doppelseiten-Ansicht (2)</value></data>
+  <data name="Single" xml:space="preserve"><value>Einzeln</value></data>
+  <data name="SingleTooltip" xml:space="preserve"><value>Einzelseite (1) – F11 für Vollbild</value></data>
+  <data name="Scroll" xml:space="preserve"><value>Scrollen</value></data>
+  <data name="ScrollTooltip" xml:space="preserve"><value>Fortlaufendes Scrollen durch Kapitel (3)</value></data>
+  <data name="PrevPageTooltip" xml:space="preserve"><value>Vorherige Seite (Bild auf)</value></data>
+  <data name="NextPageTooltip" xml:space="preserve"><value>Nächste Seite (Bild ab)</value></data>
+  <data name="FontOutTooltip" xml:space="preserve"><value>Schrift verkleinern (Strg+-)</value></data>
+  <data name="FontInTooltip" xml:space="preserve"><value>Schrift vergrößern (Strg++)</value></data>
+  <data name="Theme" xml:space="preserve"><value>Thema</value></data>
+  <data name="ThemeTooltip" xml:space="preserve"><value>Lesethema</value></data>
+  <data name="Search" xml:space="preserve"><value>Suchen</value></data>
+  <data name="SearchTooltip" xml:space="preserve"><value>Buch durchsuchen (Strg+F)</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>Im Buch suchen…</value></data>
+  <data name="Settings" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="SettingsTooltip" xml:space="preserve"><value>Typografie und Optionen</value></data>
+  <data name="Print" xml:space="preserve"><value>Drucken…</value></data>
+  <data name="PrintTooltip" xml:space="preserve"><value>Aktuelles Kapitel drucken (Strg+P)</value></data>
+  <data name="FullscreenTooltip" xml:space="preserve"><value>Vollbild (F11)</value></data>
+  <data name="EmptyHint" xml:space="preserve"><value>EPUB öffnen  (Strg+O)  —  oder Datei hier ablegen</value></data>
+  <data name="ChapterCountFormat" xml:space="preserve"><value>/ {0}</value></data>
+  <data name="ProgressFormat" xml:space="preserve"><value>{0}%</value></data>
+  <data name="OpenFileDialogFilter" xml:space="preserve"><value>EPUB-Dateien (*.epub)|*.epub</value></data>
+  <data name="OpenFileDialogTitle" xml:space="preserve"><value>EPUB öffnen</value></data>
+  <data name="OpenFileErrorMessage" xml:space="preserve"><value>„{0}" konnte nicht geöffnet werden.
+
+{1}</value></data>
+  <data name="UnhandledErrorMessage" xml:space="preserve"><value>Unerwarteter Fehler:
+
+{0}
+
+Details protokolliert unter:
+{1}</value></data>
+  <data name="Chapters" xml:space="preserve"><value>Kapitel</value></data>
+  <data name="ChaptersTooltip" xml:space="preserve"><value>Kapitel anzeigen oder ausblenden (F4)</value></data>
+  <data name="CloseChaptersTooltip" xml:space="preserve"><value>Kapitel schließen</value></data>
+  <data name="LoadingChapters" xml:space="preserve"><value>Kapitel werden geladen…</value></data>
+  <data name="NoChapters" xml:space="preserve"><value>Dieses Buch hat kein Inhaltsverzeichnis.</value></data>
+  <data name="UntitledChapter" xml:space="preserve"><value>Unbenanntes Kapitel</value></data>
+  <data name="ChapterLoadFailed" xml:space="preserve"><value>Kapitel konnten nicht geladen werden.</value></data>
+  <data name="Bookmarks" xml:space="preserve"><value>Lesezeichen</value></data>
+  <data name="NoBookmarks" xml:space="preserve"><value>Noch keine Lesezeichen. Drücken Sie B, um eines hinzuzufügen.</value></data>
+  <data name="FontPublisher" xml:space="preserve"><value>Verlagsschrift</value></data>
+  <data name="FontSerif" xml:space="preserve"><value>Serif</value></data>
+  <data name="FontSans" xml:space="preserve"><value>Serifenlos</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Hell</value></data>
+  <data name="ThemeSepia" xml:space="preserve"><value>Sepia</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Dunkel</value></data>
+  <data name="LineSpacing" xml:space="preserve"><value>Zeilenabstand</value></data>
+  <data name="Margins" xml:space="preserve"><value>Ränder</value></data>
+  <data name="ResetText" xml:space="preserve"><value>Textoptionen zurücksetzen</value></data>
+  <data name="About" xml:space="preserve"><value>Über EPUB Lite Reader</value></data>
+  <data name="AboutMessage" xml:space="preserve"><value>EPUB Lite Reader
+Schnelles, klares EPUB-Lesen für Windows.
+Keine Bibliothek, kein Konto, keine Ablenkung.
+
+© 2026 Green Yoga Inc
+Freeware — MIT-Lizenz</value></data>
+  <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="BookmarkAdded" xml:space="preserve"><value>Lesezeichen hinzugefügt</value></data>
+  <data name="BookmarkRemoved" xml:space="preserve"><value>Lesezeichen entfernt</value></data>
+  <data name="FindNext" xml:space="preserve"><value>Weitersuchen</value></data>
+  <data name="FindPrev" xml:space="preserve"><value>Rückwärts suchen</value></data>
+  <data name="CloseSearch" xml:space="preserve"><value>Schließen</value></data>
+  <data name="NoSearchResults" xml:space="preserve"><value>Keine Treffer</value></data>
+  <data name="SearchResultsFormat" xml:space="preserve"><value>{0} Treffer</value></data>
+</root>

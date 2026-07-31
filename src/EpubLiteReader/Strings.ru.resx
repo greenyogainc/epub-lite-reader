@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve"><value>EPUB Lite Reader</value></data>
+  <data name="MainWindowTitleFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="Open" xml:space="preserve"><value>Открыть…</value></data>
+  <data name="OpenTooltip" xml:space="preserve"><value>Открыть EPUB (Ctrl+O)</value></data>
+  <data name="Facing" xml:space="preserve"><value>Разворот</value></data>
+  <data name="FacingTooltip" xml:space="preserve"><value>Книжный разворот (2)</value></data>
+  <data name="Single" xml:space="preserve"><value>Одна</value></data>
+  <data name="SingleTooltip" xml:space="preserve"><value>Одна страница (1) — F11 для полноэкранного режима</value></data>
+  <data name="Scroll" xml:space="preserve"><value>Прокрутка</value></data>
+  <data name="ScrollTooltip" xml:space="preserve"><value>Непрерывная прокрутка глав (3)</value></data>
+  <data name="PrevPageTooltip" xml:space="preserve"><value>Предыдущая страница (Page Up)</value></data>
+  <data name="NextPageTooltip" xml:space="preserve"><value>Следующая страница (Page Down)</value></data>
+  <data name="FontOutTooltip" xml:space="preserve"><value>Уменьшить текст (Ctrl+-)</value></data>
+  <data name="FontInTooltip" xml:space="preserve"><value>Увеличить текст (Ctrl++)</value></data>
+  <data name="Theme" xml:space="preserve"><value>Тема</value></data>
+  <data name="ThemeTooltip" xml:space="preserve"><value>Тема чтения</value></data>
+  <data name="Search" xml:space="preserve"><value>Поиск</value></data>
+  <data name="SearchTooltip" xml:space="preserve"><value>Поиск по книге (Ctrl+F)</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>Поиск в книге…</value></data>
+  <data name="Settings" xml:space="preserve"><value>Настройки</value></data>
+  <data name="SettingsTooltip" xml:space="preserve"><value>Типографика и параметры</value></data>
+  <data name="Print" xml:space="preserve"><value>Печать…</value></data>
+  <data name="PrintTooltip" xml:space="preserve"><value>Печать текущей главы (Ctrl+P)</value></data>
+  <data name="FullscreenTooltip" xml:space="preserve"><value>Полноэкранный режим (F11)</value></data>
+  <data name="EmptyHint" xml:space="preserve"><value>Откройте EPUB (Ctrl+O)  —  или перетащите файл сюда</value></data>
+  <data name="ChapterCountFormat" xml:space="preserve"><value>/ {0}</value></data>
+  <data name="ProgressFormat" xml:space="preserve"><value>{0}%</value></data>
+  <data name="OpenFileDialogFilter" xml:space="preserve"><value>Файлы EPUB (*.epub)|*.epub</value></data>
+  <data name="OpenFileDialogTitle" xml:space="preserve"><value>Открыть EPUB</value></data>
+  <data name="OpenFileErrorMessage" xml:space="preserve"><value>Не удалось открыть «{0}».
+
+{1}</value></data>
+  <data name="UnhandledErrorMessage" xml:space="preserve"><value>Непредвиденная ошибка:
+
+{0}
+
+Подробности записаны в:
+{1}</value></data>
+  <data name="Chapters" xml:space="preserve"><value>Главы</value></data>
+  <data name="ChaptersTooltip" xml:space="preserve"><value>Показать или скрыть главы (F4)</value></data>
+  <data name="CloseChaptersTooltip" xml:space="preserve"><value>Закрыть главы</value></data>
+  <data name="LoadingChapters" xml:space="preserve"><value>Загрузка глав…</value></data>
+  <data name="NoChapters" xml:space="preserve"><value>В этой книге нет оглавления.</value></data>
+  <data name="UntitledChapter" xml:space="preserve"><value>Глава без названия</value></data>
+  <data name="ChapterLoadFailed" xml:space="preserve"><value>Не удалось загрузить главы.</value></data>
+  <data name="Bookmarks" xml:space="preserve"><value>Закладки</value></data>
+  <data name="NoBookmarks" xml:space="preserve"><value>Закладок пока нет. Нажмите B, чтобы добавить.</value></data>
+  <data name="FontPublisher" xml:space="preserve"><value>Шрифт издателя</value></data>
+  <data name="FontSerif" xml:space="preserve"><value>С засечками</value></data>
+  <data name="FontSans" xml:space="preserve"><value>Без засечек</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Светлая</value></data>
+  <data name="ThemeSepia" xml:space="preserve"><value>Сепия</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Тёмная</value></data>
+  <data name="LineSpacing" xml:space="preserve"><value>Межстрочный интервал</value></data>
+  <data name="Margins" xml:space="preserve"><value>Поля</value></data>
+  <data name="ResetText" xml:space="preserve"><value>Сбросить настройки текста</value></data>
+  <data name="About" xml:space="preserve"><value>О программе EPUB Lite Reader</value></data>
+  <data name="AboutMessage" xml:space="preserve"><value>EPUB Lite Reader
+Быстрое и понятное чтение EPUB для Windows.
+Без библиотеки, без учётной записи, без отвлечений.
+
+© 2026 Green Yoga Inc
+Бесплатно — лицензия MIT</value></data>
+  <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="BookmarkAdded" xml:space="preserve"><value>Закладка добавлена</value></data>
+  <data name="BookmarkRemoved" xml:space="preserve"><value>Закладка удалена</value></data>
+  <data name="FindNext" xml:space="preserve"><value>Найти далее</value></data>
+  <data name="FindPrev" xml:space="preserve"><value>Найти ранее</value></data>
+  <data name="CloseSearch" xml:space="preserve"><value>Закрыть</value></data>
+  <data name="NoSearchResults" xml:space="preserve"><value>Совпадений нет</value></data>
+  <data name="SearchResultsFormat" xml:space="preserve"><value>Совпадений: {0}</value></data>
+</root>

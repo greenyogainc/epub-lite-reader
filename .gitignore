@@ -7,6 +7,8 @@ packaging/out/
 *.suo
 .vs/
 .idea/
+__pycache__/
 *.log
 *.epub
 !tools/fixtures/*.epub
+!packaging/store-screenshots/source/*.epub

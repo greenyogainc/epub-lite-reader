@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve"><value>EPUB Lite Reader</value></data>
+  <data name="MainWindowTitleFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="Open" xml:space="preserve"><value>Відкрити…</value></data>
+  <data name="OpenTooltip" xml:space="preserve"><value>Відкрити EPUB (Ctrl+O)</value></data>
+  <data name="Facing" xml:space="preserve"><value>Розворот</value></data>
+  <data name="FacingTooltip" xml:space="preserve"><value>Книжковий розворот (2)</value></data>
+  <data name="Single" xml:space="preserve"><value>Одна</value></data>
+  <data name="SingleTooltip" xml:space="preserve"><value>Одна сторінка (1) — натисніть F11 для повноекранного режиму</value></data>
+  <data name="Scroll" xml:space="preserve"><value>Прокрутка</value></data>
+  <data name="ScrollTooltip" xml:space="preserve"><value>Безперервна прокрутка розділів (3)</value></data>
+  <data name="PrevPageTooltip" xml:space="preserve"><value>Попередня сторінка (Page Up)</value></data>
+  <data name="NextPageTooltip" xml:space="preserve"><value>Наступна сторінка (Page Down)</value></data>
+  <data name="FontOutTooltip" xml:space="preserve"><value>Зменшити текст (Ctrl+-)</value></data>
+  <data name="FontInTooltip" xml:space="preserve"><value>Збільшити текст (Ctrl++)</value></data>
+  <data name="Theme" xml:space="preserve"><value>Тема</value></data>
+  <data name="ThemeTooltip" xml:space="preserve"><value>Тема читання</value></data>
+  <data name="Search" xml:space="preserve"><value>Пошук</value></data>
+  <data name="SearchTooltip" xml:space="preserve"><value>Пошук у книзі (Ctrl+F)</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>Пошук у книзі…</value></data>
+  <data name="Settings" xml:space="preserve"><value>Налаштування</value></data>
+  <data name="SettingsTooltip" xml:space="preserve"><value>Типографіка та параметри</value></data>
+  <data name="Print" xml:space="preserve"><value>Друк…</value></data>
+  <data name="PrintTooltip" xml:space="preserve"><value>Друк поточного розділу (Ctrl+P)</value></data>
+  <data name="FullscreenTooltip" xml:space="preserve"><value>Повноекранний режим (F11)</value></data>
+  <data name="EmptyHint" xml:space="preserve"><value>Відкрийте EPUB (Ctrl+O)  —  або перетягніть файл сюди</value></data>
+  <data name="ChapterCountFormat" xml:space="preserve"><value>/ {0}</value></data>
+  <data name="ProgressFormat" xml:space="preserve"><value>{0}%</value></data>
+  <data name="OpenFileDialogFilter" xml:space="preserve"><value>Файли EPUB (*.epub)|*.epub</value></data>
+  <data name="OpenFileDialogTitle" xml:space="preserve"><value>Відкрити EPUB</value></data>
+  <data name="OpenFileErrorMessage" xml:space="preserve"><value>Не вдалося відкрити «{0}».
+
+{1}</value></data>
+  <data name="UnhandledErrorMessage" xml:space="preserve"><value>Неочікувана помилка:
+
+{0}
+
+Подробиці записано до:
+{1}</value></data>
+  <data name="Chapters" xml:space="preserve"><value>Розділи</value></data>
+  <data name="ChaptersTooltip" xml:space="preserve"><value>Показати або приховати розділи (F4)</value></data>
+  <data name="CloseChaptersTooltip" xml:space="preserve"><value>Закрити розділи</value></data>
+  <data name="LoadingChapters" xml:space="preserve"><value>Завантаження розділів…</value></data>
+  <data name="NoChapters" xml:space="preserve"><value>У цій книзі немає змісту.</value></data>
+  <data name="UntitledChapter" xml:space="preserve"><value>Розділ без назви</value></data>
+  <data name="ChapterLoadFailed" xml:space="preserve"><value>Не вдалося завантажити розділи.</value></data>
+  <data name="Bookmarks" xml:space="preserve"><value>Закладки</value></data>
+  <data name="NoBookmarks" xml:space="preserve"><value>Закладок ще немає. Натисніть B, щоб додати.</value></data>
+  <data name="FontPublisher" xml:space="preserve"><value>Шрифт видавця</value></data>
+  <data name="FontSerif" xml:space="preserve"><value>Із засічками</value></data>
+  <data name="FontSans" xml:space="preserve"><value>Без засічок</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Світла</value></data>
+  <data name="ThemeSepia" xml:space="preserve"><value>Сепія</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Темна</value></data>
+  <data name="LineSpacing" xml:space="preserve"><value>Міжрядковий інтервал</value></data>
+  <data name="Margins" xml:space="preserve"><value>Поля</value></data>
+  <data name="ResetText" xml:space="preserve"><value>Скинути налаштування тексту</value></data>
+  <data name="About" xml:space="preserve"><value>Про EPUB Lite Reader</value></data>
+  <data name="AboutMessage" xml:space="preserve"><value>EPUB Lite Reader
+Швидке й чисте читання EPUB для Windows.
+Без бібліотеки, без облікового запису, без відволікань.
+
+© 2026 Green Yoga Inc
+Безкоштовно — ліцензія MIT</value></data>
+  <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="BookmarkAdded" xml:space="preserve"><value>Закладку додано</value></data>
+  <data name="BookmarkRemoved" xml:space="preserve"><value>Закладку видалено</value></data>
+  <data name="FindNext" xml:space="preserve"><value>Знайти далі</value></data>
+  <data name="FindPrev" xml:space="preserve"><value>Знайти раніше</value></data>
+  <data name="CloseSearch" xml:space="preserve"><value>Закрити</value></data>
+  <data name="NoSearchResults" xml:space="preserve"><value>Немає збігів</value></data>
+  <data name="SearchResultsFormat" xml:space="preserve"><value>Збігів: {0}</value></data>
+</root>
