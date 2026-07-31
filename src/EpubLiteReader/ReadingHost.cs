@@ -74,9 +74,10 @@ public sealed class ReadingHost
         {
             await _webView.ExecuteScriptAsync(ReaderInject.ApplySettingsScript(_settings));
         }
-        catch
+        catch (Exception ex)
         {
-            // View may be mid-navigation.
+            // View may be mid-navigation; still surface anything unexpected for diagnosis.
+            App.LogError(ex);
         }
     }
 

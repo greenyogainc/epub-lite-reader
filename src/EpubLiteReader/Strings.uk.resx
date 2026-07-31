@@ -37,6 +37,7 @@
   <data name="PrintTooltip" xml:space="preserve"><value>Друк поточного розділу (Ctrl+P)</value></data>
   <data name="FullscreenTooltip" xml:space="preserve"><value>Повноекранний режим (F11)</value></data>
   <data name="EmptyHint" xml:space="preserve"><value>Відкрийте EPUB (Ctrl+O)  —  або перетягніть файл сюди</value></data>
+  <data name="OpenSampleBook" xml:space="preserve"><value>Відкрити приклад книги</value></data>
   <data name="ChapterCountFormat" xml:space="preserve"><value>/ {0}</value></data>
   <data name="ProgressFormat" xml:space="preserve"><value>{0}%</value></data>
   <data name="OpenFileDialogFilter" xml:space="preserve"><value>Файли EPUB (*.epub)|*.epub</value></data>

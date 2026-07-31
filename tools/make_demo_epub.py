@@ -11,6 +11,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "packaging" / "store-screenshots" / "source" / "EpubLiteReader-demo.epub"
+# Same content, bundled into the app itself so the empty-state "Open sample
+# book" link (and Store certification reviewers) always have something to
+# open without needing their own .epub file.
+BUNDLED_OUT = ROOT / "src" / "EpubLiteReader" / "Assets" / "sample.epub"
 
 TITLE = "A Quiet Path"
 AUTHOR = "Green Yoga Inc"
@@ -123,7 +127,7 @@ def nav_xhtml() -> str:
     for cid, title, part, _ in CHAPTERS:
         parts.setdefault(part, []).append((cid, title))
 
-    items = []
+    items: list[str] = []
     for part, chapters in parts.items():
         inner = "\n      ".join(
             f'<li><a href="{cid}.xhtml">{escape(title)}</a></li>' for cid, title in chapters
@@ -189,6 +193,10 @@ def build() -> None:
             )
 
     print(f"Wrote {OUT} ({OUT.stat().st_size} bytes)")
+
+    BUNDLED_OUT.parent.mkdir(parents=True, exist_ok=True)
+    BUNDLED_OUT.write_bytes(OUT.read_bytes())
+    print(f"Wrote {BUNDLED_OUT} ({BUNDLED_OUT.stat().st_size} bytes)")
 
 
 if __name__ == "__main__":

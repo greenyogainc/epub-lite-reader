@@ -20,7 +20,7 @@ ORDER = [
     "PrevPageTooltip", "NextPageTooltip", "FontOutTooltip", "FontInTooltip",
     "Theme", "ThemeTooltip", "Search", "SearchTooltip", "SearchPlaceholder",
     "Settings", "SettingsTooltip", "Print", "PrintTooltip", "FullscreenTooltip",
-    "EmptyHint", "ChapterCountFormat", "ProgressFormat", "OpenFileDialogFilter",
+    "EmptyHint", "OpenSampleBook", "ChapterCountFormat", "ProgressFormat", "OpenFileDialogFilter",
     "OpenFileDialogTitle", "OpenFileErrorMessage", "UnhandledErrorMessage",
     "Chapters", "ChaptersTooltip", "CloseChaptersTooltip", "LoadingChapters",
     "NoChapters", "UntitledChapter", "ChapterLoadFailed", "Bookmarks",
@@ -56,6 +56,7 @@ TRANSLATIONS = {
         "Print": "Imprimir…", "PrintTooltip": "Imprimir capítulo actual (Ctrl+P)",
         "FullscreenTooltip": "Pantalla completa (F11)",
         "EmptyHint": "Abre un EPUB  (Ctrl+O)  —  o suelta un archivo aquí",
+        "OpenSampleBook": "Abrir libro de ejemplo",
         "ChapterCountFormat": COUNT_FMT, "ProgressFormat": "{0}%",
         "OpenFileDialogFilter": "Archivos EPUB (*.epub)|*.epub", "OpenFileDialogTitle": "Abrir EPUB",
         "OpenFileErrorMessage": 'No se pudo abrir "{0}".\n\n{1}',
@@ -93,6 +94,7 @@ TRANSLATIONS = {
         "Print": "Imprimer…", "PrintTooltip": "Imprimer le chapitre actuel (Ctrl+P)",
         "FullscreenTooltip": "Plein écran (F11)",
         "EmptyHint": "Ouvrez un EPUB  (Ctrl+O)  —  ou déposez un fichier ici",
+        "OpenSampleBook": "Ouvrir un livre d'exemple",
         "ChapterCountFormat": COUNT_FMT, "ProgressFormat": "{0} %",
         "OpenFileDialogFilter": "Fichiers EPUB (*.epub)|*.epub", "OpenFileDialogTitle": "Ouvrir un EPUB",
         "OpenFileErrorMessage": "Impossible d'ouvrir « {0} ».\n\n{1}",
@@ -130,6 +132,7 @@ TRANSLATIONS = {
         "Print": "Drucken…", "PrintTooltip": "Aktuelles Kapitel drucken (Strg+P)",
         "FullscreenTooltip": "Vollbild (F11)",
         "EmptyHint": "EPUB öffnen  (Strg+O)  —  oder Datei hier ablegen",
+        "OpenSampleBook": "Beispielbuch öffnen",
         "ChapterCountFormat": COUNT_FMT, "ProgressFormat": "{0}%",
         "OpenFileDialogFilter": "EPUB-Dateien (*.epub)|*.epub", "OpenFileDialogTitle": "EPUB öffnen",
         "OpenFileErrorMessage": '„{0}" konnte nicht geöffnet werden.\n\n{1}',
@@ -167,6 +170,7 @@ TRANSLATIONS = {
         "Print": "Stampa…", "PrintTooltip": "Stampa il capitolo corrente (Ctrl+P)",
         "FullscreenTooltip": "Schermo intero (F11)",
         "EmptyHint": "Apri un EPUB  (Ctrl+O)  —  oppure trascina qui un file",
+        "OpenSampleBook": "Apri libro di esempio",
         "ChapterCountFormat": COUNT_FMT, "ProgressFormat": "{0}%",
         "OpenFileDialogFilter": "File EPUB (*.epub)|*.epub", "OpenFileDialogTitle": "Apri EPUB",
         "OpenFileErrorMessage": 'Impossibile aprire "{0}".\n\n{1}',
@@ -204,6 +208,7 @@ TRANSLATIONS = {
         "Print": "Imprimir…", "PrintTooltip": "Imprimir capítulo atual (Ctrl+P)",
         "FullscreenTooltip": "Tela cheia (F11)",
         "EmptyHint": "Abra um EPUB  (Ctrl+O)  —  ou solte um arquivo aqui",
+        "OpenSampleBook": "Abrir livro de exemplo",
         "ChapterCountFormat": COUNT_FMT, "ProgressFormat": "{0}%",
         "OpenFileDialogFilter": "Arquivos EPUB (*.epub)|*.epub", "OpenFileDialogTitle": "Abrir EPUB",
         "OpenFileErrorMessage": 'Não foi possível abrir "{0}".\n\n{1}',
@@ -241,6 +246,7 @@ TRANSLATIONS = {
         "Print": "印刷…", "PrintTooltip": "現在の章を印刷 (Ctrl+P)",
         "FullscreenTooltip": "全画面表示 (F11)",
         "EmptyHint": "EPUBを開く (Ctrl+O)  —  またはファイルをここにドロップ",
+        "OpenSampleBook": "サンプル本を開く",
         "ChapterCountFormat": COUNT_FMT, "ProgressFormat": "{0}%",
         "OpenFileDialogFilter": "EPUBファイル (*.epub)|*.epub", "OpenFileDialogTitle": "EPUBを開く",
         "OpenFileErrorMessage": '"{0}" を開けませんでした。\n\n{1}',
@@ -278,6 +284,7 @@ TRANSLATIONS = {
         "Print": "인쇄…", "PrintTooltip": "현재 장 인쇄 (Ctrl+P)",
         "FullscreenTooltip": "전체 화면 (F11)",
         "EmptyHint": "EPUB 열기  (Ctrl+O)  —  또는 파일을 여기로 끌어다 놓으세요",
+        "OpenSampleBook": "샘플 도서 열기",
         "ChapterCountFormat": COUNT_FMT, "ProgressFormat": "{0}%",
         "OpenFileDialogFilter": "EPUB 파일 (*.epub)|*.epub", "OpenFileDialogTitle": "EPUB 열기",
         "OpenFileErrorMessage": '"{0}"을(를) 열 수 없습니다.\n\n{1}',
@@ -315,6 +322,7 @@ TRANSLATIONS = {
         "Print": "打印…", "PrintTooltip": "打印当前章节 (Ctrl+P)",
         "FullscreenTooltip": "全屏 (F11)",
         "EmptyHint": "打开 EPUB  (Ctrl+O)  — 或将文件拖到此处",
+        "OpenSampleBook": "打开示例书籍",
         "ChapterCountFormat": COUNT_FMT, "ProgressFormat": "{0}%",
         "OpenFileDialogFilter": "EPUB 文件 (*.epub)|*.epub", "OpenFileDialogTitle": "打开 EPUB",
         "OpenFileErrorMessage": '无法打开"{0}"。\n\n{1}',
@@ -352,6 +360,7 @@ TRANSLATIONS = {
         "Print": "列印…", "PrintTooltip": "列印目前章節 (Ctrl+P)",
         "FullscreenTooltip": "全螢幕 (F11)",
         "EmptyHint": "開啟 EPUB  (Ctrl+O)  — 或將檔案拖曳至此",
+        "OpenSampleBook": "開啟範例書籍",
         "ChapterCountFormat": COUNT_FMT, "ProgressFormat": "{0}%",
         "OpenFileDialogFilter": "EPUB 檔案 (*.epub)|*.epub", "OpenFileDialogTitle": "開啟 EPUB",
         "OpenFileErrorMessage": "無法開啟「{0}」。\n\n{1}",
@@ -389,6 +398,7 @@ TRANSLATIONS = {
         "Print": "Печать…", "PrintTooltip": "Печать текущей главы (Ctrl+P)",
         "FullscreenTooltip": "Полноэкранный режим (F11)",
         "EmptyHint": "Откройте EPUB (Ctrl+O)  —  или перетащите файл сюда",
+        "OpenSampleBook": "Открыть пример книги",
         "ChapterCountFormat": COUNT_FMT, "ProgressFormat": "{0}%",
         "OpenFileDialogFilter": "Файлы EPUB (*.epub)|*.epub", "OpenFileDialogTitle": "Открыть EPUB",
         "OpenFileErrorMessage": "Не удалось открыть «{0}».\n\n{1}",
@@ -426,6 +436,7 @@ TRANSLATIONS = {
         "Print": "Друк…", "PrintTooltip": "Друк поточного розділу (Ctrl+P)",
         "FullscreenTooltip": "Повноекранний режим (F11)",
         "EmptyHint": "Відкрийте EPUB (Ctrl+O)  —  або перетягніть файл сюди",
+        "OpenSampleBook": "Відкрити приклад книги",
         "ChapterCountFormat": COUNT_FMT, "ProgressFormat": "{0}%",
         "OpenFileDialogFilter": "Файли EPUB (*.epub)|*.epub", "OpenFileDialogTitle": "Відкрити EPUB",
         "OpenFileErrorMessage": "Не вдалося відкрити «{0}».\n\n{1}",
@@ -463,6 +474,7 @@ TRANSLATIONS = {
         "Print": "طباعة…", "PrintTooltip": "طباعة الفصل الحالي (Ctrl+P)",
         "FullscreenTooltip": "ملء الشاشة (F11)",
         "EmptyHint": "افتح ملف EPUB (Ctrl+O)  —  أو اسحب ملفًا إلى هنا",
+        "OpenSampleBook": "فتح كتاب نموذجي",
         "ChapterCountFormat": COUNT_FMT, "ProgressFormat": "{0}%",
         "OpenFileDialogFilter": "ملفات EPUB (*.epub)|*.epub", "OpenFileDialogTitle": "فتح ملف EPUB",
         "OpenFileErrorMessage": 'تعذّر فتح "{0}".\n\n{1}',
@@ -523,8 +535,8 @@ def escape(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def build():
-    missing_report = []
+def build() -> None:
+    missing_report: list[str] = []
     for locale, values in TRANSLATIONS.items():
         missing = set(ORDER) - set(values)
         extra = set(values) - set(ORDER)

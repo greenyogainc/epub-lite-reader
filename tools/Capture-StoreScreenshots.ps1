@@ -22,6 +22,8 @@ Add-Type -Namespace Native -Name Methods -MemberDefinition @"
 [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
 [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
 [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+[DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, int dwExtraInfo);
+[DllImport("user32.dll")] public static extern bool SetCursorPos(int X, int Y);
 [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
 "@
 Add-Type -AssemblyName System.Windows.Forms
@@ -40,6 +42,14 @@ function Capture-Window([IntPtr]$hwnd, [string]$path) {
     Write-Host "Saved $path ($w x $h)"
 }
 
+function Click-At([int]$x, [int]$y) {
+    [Native.Methods]::SetCursorPos($x, $y) | Out-Null
+    Start-Sleep -Milliseconds 150
+    [Native.Methods]::mouse_event(0x0002, 0, 0, 0, 0)
+    [Native.Methods]::mouse_event(0x0004, 0, 0, 0, 0)
+    Start-Sleep -Milliseconds 200
+}
+
 Write-Host "Launching $($exe.FullName)"
 $proc = Start-Process -FilePath $exe.FullName -ArgumentList "`"$demo`"" -PassThru
 
@@ -53,7 +63,9 @@ try {
     if ($hwnd -eq [IntPtr]::Zero) { throw "Timed out waiting for main window." }
 
     Start-Sleep -Seconds 3   # WebView2 init + first chapter render
-    [Native.Methods]::MoveWindow($hwnd, 60, 40, 1100, 850, $true) | Out-Null
+    $winX = 60
+    $winY = 40
+    [Native.Methods]::MoveWindow($hwnd, $winX, $winY, 1100, 850, $true) | Out-Null
     [Native.Methods]::SetForegroundWindow($hwnd) | Out-Null
     Start-Sleep -Milliseconds 800
 
@@ -89,7 +101,17 @@ try {
     Start-Sleep -Milliseconds 900
     Capture-Window $hwnd (Join-Path $outDir "4-single-fullscreen.png")
     [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
-    Start-Sleep -Milliseconds 300
+    Start-Sleep -Milliseconds 500
+
+    # 5) Sepia reading theme (one Theme click from the default Light).
+    Click-At ($winX + 848) ($winY + 48)
+    Start-Sleep -Milliseconds 900
+    Capture-Window $hwnd (Join-Path $outDir "5-theme-sepia.png")
+
+    # 6) Dark reading theme (second Theme click).
+    Click-At ($winX + 848) ($winY + 48)
+    Start-Sleep -Milliseconds 900
+    Capture-Window $hwnd (Join-Path $outDir "6-theme-dark.png")
 }
 finally {
     if (-not $proc.HasExited) { $proc.Kill() }

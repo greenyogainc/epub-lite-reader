@@ -37,6 +37,7 @@
   <data name="PrintTooltip" xml:space="preserve"><value>Aktuelles Kapitel drucken (Strg+P)</value></data>
   <data name="FullscreenTooltip" xml:space="preserve"><value>Vollbild (F11)</value></data>
   <data name="EmptyHint" xml:space="preserve"><value>EPUB öffnen  (Strg+O)  —  oder Datei hier ablegen</value></data>
+  <data name="OpenSampleBook" xml:space="preserve"><value>Beispielbuch öffnen</value></data>
   <data name="ChapterCountFormat" xml:space="preserve"><value>/ {0}</value></data>
   <data name="ProgressFormat" xml:space="preserve"><value>{0}%</value></data>
   <data name="OpenFileDialogFilter" xml:space="preserve"><value>EPUB-Dateien (*.epub)|*.epub</value></data>

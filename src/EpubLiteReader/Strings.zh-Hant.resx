@@ -37,6 +37,7 @@
   <data name="PrintTooltip" xml:space="preserve"><value>列印目前章節 (Ctrl+P)</value></data>
   <data name="FullscreenTooltip" xml:space="preserve"><value>全螢幕 (F11)</value></data>
   <data name="EmptyHint" xml:space="preserve"><value>開啟 EPUB  (Ctrl+O)  — 或將檔案拖曳至此</value></data>
+  <data name="OpenSampleBook" xml:space="preserve"><value>開啟範例書籍</value></data>
   <data name="ChapterCountFormat" xml:space="preserve"><value>/ {0}</value></data>
   <data name="ProgressFormat" xml:space="preserve"><value>{0}%</value></data>
   <data name="OpenFileDialogFilter" xml:space="preserve"><value>EPUB 檔案 (*.epub)|*.epub</value></data>

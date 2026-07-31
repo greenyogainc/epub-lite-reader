@@ -8,12 +8,27 @@ internal static class ReaderInject
           if (window.__elrInstalled) return;
           window.__elrInstalled = true;
 
-          const style = document.createElement('style');
-          style.id = 'elr-chrome';
-          document.documentElement.appendChild(style);
+          // Resolved lazily: this script runs at document-creation time, when
+          // documentElement/head may not exist yet. Appending eagerly there
+          // throws and silently kills every window.__elr* definition below,
+          // which reads downstream as "themes and typography do nothing".
+          function styleEl() {
+            const root = document.head || document.documentElement;
+            if (!root) return null;
+            let el = document.getElementById('elr-chrome');
+            if (!el) {
+              el = document.createElement('style');
+              el.id = 'elr-chrome';
+              root.appendChild(el);
+            }
+            return el;
+          }
 
           window.__elrApply = function(settings) {
-            const s = settings || {};
+            const s = settings || (window.__elrLastSettings || {});
+            window.__elrLastSettings = s;
+            const style = styleEl();
+            if (!style) return;
             const theme = s.theme || 'light';
             const font = s.fontFamily || 'publisher';
             const size = typeof s.fontScale === 'number' ? s.fontScale : 1;
@@ -50,6 +65,10 @@ internal static class ReaderInject
               document.documentElement.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
             } catch (e) {}
           };
+
+          // The style element lives in the document, so a fresh parse drops it.
+          // Re-apply the last known settings once the DOM exists.
+          document.addEventListener('DOMContentLoaded', () => window.__elrApply(null));
 
           window.__elrScrollFraction = function() {
             const se = document.scrollingElement || document.documentElement;

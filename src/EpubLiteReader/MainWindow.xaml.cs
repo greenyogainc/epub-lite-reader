@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -96,6 +97,9 @@ public partial class MainWindow : Window
 
     private void Open_Click(object sender, RoutedEventArgs e) => _ = ShowOpenDialogAsync();
 
+    private void OpenSample_Click(object sender, RoutedEventArgs e) =>
+        _ = OpenFileAsync(Path.Combine(AppContext.BaseDirectory, "Assets", "sample.epub"));
+
     private async Task ShowOpenDialogAsync()
     {
         var dlg = new OpenFileDialog
@@ -142,7 +146,7 @@ public partial class MainWindow : Window
             MetaText.Text = string.IsNullOrWhiteSpace(doc.Author)
                 ? doc.Title
                 : string.Format(Strings.Get("MetadataFormat"), doc.Title, doc.Author);
-            EmptyHint.Visibility = Visibility.Collapsed;
+            EmptyState.Visibility = Visibility.Collapsed;
             ReaderGrid.Visibility = Visibility.Visible;
             PageCountText.Text = string.Format(Strings.Get("ChapterCountFormat"), doc.SpineCount);
             RefreshBookmarksUi();

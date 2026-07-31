@@ -37,6 +37,7 @@
   <data name="PrintTooltip" xml:space="preserve"><value>現在の章を印刷 (Ctrl+P)</value></data>
   <data name="FullscreenTooltip" xml:space="preserve"><value>全画面表示 (F11)</value></data>
   <data name="EmptyHint" xml:space="preserve"><value>EPUBを開く (Ctrl+O)  —  またはファイルをここにドロップ</value></data>
+  <data name="OpenSampleBook" xml:space="preserve"><value>サンプル本を開く</value></data>
   <data name="ChapterCountFormat" xml:space="preserve"><value>/ {0}</value></data>
   <data name="ProgressFormat" xml:space="preserve"><value>{0}%</value></data>
   <data name="OpenFileDialogFilter" xml:space="preserve"><value>EPUBファイル (*.epub)|*.epub</value></data>
