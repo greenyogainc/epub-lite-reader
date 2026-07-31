@@ -4,7 +4,8 @@
          xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
          IgnorableNamespaces="uap rescap">
 
-  <!-- Identity: replace Name/Publisher with Partner Center values before Store submission. -->
+  <!-- Identity assigned by Partner Center for Store product 9N2L3FKHCV5G
+       (PFN: GreenYogaInc.EPUBLiteReader_4k1k80w661cc6). -->
   <Identity Name="GreenYogaInc.EPUBLiteReader"
             Publisher="CN=1F15826A-1F07-4E59-AC9A-622A84CC59FF"
             Version="1.0.0.0" />
