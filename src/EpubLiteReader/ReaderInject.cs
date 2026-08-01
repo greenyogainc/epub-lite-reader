@@ -130,6 +130,58 @@ internal static class ReaderInject
             }
           }, true);
 
+          // ----- Click / key page turning -----
+          // Both funnel into the same host 'step' message, so a tap and a key
+          // press advance identically: scroll within the chapter, then move to
+          // the next one at the end.
+
+          function isTypingTarget(el) {
+            if (!el) return false;
+            const tag = (el.tagName || '').toUpperCase();
+            return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+          }
+
+          // A click that ends a drag is a text selection, not a page turn.
+          let downX = 0, downY = 0;
+          document.addEventListener('mousedown', (ev) => {
+            downX = ev.clientX; downY = ev.clientY;
+          }, true);
+
+          document.addEventListener('click', (ev) => {
+            if (ev.button !== 0 || ev.detail > 1) return;
+            if (ev.defaultPrevented) return;
+            if (isTypingTarget(ev.target)) return;
+            if (ev.target && ev.target.closest && ev.target.closest('a[href]')) return;
+            if (Math.abs(ev.clientX - downX) > 6 || Math.abs(ev.clientY - downY) > 6) return;
+            try {
+              const sel = window.getSelection();
+              if (sel && !sel.isCollapsed && String(sel).trim()) return;
+            } catch (e) {}
+
+            // Left quarter goes back, the rest goes forward -- the usual
+            // e-reader tap zones.
+            const w = window.innerWidth || 1;
+            post({ type: 'step', direction: ev.clientX < w * 0.25 ? -1 : 1 });
+          });
+
+          document.addEventListener('keydown', (ev) => {
+            if (ev.ctrlKey || ev.altKey || ev.metaKey) return;
+            if (isTypingTarget(ev.target)) return;
+
+            let dir = 0;
+            if (ev.key === ' ' || ev.key === 'Spacebar') dir = ev.shiftKey ? -1 : 1;
+            else if (ev.key === 'PageDown') dir = 1;
+            else if (ev.key === 'PageUp') dir = -1;
+            else if (ev.key === 'ArrowRight') dir = 1;
+            else if (ev.key === 'ArrowLeft') dir = -1;
+            if (!dir) return;
+
+            // The host scrolls for us; letting the page also scroll would
+            // advance twice per press.
+            ev.preventDefault();
+            post({ type: 'step', direction: dir });
+          });
+
           post({ type: 'ready' });
         })();
         """;

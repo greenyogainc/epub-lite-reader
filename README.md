@@ -13,6 +13,9 @@ immediately — no library, no account, no distractions.
   - **Single** — one chapter pane at a time (`1`); `F11` for distraction-free full screen
   - **Facing** — two consecutive spine items side by side (`2`)
   - **Scroll** — continuous chapter scrolling (`3`)
+- **Click to turn pages** — click the page to go forward, or its left quarter to
+  go back. Scrolls within the chapter first, then moves to the next one; the
+  keyboard (`Space`, `PgDn`/`PgUp`, `←`/`→`) does exactly the same thing.
 - Chapter sidebar (`F4`) from the book’s built-in table of contents
 - Font size, theme (light / sepia / dark), font family, line spacing, and margins
 - Book search (`Ctrl+F`), bookmarks (`B`)
@@ -31,6 +34,7 @@ immediately — no library, no account, no distractions.
 | `F4` | Show / hide chapter sidebar |
 | `1` / `2` / `3` | Single / Facing / Continuous mode |
 | `F11` (`Esc` to exit) | Full screen |
+| `Space` / `Shift`+`Space` | Next / previous page or chapter |
 | `←` `→` / `PgUp` `PgDn` | Previous / next page or chapter |
 | `Home` / `End` | Beginning / end of book |
 | `Ctrl` `+` / `−` | Increase / decrease text size |

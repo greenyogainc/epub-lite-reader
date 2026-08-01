@@ -732,6 +732,12 @@ public partial class MainWindow : Window
                 _left?.SetDisplaySettings(_display);
                 _right?.SetDisplaySettings(_display);
             }
+            else if (type == "step" && root.TryGetProperty("direction", out var d))
+            {
+                // Clicks and keys inside the WebView both arrive here, so they
+                // share StepAsync's scroll-then-advance behaviour.
+                _ = StepAsync(d.GetInt32() < 0 ? -1 : +1);
+            }
         }
         catch
         {
@@ -854,6 +860,13 @@ public partial class MainWindow : Window
             case Key.PageUp:
             case Key.Left:
                 await StepAsync(-1);
+                break;
+            // Space mirrors the in-page handler for when the toolbar, not the
+            // reading pane, holds focus. Skipped while a button is focused so
+            // it still activates that button instead.
+            case Key.Space when !ctrl
+                && Keyboard.FocusedElement is not System.Windows.Controls.Primitives.ButtonBase:
+                await StepAsync(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? -1 : +1);
                 break;
             case Key.Home:
                 await GoToSpineAsync(0);
