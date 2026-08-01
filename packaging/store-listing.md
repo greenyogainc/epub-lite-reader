@@ -23,6 +23,7 @@ EPUB Lite Reader is a free, lightweight EPUB reader for Windows. Open a book and
 
 FEATURES
 • Three reading modes: Facing (two-page book layout), Single (with full-screen mode), and Scroll (continuous chapter scrolling)
+• Turn the page with a click — click to go forward, click the left edge to go back, or use the keyboard (Space, Page Up/Down, arrow keys)
 • Chapter sidebar built from the book's table of contents, with a resizable pane
 • Reading themes: Light, Sepia, and Dark
 • Adjustable font size, font family (publisher, serif, sans-serif), line spacing, and margins
@@ -41,6 +42,7 @@ No ads. No telemetry. No subscription. Just reading.
 
 ```
 Facing, single-page, and continuous scroll reading modes
+Turn pages by clicking or with the keyboard
 Full-screen distraction-free reading
 Chapter navigation sidebar
 Light, Sepia, and Dark reading themes
@@ -75,6 +77,7 @@ EPUB Lite Reader es un lector de EPUB gratuito y ligero para Windows. Abre un li
 
 CARACTERÍSTICAS
 • Tres modos de lectura: Doble (vista de libro a doble página), Única (con pantalla completa) y Continuo (desplazamiento continuo de capítulos)
+• Pasa de página con un clic: haz clic para avanzar, en el borde izquierdo para retroceder, o usa el teclado (Espacio, Re Pág/Av Pág, flechas)
 • Panel lateral de capítulos generado a partir del índice del libro, con tamaño ajustable
 • Temas de lectura: Claro, Sepia y Oscuro
 • Tamaño de fuente, tipo de letra (del editor, serif, sans-serif), interlineado y márgenes ajustables
@@ -93,6 +96,7 @@ Sin anuncios. Sin telemetría. Sin suscripción. Solo lectura.
 
 ```
 Modos de lectura Doble, Única y Continuo
+Pasa de página con un clic o con el teclado
 Lectura a pantalla completa sin distracciones
 Panel lateral de navegación por capítulos
 Temas de lectura Claro, Sepia y Oscuro
@@ -127,6 +131,7 @@ EPUB Lite Reader est un lecteur EPUB gratuit et léger pour Windows. Ouvrez un l
 
 FONCTIONNALITÉS
 • Trois modes de lecture : Double (mise en page double page), Simple (avec plein écran) et Continu (défilement continu des chapitres)
+• Tournez la page d'un clic : cliquez pour avancer, sur le bord gauche pour reculer, ou utilisez le clavier (Espace, Page préc./suiv., flèches)
 • Panneau latéral des chapitres généré à partir de la table des matières du livre, redimensionnable
 • Thèmes de lecture : Clair, Sépia et Sombre
 • Taille de police, police (éditeur, serif, sans-serif), interligne et marges réglables
@@ -145,6 +150,7 @@ Sans publicité. Sans télémétrie. Sans abonnement. Juste la lecture.
 
 ```
 Modes de lecture Double, Simple et Continu
+Tournez les pages d'un clic ou au clavier
 Lecture plein écran sans distraction
 Panneau de navigation par chapitres
 Thèmes de lecture Clair, Sépia et Sombre
@@ -179,6 +185,7 @@ EPUB Lite Reader ist ein kostenloser, schlanker EPUB-Reader für Windows. Öffne
 
 FUNKTIONEN
 • Drei Lesemodi: Doppel (Doppelseiten-Ansicht), Einzeln (mit Vollbildmodus) und Scrollen (fortlaufendes Scrollen durch Kapitel)
+• Umblättern per Klick: klicken zum Vorwärtsblättern, auf den linken Rand zum Zurückblättern, oder die Tastatur nutzen (Leertaste, Bild auf/ab, Pfeiltasten)
 • Kapitel-Seitenleiste aus dem Inhaltsverzeichnis des Buchs, mit anpassbarer Breite
 • Lesethemen: Hell, Sepia und Dunkel
 • Einstellbare Schriftgröße, Schriftart (Verlagsschrift, Serif, serifenlos), Zeilenabstand und Ränder
@@ -197,6 +204,7 @@ Keine Werbung. Keine Telemetrie. Kein Abonnement. Einfach lesen.
 
 ```
 Lesemodi Doppel, Einzeln und Scrollen
+Umblättern per Klick oder Tastatur
 Ablenkungsfreies Lesen im Vollbild
 Kapitel-Navigationsleiste
 Lesethemen Hell, Sepia und Dunkel
@@ -231,6 +239,7 @@ EPUB Lite Reader è un lettore EPUB gratuito e leggero per Windows. Apri un libr
 
 CARATTERISTICHE
 • Tre modalità di lettura: Doppia (impaginazione a doppia pagina), Singola (con schermo intero) e Scorri (scorrimento continuo dei capitoli)
+• Cambia pagina con un clic: clicca per avanzare, sul bordo sinistro per tornare indietro, oppure usa la tastiera (Spazio, Pagina su/giù, frecce)
 • Pannello laterale dei capitoli generato dal sommario del libro, ridimensionabile
 • Temi di lettura: Chiaro, Seppia e Scuro
 • Dimensione del carattere, tipo di carattere (dell'editore, serif, sans-serif), interlinea e margini regolabili
@@ -249,6 +258,7 @@ Nessuna pubblicità. Nessuna telemetria. Nessun abbonamento. Solo lettura.
 
 ```
 Modalità di lettura Doppia, Singola e Scorri
+Cambia pagina con un clic o dalla tastiera
 Lettura a schermo intero senza distrazioni
 Pannello di navigazione dei capitoli
 Temi di lettura Chiaro, Seppia e Scuro
@@ -283,6 +293,7 @@ O EPUB Lite Reader é um leitor de EPUB gratuito e leve para Windows. Abra um li
 
 FUNCIONALIDADES
 • Três modos de leitura: Dupla (página dupla), Única (com ecrã inteiro) e Contínuo (deslocamento contínuo de capítulos)
+• Mude de página com um clique: clique para avançar, na margem esquerda para recuar, ou use o teclado (Espaço, Page Up/Down, setas)
 • Painel lateral de capítulos criado a partir do índice do livro, com tamanho ajustável
 • Temas de leitura: Claro, Sépia e Escuro
 • Tamanho de letra, tipo de letra (do editor, serif, sans-serif), espaçamento entre linhas e margens ajustáveis
@@ -301,6 +312,7 @@ Sem anúncios. Sem telemetria. Sem subscrição. Só leitura.
 
 ```
 Modos de leitura Dupla, Única e Contínuo
+Mude de página com um clique ou pelo teclado
 Leitura em ecrã inteiro sem distrações
 Painel de navegação por capítulos
 Temas de leitura Claro, Sépia e Escuro
@@ -335,6 +347,7 @@ O EPUB Lite Reader é um leitor de EPUB gratuito e leve para Windows. Abra um li
 
 RECURSOS
 • Três modos de leitura: Dupla (layout de livro com página dupla), Única (com tela cheia) e Contínuo (rolagem contínua de capítulos)
+• Vire a página com um clique: clique para avançar, na borda esquerda para voltar, ou use o teclado (Espaço, Page Up/Down, setas)
 • Painel lateral de capítulos criado a partir do sumário do livro, com tamanho ajustável
 • Temas de leitura: Claro, Sépia e Escuro
 • Tamanho de fonte, tipo de fonte (da editora, serif, sans-serif), espaçamento entre linhas e margens ajustáveis
@@ -353,6 +366,7 @@ Sem anúncios. Sem telemetria. Sem assinatura. Só leitura.
 
 ```
 Modos de leitura Dupla, Única e Contínuo
+Vire páginas com um clique ou pelo teclado
 Leitura em tela cheia sem distrações
 Painel de navegação por capítulos
 Temas de leitura Claro, Sépia e Escuro
@@ -387,6 +401,7 @@ EPUB Lite Readerは、Windows向けの無料で軽量なEPUBリーダーです�
 
 主な機能
 • 3つの表示モード：見開き（見開きページ表示）、単一（全画面表示対応）、スクロール（章を連続スクロール）
+• クリックでページめくり — クリックで進み、左端のクリックで戻ります。キーボード（スペース、Page Up/Down、矢印キー）でも同じ操作ができます
 • 本の目次から生成される章サイドバー（幅調整可能）
 • 読書テーマ：ライト、セピア、ダーク
 • フォントサイズ、フォント（出版社指定、セリフ体、サンセリフ体）、行間、余白を調整可能
@@ -405,6 +420,7 @@ EPUB Lite ReaderはEPUB 2およびEPUB 3形式に対応しています。PDF Lit
 
 ```
 見開き・単一・スクロールの3つの表示モード
+クリックまたはキーボードでページめくり
 気の散らない全画面読書
 章ナビゲーションサイドバー
 ライト・セピア・ダークの読書テーマ
@@ -439,6 +455,7 @@ EPUB Lite Reader는 Windows용 무료 경량 EPUB 리더입니다. 책을 열면
 
 주요 기능
 • 세 가지 읽기 모드: 마주보기(마주보는 페이지 보기), 단일(전체 화면 지원), 스크롤(장 연속 스크롤)
+• 클릭으로 페이지 넘기기 — 클릭하면 다음으로, 왼쪽 가장자리를 클릭하면 이전으로 이동하며, 키보드(스페이스, Page Up/Down, 화살표 키)도 동일하게 작동합니다
 • 책의 목차를 기반으로 한 장 사이드바(크기 조절 가능)
 • 읽기 테마: 라이트, 세피아, 다크
 • 글꼴 크기, 글꼴(출판사 지정, 세리프, 산세리프), 줄 간격, 여백 조정 가능
@@ -457,6 +474,7 @@ EPUB Lite Reader는 EPUB 2 및 EPUB 3 파일을 지원합니다. PDF Lite Viewer
 
 ```
 마주보기, 단일, 스크롤 읽기 모드
+클릭 또는 키보드로 페이지 넘기기
 방해 없는 전체 화면 읽기
 장 탐색 사이드바
 라이트, 세피아, 다크 읽기 테마
@@ -491,6 +509,7 @@ EPUB Lite Reader 是一款适用于 Windows 的免费轻量级 EPUB 阅读器。
 
 主要功能
 • 三种阅读模式：双页（双页对照版式）、单页（支持全屏）、滚动（连续滚动章节）
+• 点击翻页 — 点击页面前进，点击左侧边缘后退，也可使用键盘（空格、Page Up/Down、方向键）
 • 根据书籍目录生成的章节侧边栏，可调整宽度
 • 阅读主题：浅色、护眼、深色
 • 可调整字号、字体（出版商字体、衬线体、无衬线体）、行距和页边距
@@ -509,6 +528,7 @@ EPUB Lite Reader 支持 EPUB 2 和 EPUB 3 格式。由 Green Yoga Inc（PDF Lite
 
 ```
 双页、单页、滚动阅读模式
+点击或使用键盘翻页
 无干扰全屏阅读
 章节导航侧边栏
 浅色、护眼、深色阅读主题
@@ -543,6 +563,7 @@ EPUB Lite Reader 是一款適用於 Windows 的免費輕量級 EPUB 閱讀器。
 
 主要功能
 • 三種閱讀模式：雙頁（雙頁對照版面）、單頁（支援全螢幕）、捲動（連續捲動章節）
+• 點擊翻頁 — 點擊頁面前進，點擊左側邊緣後退，也可使用鍵盤（空白鍵、Page Up/Down、方向鍵）
 • 根據書籍目錄產生的章節側邊欄，可調整寬度
 • 閱讀主題：淺色、護眼、深色
 • 可調整字型大小、字型（出版商字型、襯線體、無襯線體）、行距與邊界
@@ -561,6 +582,7 @@ EPUB Lite Reader 支援 EPUB 2 與 EPUB 3 格式。由 Green Yoga Inc（PDF Lite
 
 ```
 雙頁、單頁、捲動閱讀模式
+點擊或使用鍵盤翻頁
 無干擾全螢幕閱讀
 章節導覽側邊欄
 淺色、護眼、深色閱讀主題
@@ -595,6 +617,7 @@ EPUB Lite Reader — бесплатная и лёгкая программа д�
 
 ВОЗМОЖНОСТИ
 • Три режима чтения: Разворот (книжный разворот), Одна (с полноэкранным режимом) и Прокрутка (непрерывная прокрутка глав)
+• Перелистывание щелчком: щёлкните, чтобы перейти вперёд, по левому краю — назад, либо используйте клавиатуру (пробел, Page Up/Down, стрелки)
 • Боковая панель глав, построенная по оглавлению книги, с изменяемой шириной
 • Темы чтения: Светлая, Сепия и Тёмная
 • Настраиваемый размер шрифта, шрифт (издательский, с засечками, без засечек), межстрочный интервал и поля
@@ -613,6 +636,7 @@ EPUB Lite Reader поддерживает файлы EPUB 2 и EPUB 3. Это б
 
 ```
 Режимы чтения: разворот, одна страница, прокрутка
+Перелистывание щелчком или с клавиатуры
 Полноэкранное чтение без отвлечений
 Боковая панель навигации по главам
 Темы чтения: светлая, сепия, тёмная
@@ -647,6 +671,7 @@ EPUB Lite Reader — безкоштовна та легка програма д�
 
 МОЖЛИВОСТІ
 • Три режими читання: Розворот (книжковий розворот), Одна (з повноекранним режимом) і Прокрутка (безперервна прокрутка розділів)
+• Гортання кліком: клацніть, щоб перейти вперед, по лівому краю — назад, або скористайтеся клавіатурою (пробіл, Page Up/Down, стрілки)
 • Бічна панель розділів, побудована за змістом книги, з можливістю зміни ширини
 • Теми читання: Світла, Сепія та Темна
 • Налаштування розміру шрифту, шрифту (видавничий, із засічками, без засічок), міжрядкового інтервалу та полів
@@ -665,6 +690,7 @@ EPUB Lite Reader підтримує файли EPUB 2 та EPUB 3. Це безк
 
 ```
 Режими читання: розворот, одна сторінка, прокрутка
+Гортання кліком або з клавіатури
 Повноекранне читання без відволікань
 Бічна панель навігації розділами
 Теми читання: світла, сепія, темна
@@ -699,6 +725,7 @@ EPUB Lite Reader هو برنامج مجاني وخفيف لقراءة ملفات
 
 الميزات
 • ثلاثة أوضاع للقراءة: صفحتان (تخطيط كتاب بصفحتين)، صفحة واحدة (مع وضع ملء الشاشة)، وتمرير (تمرير متواصل للفصول)
+• قلب الصفحات بنقرة: انقر للتقدم، وانقر على الحافة اليسرى للرجوع، أو استخدم لوحة المفاتيح (المسافة، Page Up/Down، مفاتيح الأسهم)
 • لوحة جانبية للفصول يتم إنشاؤها من فهرس محتويات الكتاب، وقابلة لتغيير الحجم
 • مظاهر القراءة: فاتح وبني داكن وداكن
 • إمكانية ضبط حجم الخط ونوعه (خط الناشر، بأطراف زخرفية، بلا أطراف زخرفية)، وتباعد الأسطر، والهوامش
@@ -717,6 +744,7 @@ EPUB Lite Reader هو برنامج مجاني وخفيف لقراءة ملفات
 
 ```
 أوضاع القراءة: صفحتان، صفحة واحدة، تمرير
+قلب الصفحات بالنقر أو بلوحة المفاتيح
 قراءة بملء الشاشة بلا تشتيت
 لوحة جانبية للتنقل بين الفصول
 مظاهر القراءة: فاتح وبني داكن وداكن
