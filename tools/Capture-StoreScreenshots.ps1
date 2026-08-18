@@ -92,6 +92,12 @@ try {
     Start-Sleep -Milliseconds 700
     Assert-Foreground $hwnd
 
+    # Display settings persist per book, so a previous run's enlarged type (step
+    # 4) would otherwise carry into this run's very first shot. Reset to the
+    # defaults before capturing anything.
+    [System.Windows.Forms.SendKeys]::SendWait("^0")
+    Start-Sleep -Milliseconds 600
+
     # 1) Facing mode + chapter sidebar
     [System.Windows.Forms.SendKeys]::SendWait("2")
     Start-Sleep -Milliseconds 400
@@ -131,7 +137,7 @@ try {
     # Spine 0 pairs with a blank right pane; step forward so both pages carry text.
     [System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
     Start-Sleep -Milliseconds 900
-    for ($i = 0; $i -lt 3; $i++) {
+    for ($i = 0; $i -lt 6; $i++) {
         [System.Windows.Forms.SendKeys]::SendWait("^{ADD}")
         Start-Sleep -Milliseconds 300
     }
