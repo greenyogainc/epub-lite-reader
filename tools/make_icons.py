@@ -1,76 +1,95 @@
-"""Derive every MSIX tile asset and app.ico from the master icon.
+"""Draw the app mark and derive every MSIX asset and app.ico from it.
 
-The master (packaging/icon-source.png) is hand-made square artwork; this script
-is the only thing that writes packaging/Assets/*.png and app.ico, so the derived
-assets are always reproducible. Re-run after replacing the master.
+The mark is the reading-blue book on slate, with the Green Yoga Inc logo as a
+badge on the right. Only the logo is a source asset (packaging/gy-logo.png);
+the book itself is drawn here, so every size is rendered rather than upscaled.
 """
 from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "packaging" / "icon-source.png"
+LOGO_SRC = ROOT / "packaging" / "gy-logo.png"
 ASSETS = ROOT / "packaging" / "Assets"
 APP_ICO = ROOT / "src" / "EpubLiteReader" / "app.ico"
 
-# Square Store/tile assets, all straight downscales of the master.
+# Brand: deep slate + reading-blue accent (matches toolbar accent #1F5B94)
+BG = (0x2B, 0x2B, 0x2B, 255)
+ACCENT = (0x1F, 0x5B, 0x94, 255)
+FG = (0xDD, 0xDD, 0xDD, 255)
+
+SS = 4               # supersample factor, removed by the final LANCZOS pass
+BADGE_FRAC = 0.27    # logo width as a fraction of the icon
+BADGE_PAD = 0.04
+DISC_MARGIN = 0.11   # white disc ring around the logo, as a fraction of it
+
 SQUARE_TILES = {
     "Square44x44Logo.png": 44,
     "Square150x150Logo.png": 150,
     "Square310x310Logo.png": 310,
     "StoreLogo.png": 50,
+    # Shown on .epub files in Explorer via the file-type association.
+    "EpubFileLogo.png": 256,
 }
 
-# Windows picks from these; 20 and 40 matter for taskbar/title-bar crispness.
 ICO_SIZES = [16, 20, 24, 32, 40, 48, 64, 128, 256]
 
 
-def load_master() -> Image.Image:
-    if not SOURCE.exists():
-        raise SystemExit(f"Master icon not found: {SOURCE}")
-    im = Image.open(SOURCE).convert("RGBA")
-    if im.width != im.height:
-        raise SystemExit(f"Master icon must be square, got {im.size}")
-    return im
+def render(size: int) -> Image.Image:
+    """The full mark at `size` px, drawn at SSx and downsampled."""
+    w = size * SS
+    im = Image.new("RGBA", (w, w), BG)
+    d = ImageDraw.Draw(im)
 
+    x0, y0, x1, y1 = w * 0.22, w * 0.18, w * 0.78, w * 0.82
+    d.rectangle([x0, y0, x1, y1], fill=FG, outline=ACCENT, width=max(SS, int(w * 0.006)))
+    half = max(1, int(w / 40))
+    mid = (x0 + x1) / 2
+    d.rectangle([mid - half, y0, mid + half, y1], fill=ACCENT)
 
-def square(im: Image.Image, size: int) -> Image.Image:
+    # The logo is a deep green that muddies against both the slate ground and
+    # the page; the white disc keeps it readable down to 44px.
+    logo = Image.open(LOGO_SRC).convert("RGBA")
+    s = int(w * BADGE_FRAC)
+    logo = logo.resize((s, s), Image.LANCZOS)
+    pad = int(w * BADGE_PAD)
+    x, y = w - s - pad, w - s - pad
+    m = int(s * DISC_MARGIN)
+    d.ellipse([x - m, y - m, x + s + m, y + s + m], fill=(255, 255, 255, 255))
+    im.alpha_composite(logo, (x, y))
+
     return im.resize((size, size), Image.LANCZOS)
 
 
-def wide(im: Image.Image, w: int, h: int) -> Image.Image:
-    """Letterbox the square art onto a wide tile.
-
-    Stretching to 310x150 would distort the artwork, so the icon is scaled to
-    the tile height and centred on the master's own background colour, which
-    makes the padding read as part of the tile rather than as bars.
-    """
-    bg = im.convert("RGB").getpixel((0, 0))
-    canvas = Image.new("RGBA", (w, h), bg + (255,))
-    art = square(im, h)
-    canvas.paste(art, ((w - h) // 2, 0), art)
+def wide(w: int, h: int) -> Image.Image:
+    """Letterbox the square mark onto the wide tile rather than distorting it."""
+    canvas = Image.new("RGBA", (w, h), BG)
+    art = render(h)
+    canvas.alpha_composite(art, ((w - h) // 2, 0))
     return canvas
 
 
 def build() -> None:
-    master = load_master()
+    if not LOGO_SRC.exists():
+        raise SystemExit(f"Logo not found: {LOGO_SRC}")
     ASSETS.mkdir(parents=True, exist_ok=True)
 
     for name, size in SQUARE_TILES.items():
         out = ASSETS / name
-        square(master, size).save(out)
+        render(size).save(out)
         print(f"Wrote {out} ({size}x{size})")
 
     out = ASSETS / "Wide310x150Logo.png"
-    wide(master, 310, 150).save(out)
+    wide(310, 150).save(out)
     print(f"Wrote {out} (310x150)")
 
-    # Pillow downsamples each .ico frame from the master rather than from an
-    # already-shrunk frame, so the small sizes stay as sharp as they can be.
+    # Each .ico frame is rendered at its own size, not downscaled from one image.
+    frames = [render(s) for s in ICO_SIZES]
     APP_ICO.parent.mkdir(parents=True, exist_ok=True)
-    master.save(APP_ICO, format="ICO", sizes=[(s, s) for s in ICO_SIZES])
+    frames[-1].save(APP_ICO, format="ICO", sizes=[(s, s) for s in ICO_SIZES],
+                    append_images=frames[:-1])
     print(f"Wrote {APP_ICO} ({', '.join(str(s) for s in ICO_SIZES)})")
 
 
