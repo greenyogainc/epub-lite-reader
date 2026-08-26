@@ -70,12 +70,26 @@
   <data name="Margins" xml:space="preserve"><value>Поля</value></data>
   <data name="ResetText" xml:space="preserve"><value>Сбросить настройки текста</value></data>
   <data name="About" xml:space="preserve"><value>О программе EPUB Lite Reader</value></data>
-  <data name="AboutMessage" xml:space="preserve"><value>EPUB Lite Reader
-Быстрое и понятное чтение EPUB для Windows.
-Без библиотеки, без учётной записи, без отвлечений.
-
-© 2026 Green Yoga Inc
-Бесплатно — лицензия MIT</value></data>
+  <data name="AboutWindowTitleFormat" xml:space="preserve"><value>О программе {0}</value></data>
+  <data name="AboutVersionFormat" xml:space="preserve"><value>Версия {0}</value></data>
+  <data name="AboutPublishedBy" xml:space="preserve"><value>Издатель — Green Yoga Inc.</value></data>
+  <data name="AboutBrandBlurb" xml:space="preserve"><value>Green Yoga Inc создаёт продуманное программное обеспечение и цифровые инструменты для чтения, благополучия и практичных технологий.</value></data>
+  <data name="AboutWebsiteLink" xml:space="preserve"><value>Веб-сайт Green Yoga</value></data>
+  <data name="AboutPrivacyLink" xml:space="preserve"><value>Политика конфиденциальности</value></data>
+  <data name="AboutLicenseLink" xml:space="preserve"><value>Лицензия MIT</value></data>
+  <data name="AboutContactSupport" xml:space="preserve"><value>Связаться со службой поддержки</value></data>
+  <data name="AboutClose" xml:space="preserve"><value>Закрыть</value></data>
+  <data name="AboutLicenseUnavailable" xml:space="preserve"><value>Не удалось загрузить текст лицензии. Это приложение распространяется по лицензии MIT.</value></data>
+  <data name="SupportDisclosure" xml:space="preserve"><value>При выборе «Связаться со службой поддержки» в этом окне загружается веб-сайт Green Yoga (greenyogainc.com). Требуется подключение к интернету, и к любой отправляемой вами информации применяется политика конфиденциальности веб-сайта Green Yoga.</value></data>
+  <data name="SupportLoadButton" xml:space="preserve"><value>Загрузить страницу поддержки</value></data>
+  <data name="SupportOpenInBrowser" xml:space="preserve"><value>Открыть в веб-браузере</value></data>
+  <data name="SupportEmail" xml:space="preserve"><value>Написать в службу поддержки</value></data>
+  <data name="SupportRetry" xml:space="preserve"><value>Повторить</value></data>
+  <data name="SupportLoading" xml:space="preserve"><value>Загрузка страницы поддержки…</value></data>
+  <data name="SupportLoadFailed" xml:space="preserve"><value>Не удалось загрузить страницу поддержки. Проверьте подключение к интернету и повторите попытку либо воспользуйтесь одним из вариантов ниже.</value></data>
+  <data name="SupportBack" xml:space="preserve"><value>Назад</value></data>
+  <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>Раздел {0}</value></data>
+  <data name="PageBoxName" xml:space="preserve"><value>Номер главы</value></data>
   <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
   <data name="BookmarkAdded" xml:space="preserve"><value>Закладка добавлена</value></data>
   <data name="BookmarkRemoved" xml:space="preserve"><value>Закладка удалена</value></data>

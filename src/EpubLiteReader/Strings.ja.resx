@@ -70,12 +70,26 @@
   <data name="Margins" xml:space="preserve"><value>余白</value></data>
   <data name="ResetText" xml:space="preserve"><value>テキスト設定をリセット</value></data>
   <data name="About" xml:space="preserve"><value>EPUB Lite Readerについて</value></data>
-  <data name="AboutMessage" xml:space="preserve"><value>EPUB Lite Reader
-Windows向けの高速でシンプルなEPUBリーダー。
-ライブラリなし、アカウントなし、気の散る要素なし。
-
-© 2026 Green Yoga Inc
-フリーウェア — MITライセンス</value></data>
+  <data name="AboutWindowTitleFormat" xml:space="preserve"><value>{0} について</value></data>
+  <data name="AboutVersionFormat" xml:space="preserve"><value>バージョン {0}</value></data>
+  <data name="AboutPublishedBy" xml:space="preserve"><value>Green Yoga Inc. 発行</value></data>
+  <data name="AboutBrandBlurb" xml:space="preserve"><value>Green Yoga Inc は、読書、ウェルネス、実用的なテクノロジーのための工夫を凝らしたソフトウェアとデジタルツールを開発しています。</value></data>
+  <data name="AboutWebsiteLink" xml:space="preserve"><value>Green Yoga ウェブサイト</value></data>
+  <data name="AboutPrivacyLink" xml:space="preserve"><value>プライバシーポリシー</value></data>
+  <data name="AboutLicenseLink" xml:space="preserve"><value>MITライセンス</value></data>
+  <data name="AboutContactSupport" xml:space="preserve"><value>サポートに問い合わせる</value></data>
+  <data name="AboutClose" xml:space="preserve"><value>閉じる</value></data>
+  <data name="AboutLicenseUnavailable" xml:space="preserve"><value>ライセンス文を読み込めませんでした。このアプリケーションはMITライセンスの下で公開されています。</value></data>
+  <data name="SupportDisclosure" xml:space="preserve"><value>「サポートに問い合わせる」を選択すると、このウィンドウ内にGreen Yogaのウェブサイト (greenyogainc.com) が読み込まれます。インターネット接続が必要であり、送信する情報にはGreen Yogaウェブサイトのプライバシーポリシーが適用されます。</value></data>
+  <data name="SupportLoadButton" xml:space="preserve"><value>サポートページを読み込む</value></data>
+  <data name="SupportOpenInBrowser" xml:space="preserve"><value>ウェブブラウザで開く</value></data>
+  <data name="SupportEmail" xml:space="preserve"><value>メールでサポートに問い合わせる</value></data>
+  <data name="SupportRetry" xml:space="preserve"><value>再試行</value></data>
+  <data name="SupportLoading" xml:space="preserve"><value>サポートページを読み込んでいます…</value></data>
+  <data name="SupportLoadFailed" xml:space="preserve"><value>サポートページを読み込めませんでした。インターネット接続を確認して再試行するか、以下のいずれかのオプションをご利用ください。</value></data>
+  <data name="SupportBack" xml:space="preserve"><value>戻る</value></data>
+  <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>セクション {0}</value></data>
+  <data name="PageBoxName" xml:space="preserve"><value>章番号</value></data>
   <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
   <data name="BookmarkAdded" xml:space="preserve"><value>しおりを追加しました</value></data>
   <data name="BookmarkRemoved" xml:space="preserve"><value>しおりを削除しました</value></data>

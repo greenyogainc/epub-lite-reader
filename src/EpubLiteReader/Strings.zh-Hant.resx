@@ -70,12 +70,26 @@
   <data name="Margins" xml:space="preserve"><value>邊界</value></data>
   <data name="ResetText" xml:space="preserve"><value>重設文字設定</value></data>
   <data name="About" xml:space="preserve"><value>關於 EPUB Lite Reader</value></data>
-  <data name="AboutMessage" xml:space="preserve"><value>EPUB Lite Reader
-適用於 Windows 的快速、簡潔 EPUB 閱讀器。
-無需書庫、無需帳戶、無干擾。
-
-© 2026 Green Yoga Inc
-免費軟體 — MIT 授權</value></data>
+  <data name="AboutWindowTitleFormat" xml:space="preserve"><value>關於 {0}</value></data>
+  <data name="AboutVersionFormat" xml:space="preserve"><value>版本 {0}</value></data>
+  <data name="AboutPublishedBy" xml:space="preserve"><value>由 Green Yoga Inc. 出品</value></data>
+  <data name="AboutBrandBlurb" xml:space="preserve"><value>Green Yoga Inc 打造用心設計的軟體與數位工具，專注於閱讀、身心健康與實用科技。</value></data>
+  <data name="AboutWebsiteLink" xml:space="preserve"><value>Green Yoga 官方網站</value></data>
+  <data name="AboutPrivacyLink" xml:space="preserve"><value>隱私權政策</value></data>
+  <data name="AboutLicenseLink" xml:space="preserve"><value>MIT 授權</value></data>
+  <data name="AboutContactSupport" xml:space="preserve"><value>聯絡支援</value></data>
+  <data name="AboutClose" xml:space="preserve"><value>關閉</value></data>
+  <data name="AboutLicenseUnavailable" xml:space="preserve"><value>無法載入授權條款文字。本應用程式依 MIT 授權發布。</value></data>
+  <data name="SupportDisclosure" xml:space="preserve"><value>點選「聯絡支援」會在此視窗內載入 Green Yoga 官方網站 (greenyogainc.com)。需要網際網路連線，且您提交的任何資訊均適用 Green Yoga 網站的隱私權政策。</value></data>
+  <data name="SupportLoadButton" xml:space="preserve"><value>載入支援頁面</value></data>
+  <data name="SupportOpenInBrowser" xml:space="preserve"><value>在網頁瀏覽器中開啟</value></data>
+  <data name="SupportEmail" xml:space="preserve"><value>透過電子郵件聯絡支援</value></data>
+  <data name="SupportRetry" xml:space="preserve"><value>重試</value></data>
+  <data name="SupportLoading" xml:space="preserve"><value>正在載入支援頁面…</value></data>
+  <data name="SupportLoadFailed" xml:space="preserve"><value>無法載入支援頁面。請檢查您的網際網路連線並重試，或使用下列選項之一。</value></data>
+  <data name="SupportBack" xml:space="preserve"><value>返回</value></data>
+  <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>第 {0} 節</value></data>
+  <data name="PageBoxName" xml:space="preserve"><value>章節編號</value></data>
   <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
   <data name="BookmarkAdded" xml:space="preserve"><value>已加入書籤</value></data>
   <data name="BookmarkRemoved" xml:space="preserve"><value>已移除書籤</value></data>
