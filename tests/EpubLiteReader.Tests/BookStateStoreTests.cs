@@ -160,4 +160,32 @@ public sealed class BookStateStoreTests : IDisposable
 
         Assert.Equal("short", File.ReadAllText(path));
     }
+
+    [Fact]
+    public void SaveBook_StampsCurrentSchemaVersion()
+    {
+        BookStateStore.SaveBook(new BookState { BookId = "book-sv" });
+        var loaded = BookStateStore.LoadBook("book-sv");
+        Assert.NotNull(loaded);
+        Assert.Equal(BookState.CurrentSchemaVersion, loaded!.SchemaVersion);
+    }
+
+    [Fact]
+    public void LoadBook_LegacyStateWithoutSchemaVersion_DefaultsToZero()
+    {
+        // A ≤1.0.3 file has no "schemaVersion" property at all.
+        Directory.CreateDirectory(BooksDir);
+        File.WriteAllText(Path.Combine(BooksDir, "legacy.json"),
+            "{\"bookId\":\"legacy\",\"spineIndex\":3,\"scrollFraction\":0.85," +
+            "\"display\":{\"viewMode\":\"continuous\"}}");
+
+        var loaded = BookStateStore.LoadBook("legacy");
+        Assert.NotNull(loaded);
+        Assert.Equal(0, loaded!.SchemaVersion);
+        // The raw legacy fraction survives load unchanged; the migration to a
+        // safe resume position happens in the UI layer on open, gated on
+        // SchemaVersion < 1.
+        Assert.Equal(0.85, loaded.ScrollFraction);
+        Assert.Equal(ViewMode.Continuous, loaded.Display.ViewMode);
+    }
 }

@@ -115,7 +115,11 @@ public sealed class ReadingHost
     public async Task NavigateContinuousAsync(EpubDoc doc, int spineIndex, double spineFraction = 0)
     {
         await MapBookAsync(doc);
-        var url = doc.GetContinuousUrl();
+        // Encode the real target in the URL hash so the document's own onHash
+        // handler loads and pins that spine immediately — no flash to spine 0
+        // and no needless eager load of chapter 0. ContinuousGoToAsync then
+        // refines to the sub-chapter fraction.
+        var url = doc.GetContinuousUrl(spineIndex);
         await NavigateAndRestoreAsync(url, 0);
         await ContinuousGoToAsync(spineIndex, spineFraction);
     }

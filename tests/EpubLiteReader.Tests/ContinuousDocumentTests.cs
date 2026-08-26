@@ -68,6 +68,27 @@ public sealed class ContinuousDocumentTests : IDisposable
     }
 
     [Fact]
+    public async Task GetContinuousUrl_EncodesRequestedSpineInHash()
+    {
+        var (doc, _) = await EpubDoc.OpenWithChaptersAsync(_epubPath, "Untitled");
+        try
+        {
+            // The continuous URL must carry the real target spine so the
+            // document's onHash handler lands there directly instead of
+            // flashing to spine 0 (regression guard).
+            Assert.EndsWith("#spine-0", doc.GetContinuousUrl(0));
+            Assert.EndsWith("#spine-137", doc.GetContinuousUrl(137));
+            Assert.Contains(EpubDoc.ContinuousFileName, doc.GetContinuousUrl(42));
+            // Out-of-range indices omit the fragment rather than producing a bad hash.
+            Assert.DoesNotContain("#spine-", doc.GetContinuousUrl(99999));
+        }
+        finally
+        {
+            doc.Dispose();
+        }
+    }
+
+    [Fact]
     public async Task Search_RespectsMaxResultsCap()
     {
         var (doc, _) = await EpubDoc.OpenWithChaptersAsync(_epubPath, "Untitled");

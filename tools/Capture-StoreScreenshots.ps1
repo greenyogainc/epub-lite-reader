@@ -151,7 +151,7 @@ function Move-CursorAway {
     [Native.Methods]::SetCursorPos($w.Right - 2, $w.Bottom - 2) | Out-Null
 }
 
-function Save-WindowImage([IntPtr]$hwnd, [int]$expectedPid, [string]$path) {
+function Save-WindowImage([IntPtr]$hwnd, [int]$expectedPid, [string]$path, [int]$maxWidth = 0) {
     Assert-OwnProcessForeground $expectedPid
     Move-CursorAway
     Start-Sleep -Milliseconds 250   # let any open tooltip fade
@@ -161,8 +161,24 @@ function Save-WindowImage([IntPtr]$hwnd, [int]$expectedPid, [string]$path) {
     $bmp = New-Object System.Drawing.Bitmap $w, $h
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.CopyFromScreen($rect.Left, $rect.Top, 0, 0, (New-Object System.Drawing.Size $w, $h))
+    $g.Dispose()
+
+    # Fullscreen captures the monitor's native resolution; downscale it so the
+    # listing carousel is a uniform 16:9 set (still well above the 1366x768 min).
+    if ($maxWidth -gt 0 -and $w -gt $maxWidth) {
+        $nh = [int]([math]::Round($h * ($maxWidth / $w)))
+        $scaled = New-Object System.Drawing.Bitmap $maxWidth, $nh
+        $sg = [System.Drawing.Graphics]::FromImage($scaled)
+        $sg.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+        $sg.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+        $sg.DrawImage($bmp, 0, 0, $maxWidth, $nh)
+        $sg.Dispose(); $bmp.Dispose()
+        $bmp = $scaled
+        $w = $maxWidth; $h = $nh
+    }
+
     $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
-    $g.Dispose(); $bmp.Dispose()
+    $bmp.Dispose()
     Write-Host "Saved $path ($w x $h)"
 }
 
@@ -315,7 +331,7 @@ try {
     Wait-AppState { param($s) $s.fullscreen } "fullscreen"
     $fs = Get-VisibleWindowRect $hwnd
     if (($fs.Right - $fs.Left) -le $winW) { throw "F11 did not enter full screen; aborting." }
-    Save-WindowImage $hwnd $proc.Id (Join-Path $outDir "4-fullscreen-reading.png")
+    Save-WindowImage $hwnd $proc.Id (Join-Path $outDir "4-fullscreen-reading.png") -maxWidth 1920
     [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
     Wait-AppState { param($s) -not $s.fullscreen } "left fullscreen"
     [System.Windows.Forms.SendKeys]::SendWait("^0")

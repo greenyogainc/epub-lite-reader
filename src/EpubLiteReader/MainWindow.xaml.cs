@@ -54,10 +54,13 @@ public partial class MainWindow : Window
 
         _appSettings = BookStateStore.LoadAppSettings();
         _display = _appSettings.Defaults.Clone();
-        if (_appSettings.WindowWidth is double w && w >= MinWidth)
-            Width = Math.Min(w, SystemParameters.VirtualScreenWidth);
-        if (_appSettings.WindowHeight is double h && h >= MinHeight)
-            Height = Math.Min(h, SystemParameters.VirtualScreenHeight);
+        // Honor any previously saved size, clamped into [minimum, virtual screen]
+        // rather than discarded — a layout saved below the new minimum snaps up
+        // to the floor instead of silently reverting to the default size.
+        if (_appSettings.WindowWidth is double w && w > 0)
+            Width = Math.Clamp(w, MinWidth, SystemParameters.VirtualScreenWidth);
+        if (_appSettings.WindowHeight is double h && h > 0)
+            Height = Math.Clamp(h, MinHeight, SystemParameters.VirtualScreenHeight);
 
         PageCountText.Text = string.Format(Strings.Get("ChapterCountFormat"), 0);
 
@@ -180,6 +183,15 @@ public partial class MainWindow : Window
             _spineIndex = Math.Clamp(_bookState.SpineIndex, 0, Math.Max(0, doc.SpineCount - 1));
             _scrollFraction = Math.Clamp(_bookState.ScrollFraction, 0, 1);
             _mode = _display.ViewMode;
+
+            // Migration: in ≤1.0.3 (SchemaVersion 0) a continuous-mode
+            // ScrollFraction was a whole-document fraction paired with a stale
+            // spine index. Interpreting it as a within-spine fraction now would
+            // jump to the wrong place, so resume at the saved chapter's top
+            // instead. Newer states (v1) carry a coherent within-spine value.
+            if (_bookState.SchemaVersion < 1 && _mode == ViewMode.Continuous)
+                _scrollFraction = 0;
+
             UpdateModeRadios(_mode);
 
             Title = string.Format(Strings.Get("MainWindowTitleFormat"), doc.Title, Strings.Get("AppTitle"));
@@ -259,24 +271,23 @@ public partial class MainWindow : Window
 
     private async Task RunViewPumpAsync()
     {
-        try
+        // Each request is isolated: a failed navigation must not abandon a
+        // newer request still queued behind it, nor strand navIdle.
+        while (_pendingView is { } request)
         {
-            while (_pendingView is { } request)
+            _pendingView = null;
+            try
             {
-                _pendingView = null;
                 await ExecuteViewAsync(request);
             }
+            catch (Exception ex)
+            {
+                App.LogError(ex);
+            }
         }
-        catch (Exception ex)
-        {
-            App.LogError(ex);
-        }
-        finally
-        {
-            // This pump's own task is still marked running here, so idleness
-            // must be stated explicitly: the queue is drained.
-            WriteAutomationState(navIdleOverride: _pendingView is null);
-        }
+        // This pump's own task is still marked running inside this method, so
+        // idleness is stated explicitly: the queue is drained.
+        WriteAutomationState(navIdleOverride: true);
     }
 
     /// <summary>Facing pairs: [0], [1,2], [3,4], …</summary>
@@ -284,10 +295,15 @@ public partial class MainWindow : Window
 
     private async Task ExecuteViewAsync(ViewRequest request)
     {
-        if (_doc is null || _left is null || _right is null) return;
+        // Snapshot the target document: a book opened while this navigation is
+        // parked on an await must not have its (now-disposed) files rendered.
+        // If _doc has been swapped, the newer open has already queued its own
+        // request into this same pump, so bail and let that run.
+        var doc = _doc;
+        if (doc is null || _left is null || _right is null) return;
 
         _mode = request.Mode;
-        _spineIndex = Math.Clamp(request.Spine, 0, Math.Max(0, _doc.SpineCount - 1));
+        _spineIndex = Math.Clamp(request.Spine, 0, Math.Max(0, doc.SpineCount - 1));
         _scrollFraction = request.RestoreScroll ? Math.Clamp(request.Fraction, 0, 1) : 0;
         UpdateModeRadios(_mode);
 
@@ -299,10 +315,17 @@ public partial class MainWindow : Window
             RightCol.Width = new GridLength(1, GridUnitType.Star);
             WebRight.Visibility = Visibility.Visible;
             int start = FacingGroupStart(_spineIndex);
+            // The restore fraction belongs to the requested spine. When the
+            // facing pair starts on a *different* spine (even, non-zero index),
+            // applying that fraction to the pair's start chapter would land in
+            // the wrong chapter, so only restore when they coincide.
+            double leftFraction = (start == _spineIndex) ? _scrollFraction : 0;
             _spineIndex = start;
-            await _left.NavigateSpineAsync(_doc, start, request.Anchor, _scrollFraction);
-            if (start != 0 && start + 1 < _doc.SpineCount)
-                await _right.NavigateSpineAsync(_doc, start + 1);
+            if (!ReferenceEquals(doc, _doc)) return;
+            await _left.NavigateSpineAsync(doc, start, request.Anchor, leftFraction);
+            if (!ReferenceEquals(doc, _doc)) return;
+            if (start != 0 && start + 1 < doc.SpineCount)
+                await _right.NavigateSpineAsync(doc, start + 1);
             else
                 await _right.NavigateBlankAsync();
         }
@@ -310,12 +333,14 @@ public partial class MainWindow : Window
         {
             RightCol.Width = new GridLength(0);
             WebRight.Visibility = Visibility.Collapsed;
+            if (!ReferenceEquals(doc, _doc)) return;
             if (_mode == ViewMode.Continuous)
-                await _left.NavigateContinuousAsync(_doc, _spineIndex, _scrollFraction);
+                await _left.NavigateContinuousAsync(doc, _spineIndex, _scrollFraction);
             else
-                await _left.NavigateSpineAsync(_doc, _spineIndex, request.Anchor, _scrollFraction);
+                await _left.NavigateSpineAsync(doc, _spineIndex, request.Anchor, _scrollFraction);
         }
 
+        if (!ReferenceEquals(doc, _doc)) return;
         PageBox.Text = (_spineIndex + 1).ToString();
         UpdateProgress();
         SyncChapterSelection();
@@ -718,12 +743,21 @@ public partial class MainWindow : Window
     private async void FindNext_Click(object sender, RoutedEventArgs e) => await RunSearchAsync(true);
     private async void FindPrev_Click(object sender, RoutedEventArgs e) => await RunSearchAsync(false);
 
+    private bool _searching;
+
     private async Task RunSearchAsync(bool forward)
     {
         if (_doc is null || _left is null || _right is null) return;
         var q = SearchBox.Text?.Trim() ?? "";
         if (q.Length == 0) return;
 
+        // Serialize searches: the continuous-mode path can await frame loading
+        // for seconds, and overlapping searches would double-advance the hit
+        // index and fire concurrent finds on the same view.
+        if (_searching) return;
+        _searching = true;
+        try
+        {
         await WhenNavIdleAsync();
 
         // Prefer in-page find first on the currently displayed chapter panes.
@@ -772,9 +806,12 @@ public partial class MainWindow : Window
         {
             // Highlight inside the chapter frame; the frame is loaded on demand.
             var found = await _left.FindInSpineAsync(hit.SpineIndex, q);
+            if (_doc is null) return; // book closed/replaced during the frame-load wait
             if (!found)
                 await _left.ContinuousGoToAsync(hit.SpineIndex, 0);
-            _spineIndex = hit.SpineIndex;
+            // Clamp: a hit index captured before a book swap could exceed the
+            // new book's spine count.
+            _spineIndex = Math.Clamp(hit.SpineIndex, 0, Math.Max(0, _doc.SpineCount - 1));
             PageBox.Text = (_spineIndex + 1).ToString();
             SyncChapterSelection();
             ScheduleSave();
@@ -789,6 +826,11 @@ public partial class MainWindow : Window
         }
 
         WriteAutomationState();
+        }
+        finally
+        {
+            _searching = false;
+        }
     }
 
     // ---------- Bookmarks ----------

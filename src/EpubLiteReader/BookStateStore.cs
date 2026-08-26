@@ -17,6 +17,13 @@ public sealed class BookmarkEntry
 
 public sealed class BookState
 {
+    /// <summary>
+    /// Persisted-state schema version. 0 (or absent) = written by ≤1.0.3, when
+    /// ScrollFraction in continuous mode meant a whole-document fraction paired
+    /// with a stale SpineIndex. 1 = ScrollFraction is a within-spine fraction.
+    /// </summary>
+    public int SchemaVersion { get; set; }
+
     public string BookId { get; set; } = "";
     public string? FilePath { get; set; }
     public int SpineIndex { get; set; }
@@ -24,6 +31,9 @@ public sealed class BookState
     public DisplaySettings Display { get; set; } = new();
     public List<BookmarkEntry> Bookmarks { get; set; } = new();
     public DateTime UpdatedUtc { get; set; } = DateTime.UtcNow;
+
+    /// <summary>Current schema version written by this build.</summary>
+    public const int CurrentSchemaVersion = 1;
 }
 
 public sealed class AppSettings
@@ -103,6 +113,7 @@ public static class BookStateStore
         try
         {
             state.UpdatedUtc = DateTime.UtcNow;
+            state.SchemaVersion = BookState.CurrentSchemaVersion;
             WriteAtomic(BookPath(state.BookId), JsonSerializer.Serialize(state, JsonOptions));
         }
         catch (Exception ex)

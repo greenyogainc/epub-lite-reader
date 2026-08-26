@@ -39,6 +39,7 @@ Get-ChildItem $stage -Filter *.pdb -Recurse | Remove-Item -Force
 $arch = switch ($Rid) {
     "win-x64"   { "x64" }
     "win-arm64" { "arm64" }
+    default     { throw "Unsupported RID '$Rid'." }   # unreachable past ValidateSet; defensive
 }
 
 # XmlDocument.Load/Save honor the XML declaration's utf-8 encoding on every
