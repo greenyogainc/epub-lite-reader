@@ -5,7 +5,7 @@ using Microsoft.Web.WebView2.Wpf;
 namespace EpubLiteReader;
 
 /// <summary>A validated message posted by the injected reader script.</summary>
-public sealed record HostMessage(string Type, double Fraction = 0, int Direction = 0, int Spine = 0, string? Href = null);
+public sealed record HostMessage(string Type, double Fraction = 0, int Direction = 0, int Spine = 0, string? Href = null, string? Key = null);
 
 /// <summary>Configures a WebView2 for safe local EPUB rendering.</summary>
 public sealed class ReadingHost
@@ -344,6 +344,15 @@ public sealed class ReadingHost
                     if (!root.TryGetProperty("direction", out var d) || !d.TryGetInt32(out var dir)) return false;
                     if (dir is not (-1 or 1)) return false;
                     message = new HostMessage("step", Direction: dir);
+                    return true;
+                }
+
+                case "key":
+                {
+                    if (!root.TryGetProperty("key", out var k) || k.ValueKind != JsonValueKind.String) return false;
+                    var key = k.GetString();
+                    if (key is not ("1" or "2" or "3" or "F4" or "F11" or "Escape")) return false;
+                    message = new HostMessage("key", Key: key);
                     return true;
                 }
 

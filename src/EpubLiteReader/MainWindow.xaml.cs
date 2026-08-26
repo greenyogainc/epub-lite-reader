@@ -273,7 +273,9 @@ public partial class MainWindow : Window
         }
         finally
         {
-            WriteAutomationState();
+            // This pump's own task is still marked running here, so idleness
+            // must be stated explicitly: the queue is drained.
+            WriteAutomationState(navIdleOverride: _pendingView is null);
         }
     }
 
@@ -464,12 +466,15 @@ public partial class MainWindow : Window
         }
         else
         {
+            bool hadFocus = ChapterPane.IsKeyboardFocusWithin;
             if (ChapterColumn.ActualWidth > 0)
                 _chapterPaneWidth = new GridLength(ChapterColumn.ActualWidth);
             ChapterColumn.MinWidth = 0;
             ChapterColumn.Width = new GridLength(0);
             ChapterPane.Visibility = Visibility.Collapsed;
             ChapterSplitter.Visibility = Visibility.Collapsed;
+            if (hadFocus)
+                WebLeft.Focus();
         }
 
         WriteAutomationState();
@@ -584,19 +589,21 @@ public partial class MainWindow : Window
         if (_suppressChapterNav) return;
         if (e.NewValue is not ChapterItem item) return;
 
-        if (!ReferenceEquals(item, _selectedChapter))
+        // The virtualized tree re-raises selection for the already-current
+        // chapter when its container realizes (e.g. on opening the pane).
+        // Navigating then would yank the reader away from its position.
+        if (ReferenceEquals(item, _selectedChapter)) return;
+
+        _suppressChapterNav = true;
+        try
         {
-            _suppressChapterNav = true;
-            try
-            {
-                if (_selectedChapter is not null)
-                    _selectedChapter.IsSelected = false;
-                _selectedChapter = item;
-            }
-            finally
-            {
-                _suppressChapterNav = false;
-            }
+            if (_selectedChapter is not null)
+                _selectedChapter.IsSelected = false;
+            _selectedChapter = item;
+        }
+        finally
+        {
+            _suppressChapterNav = false;
         }
 
         if (item.SpineIndex is int spine)
@@ -674,11 +681,18 @@ public partial class MainWindow : Window
     private void SearchToggle_Changed(object sender, RoutedEventArgs e)
     {
         bool on = SearchToggle.IsChecked == true;
+        bool hadFocus = SearchBar.IsKeyboardFocusWithin;
         SearchBar.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
         if (on)
         {
             SearchBox.Focus();
             SearchBox.SelectAll();
+        }
+        else if (hadFocus)
+        {
+            // Return focus to the content instead of letting WPF drop it on an
+            // arbitrary toolbar button.
+            WebLeft.Focus();
         }
     }
 
@@ -894,6 +908,22 @@ public partial class MainWindow : Window
                 // share StepAsync's scroll-then-advance behaviour.
                 _ = StepAsync(msg.Direction);
                 break;
+
+            case "key":
+                // App shortcuts pressed while the reading pane holds focus.
+                switch (msg.Key)
+                {
+                    case "1": SetMode(ViewMode.Single); break;
+                    case "2": SetMode(ViewMode.Facing); break;
+                    case "3": SetMode(ViewMode.Continuous); break;
+                    case "F4": SetChapterPaneVisible(!_chapterPaneVisible); break;
+                    case "F11": ToggleFullscreen(); break;
+                    case "Escape":
+                        if (_fullscreen) ToggleFullscreen();
+                        else if (SearchToggle.IsChecked == true) SearchToggle.IsChecked = false;
+                        break;
+                }
+                break;
         }
     }
 
@@ -955,7 +985,7 @@ public partial class MainWindow : Window
     /// small JSON file so scripted captures can wait for real readiness instead
     /// of sleeping. Inert in normal use.
     /// </summary>
-    private void WriteAutomationState()
+    private void WriteAutomationState(bool? navIdleOverride = null)
     {
         var file = App.AutomationStateFile;
         if (file is null) return;
@@ -969,7 +999,7 @@ public partial class MainWindow : Window
                 spineCount = _doc?.SpineCount ?? 0,
                 theme = _display.Theme.ToString(),
                 fontScale = _display.FontScale,
-                navIdle = _viewPump is null || _viewPump.IsCompleted,
+                navIdle = navIdleOverride ?? (_viewPump is null || _viewPump.IsCompleted),
                 searchStatus = SearchStatus.Text,
                 fullscreen = _fullscreen,
                 chapterPane = _chapterPaneVisible,

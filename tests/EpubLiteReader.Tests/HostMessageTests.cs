@@ -45,6 +45,34 @@ public class HostMessageTests
     }
 
     [Theory]
+    [InlineData("1")]
+    [InlineData("2")]
+    [InlineData("3")]
+    [InlineData("F4")]
+    [InlineData("F11")]
+    [InlineData("Escape")]
+    public void TryParseMessage_Key_AcceptsForwardedShortcuts(string key)
+    {
+        var json = $"{{\"type\":\"key\",\"key\":\"{key}\"}}";
+
+        Assert.True(ReadingHost.TryParseMessage(json, out var msg));
+        Assert.Equal("key", msg.Type);
+        Assert.Equal(key, msg.Key);
+    }
+
+    [Theory]
+    [InlineData("{\"type\":\"key\"}")]
+    [InlineData("{\"type\":\"key\",\"key\":\"4\"}")]
+    [InlineData("{\"type\":\"key\",\"key\":\"a\"}")]
+    [InlineData("{\"type\":\"key\",\"key\":\"F12\"}")]
+    [InlineData("{\"type\":\"key\",\"key\":\"Enter\"}")]
+    [InlineData("{\"type\":\"key\",\"key\":3}")]
+    public void TryParseMessage_Key_RejectsUnknownKeys(string json)
+    {
+        Assert.False(ReadingHost.TryParseMessage(json, out _));
+    }
+
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("not json")]

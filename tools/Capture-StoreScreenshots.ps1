@@ -48,6 +48,10 @@ Add-Type -Namespace Native -Name Methods -MemberDefinition @"
 [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+[DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, int dwExtraInfo);
+[DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, int dwExtraInfo);
+[DllImport("user32.dll")] public static extern bool SetCursorPos(int X, int Y);
+[DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr hwnd, int attr, out RECT rect, int size);
 [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
 "@
 Add-Type -AssemblyName System.Windows.Forms
@@ -74,24 +78,84 @@ function Wait-AppState([scriptblock]$predicate, [string]$what, [int]$timeoutSec 
         }
         Start-Sleep -Milliseconds 120
     }
-    throw "Timed out waiting for: $what"
+    $last = Read-AppState $suffix
+    $dump = if ($last) { $last | ConvertTo-Json -Compress } else { "<no state file>" }
+    throw "Timed out waiting for: $what -- last app state: $dump"
+}
+
+function Test-OwnProcessForeground([int]$expectedPid) {
+    $fg = [Native.Methods]::GetForegroundWindow()
+    $fgPid = 0
+    [Native.Methods]::GetWindowThreadProcessId($fg, [ref]$fgPid) | Out-Null
+    return ($fgPid -eq $expectedPid)
+}
+
+# Windows' foreground lock makes bare SetForegroundWindow a no-op while another
+# app holds focus. Escalate: plain call -> Alt-key unlock -> a real click on the
+# window's own title bar (position derived live from GetWindowRect).
+function Set-AppForeground([IntPtr]$hwnd, [int]$expectedPid, [bool]$allowTitleClick = $true) {
+    if (Test-OwnProcessForeground $expectedPid) { return }
+    [Native.Methods]::SetForegroundWindow($hwnd) | Out-Null
+    Start-Sleep -Milliseconds 250
+    if (Test-OwnProcessForeground $expectedPid) { return }
+
+    [Native.Methods]::keybd_event(0x12, 0, 0, 0)      # Alt down releases the lock
+    [Native.Methods]::SetForegroundWindow($hwnd) | Out-Null
+    [Native.Methods]::keybd_event(0x12, 0, 2, 0)      # Alt up
+    Start-Sleep -Milliseconds 250
+    if (Test-OwnProcessForeground $expectedPid) { return }
+
+    if ($allowTitleClick) {
+        $rect = New-Object Native.Methods+RECT
+        [Native.Methods]::GetWindowRect($hwnd, [ref]$rect) | Out-Null
+        $x = [int](($rect.Left + $rect.Right) / 2)
+        $y = $rect.Top + 15
+        [Native.Methods]::SetCursorPos($x, $y) | Out-Null
+        Start-Sleep -Milliseconds 150
+        [Native.Methods]::mouse_event(0x0002, 0, 0, 0, 0)
+        [Native.Methods]::mouse_event(0x0004, 0, 0, 0, 0)
+        Start-Sleep -Milliseconds 300
+    }
+    if (-not (Test-OwnProcessForeground $expectedPid)) {
+        throw "Could not bring EpubLiteReader (PID $expectedPid) to the foreground."
+    }
 }
 
 function Assert-OwnProcessForeground([int]$expectedPid) {
     # CopyFromScreen grabs whatever is on top, so if focus went elsewhere we
     # would silently ship a screenshot of another app. Fail loudly instead.
-    $fg = [Native.Methods]::GetForegroundWindow()
-    $fgPid = 0
-    [Native.Methods]::GetWindowThreadProcessId($fg, [ref]$fgPid) | Out-Null
-    if ($fgPid -ne $expectedPid) {
+    if (-not (Test-OwnProcessForeground $expectedPid)) {
+        $fg = [Native.Methods]::GetForegroundWindow()
+        $fgPid = 0
+        [Native.Methods]::GetWindowThreadProcessId($fg, [ref]$fgPid) | Out-Null
         throw "Foreground window belongs to PID $fgPid, not EpubLiteReader ($expectedPid); aborting."
     }
 }
 
+# The visible window bounds: GetWindowRect includes the invisible DWM
+# resize/shadow border, which would leak a strip of whatever sits behind the
+# window into the capture. DWMWA_EXTENDED_FRAME_BOUNDS (9) excludes it.
+function Get-VisibleWindowRect([IntPtr]$hwnd) {
+    $rect = New-Object Native.Methods+RECT
+    $size = [System.Runtime.InteropServices.Marshal]::SizeOf([type]([Native.Methods+RECT]))
+    if ([Native.Methods]::DwmGetWindowAttribute($hwnd, 9, [ref]$rect, $size) -ne 0) {
+        [Native.Methods]::GetWindowRect($hwnd, [ref]$rect) | Out-Null
+    }
+    return $rect
+}
+
+# Hover tooltips must never photobomb a shot: keep the pointer parked in the
+# far screen corner except while a deliberate click needs it.
+function Move-CursorAway {
+    $w = [System.Windows.Forms.SystemInformation]::VirtualScreen
+    [Native.Methods]::SetCursorPos($w.Right - 2, $w.Bottom - 2) | Out-Null
+}
+
 function Save-WindowImage([IntPtr]$hwnd, [int]$expectedPid, [string]$path) {
     Assert-OwnProcessForeground $expectedPid
-    $rect = New-Object Native.Methods+RECT
-    [Native.Methods]::GetWindowRect($hwnd, [ref]$rect) | Out-Null
+    Move-CursorAway
+    Start-Sleep -Milliseconds 250   # let any open tooltip fade
+    $rect = Get-VisibleWindowRect $hwnd
     $w = $rect.Right - $rect.Left
     $h = $rect.Bottom - $rect.Top
     $bmp = New-Object System.Drawing.Bitmap $w, $h
@@ -104,6 +168,20 @@ function Save-WindowImage([IntPtr]$hwnd, [int]$expectedPid, [string]$path) {
 
 function Get-UiaRoot([IntPtr]$hwnd) {
     return [System.Windows.Automation.AutomationElement]::FromHandle($hwnd)
+}
+
+# Keyboard focus parked on a toolbar button makes WPF pop that button's
+# tooltip into the shot (tooltip-on-keyboard-focus). Keeping focus on the
+# reader document avoids that, and every app shortcut still works because the
+# injected script forwards them.
+function Focus-ReaderContent($mainElement) {
+    try {
+        $cond = New-Object System.Windows.Automation.PropertyCondition(
+            [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+            [System.Windows.Automation.ControlType]::Document)
+        $doc = $mainElement.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $cond)
+        if ($doc) { $doc.SetFocus(); Start-Sleep -Milliseconds 200 }
+    } catch { }
 }
 
 function Invoke-ByName($scopeElement, [string]$name, [int]$timeoutSec = 10) {
@@ -124,43 +202,38 @@ function Invoke-ByName($scopeElement, [string]$name, [int]$timeoutSec = 10) {
     throw "UIA element named '$name' not found or not invokable."
 }
 
-function Find-ProcessWindow([int]$ownPid, [string]$titleContains, [int]$timeoutSec = 10) {
+# Menu items and dialog buttons live in separate top-level windows (WPF
+# popups, owned dialogs): enumerate our process's top-level windows and
+# search inside each.
+function Invoke-InProcessByName([int]$ownPid, [string]$name, [int]$timeoutSec = 10) {
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     $pidCond = New-Object System.Windows.Automation.PropertyCondition(
         [System.Windows.Automation.AutomationElement]::ProcessIdProperty, $ownPid)
+    $nameCond = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::NameProperty, $name)
     while ($sw.Elapsed.TotalSeconds -lt $timeoutSec) {
-        $windows = [System.Windows.Automation.AutomationElement]::RootElement.FindAll(
+        $tops = [System.Windows.Automation.AutomationElement]::RootElement.FindAll(
             [System.Windows.Automation.TreeScope]::Children, $pidCond)
-        foreach ($w in $windows) {
-            if ($w.Current.Name -like "*$titleContains*") { return $w }
-        }
-        Start-Sleep -Milliseconds 150
-    }
-    throw "Window containing '$titleContains' not found for PID $ownPid."
-}
-
-# Menu items live in popup windows, so search the whole desktop but only
-# within our process.
-function Invoke-MenuItem([int]$ownPid, [string]$name, [int]$timeoutSec = 10) {
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($sw.Elapsed.TotalSeconds -lt $timeoutSec) {
-        $cond = New-Object System.Windows.Automation.AndCondition(
-            (New-Object System.Windows.Automation.PropertyCondition(
-                [System.Windows.Automation.AutomationElement]::ProcessIdProperty, $ownPid)),
-            (New-Object System.Windows.Automation.PropertyCondition(
-                [System.Windows.Automation.AutomationElement]::NameProperty, $name)))
-        $el = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst(
-            [System.Windows.Automation.TreeScope]::Descendants, $cond)
-        if ($el) {
-            $pattern = $null
-            if ($el.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) {
-                $pattern.Invoke()
-                return
+        foreach ($top in $tops) {
+            $el = $top.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $nameCond)
+            if ($el) {
+                $pattern = $null
+                if ($el.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) {
+                    $pattern.Invoke()
+                    Start-Sleep -Milliseconds 250   # let the menu close before sending keys
+                    return
+                }
+                if ($el.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref]$pattern)) {
+                    $pattern.Toggle()
+                    Start-Sleep -Milliseconds 250
+                    return
+                }
             }
         }
         Start-Sleep -Milliseconds 150
     }
-    throw "Menu item '$name' not found."
+    [System.Windows.Forms.SendKeys]::SendWait("{ESC}")   # close any stuck menu before failing
+    throw "Element named '$name' not found in the app's windows."
 }
 
 Write-Host "Launching $($exe.FullName)"
@@ -178,21 +251,30 @@ try {
     # Wait for the book itself, not just the window.
     Wait-AppState { param($s) $s.book -and $s.navIdle } "demo book loaded" 60
 
-    # Pin on top, position, size, focus.
+    # Pin on top, position, size, focus. The outer size is padded so the
+    # VISIBLE window (what gets captured) is exactly $winW x $winH.
     [Native.Methods]::ShowWindow($hwnd, 9) | Out-Null   # SW_RESTORE
     [Native.Methods]::SetWindowPos($hwnd, [IntPtr](-1), 40, 30, $winW, $winH, 0x0040) | Out-Null
     Start-Sleep -Milliseconds 400
-    [Native.Methods]::SetForegroundWindow($hwnd) | Out-Null
+    $outer = New-Object Native.Methods+RECT
+    [Native.Methods]::GetWindowRect($hwnd, [ref]$outer) | Out-Null
+    $visible = Get-VisibleWindowRect $hwnd
+    $dw = ($outer.Right - $outer.Left) - ($visible.Right - $visible.Left)
+    $dh = ($outer.Bottom - $outer.Top) - ($visible.Bottom - $visible.Top)
+    [Native.Methods]::SetWindowPos($hwnd, [IntPtr](-1), 40, 30, $winW + $dw, $winH + $dh, 0x0040) | Out-Null
     Start-Sleep -Milliseconds 300
-    Assert-OwnProcessForeground $proc.Id
+    Set-AppForeground $hwnd $proc.Id
+    Move-CursorAway
     $mainUia = Get-UiaRoot $hwnd
+    Focus-ReaderContent $mainUia
 
     # Deterministic baseline regardless of persisted per-book settings:
     # default typography (Ctrl+0) and the Light theme via the Settings menu.
     [System.Windows.Forms.SendKeys]::SendWait("^0")
     Invoke-ByName $mainUia "Settings"
-    Invoke-MenuItem $proc.Id "Light"
+    Invoke-InProcessByName $proc.Id "Light"
     Wait-AppState { param($s) $s.theme -eq "Light" -and [math]::Abs($s.fontScale - 1) -lt 0.01 } "light theme + default type"
+    Focus-ReaderContent $mainUia
 
     # 1) Facing mode + chapter sidebar
     [System.Windows.Forms.SendKeys]::SendWait("2")
@@ -213,7 +295,7 @@ try {
 
     # 3) Search with a visibly highlighted match, still in Continuous mode --
     #    this exercises the frame-aware find and shows the match counter.
-    [System.Windows.Forms.SendKeys]::SendWait("^f")
+    Invoke-InProcessByName $proc.Id "Search"
     Start-Sleep -Milliseconds 300
     [System.Windows.Forms.SendKeys]::SendWait("ridge")
     [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
@@ -231,8 +313,7 @@ try {
     Wait-AppState { param($s) $s.fontScale -gt 1.3 } "enlarged type"
     [System.Windows.Forms.SendKeys]::SendWait("{F11}")
     Wait-AppState { param($s) $s.fullscreen } "fullscreen"
-    $fs = New-Object Native.Methods+RECT
-    [Native.Methods]::GetWindowRect($hwnd, [ref]$fs) | Out-Null
+    $fs = Get-VisibleWindowRect $hwnd
     if (($fs.Right - $fs.Left) -le $winW) { throw "F11 did not enter full screen; aborting." }
     Save-WindowImage $hwnd $proc.Id (Join-Path $outDir "4-fullscreen-reading.png")
     [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
@@ -244,22 +325,23 @@ try {
 
     # 5) Dark reading theme via the Settings menu (no coordinate clicks).
     Invoke-ByName $mainUia "Settings"
-    Invoke-MenuItem $proc.Id "Dark"
+    Invoke-InProcessByName $proc.Id "Dark"
     Wait-AppState { param($s) $s.theme -eq "Dark" } "dark theme"
+    Focus-ReaderContent $mainUia
     Save-WindowImage $hwnd $proc.Id (Join-Path $outDir "5-theme-dark.png")
 
     # 6) About window (captured over the main window, centered on it).
     Invoke-ByName $mainUia "Settings"
-    Invoke-MenuItem $proc.Id "About EPUB Lite Reader"
+    Invoke-InProcessByName $proc.Id "About EPUB Lite Reader"
     Wait-AppState { param($s) $s.aboutOpen } "about window" 15 ".about"
     Save-WindowImage $hwnd $proc.Id (Join-Path $outDir "6-about.png")
 
     # 7) Contact support with the live form loaded (requires internet). No form
-    #    fields are filled and nothing is submitted.
-    $aboutWin = Find-ProcessWindow $proc.Id "About"
-    Invoke-ByName $aboutWin "Contact support"
+    #    fields are filled and nothing is submitted. The process-wide search
+    #    reaches the About dialog's buttons the same way it reaches menu items.
+    Invoke-InProcessByName $proc.Id "Contact support"
     Wait-AppState { param($s) $s.supportView } "support view" 15 ".about"
-    Invoke-ByName $aboutWin "Load support page"
+    Invoke-InProcessByName $proc.Id "Load support page"
     Wait-AppState { param($s) $s.supportLoaded } "support page loaded" 45 ".about"
     Start-Sleep -Milliseconds 1500   # remote page layout/fonts settle
     Save-WindowImage $hwnd $proc.Id (Join-Path $outDir "7-contact-support.png")
@@ -271,12 +353,14 @@ finally {
 
 Write-Host ""
 Write-Host "== Verifying captured set =="
-$fail = $false
-Get-ChildItem $outDir\*.png | ForEach-Object {
-    $img = [System.Drawing.Image]::FromFile($_.FullName)
-    $ok = ($img.Width -ge 1366 -and $img.Height -ge 768 -and $_.Length -lt 50MB)
-    "{0}: {1}x{2} ({3:N0} bytes) {4}" -f $_.Name, $img.Width, $img.Height, $_.Length, $(if ($ok) { "OK" } else { "FAIL: below Store minimum 1366x768 or over 50MB"; $script:fail = $true })
+$failures = @()
+foreach ($file in Get-ChildItem $outDir\*.png) {
+    $img = [System.Drawing.Image]::FromFile($file.FullName)
+    $ok = ($img.Width -ge 1366 -and $img.Height -ge 768 -and $file.Length -lt 50MB)
+    $verdict = if ($ok) { "OK" } else { "FAIL: below Store minimum 1366x768 or over 50MB" }
+    Write-Host ("{0}: {1}x{2} ({3:N0} bytes) {4}" -f $file.Name, $img.Width, $img.Height, $file.Length, $verdict)
+    if (-not $ok) { $failures += $file.Name }
     $img.Dispose()
 }
-if ($fail) { throw "One or more screenshots violate Store requirements." }
+if ($failures) { throw "Screenshots violating Store requirements: $($failures -join ', ')" }
 Write-Host "Done."

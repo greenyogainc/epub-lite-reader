@@ -173,6 +173,17 @@ internal static class ReaderInject
             if (ev.ctrlKey || ev.altKey || ev.metaKey) return;
             if (isTypingTarget(ev.target)) return;
 
+            // App-level shortcuts must keep working while the reading pane has
+            // focus, so forward them to the host instead of letting the
+            // browser swallow them.
+            if (!ev.shiftKey &&
+                (ev.key === '1' || ev.key === '2' || ev.key === '3' ||
+                 ev.key === 'F4' || ev.key === 'F11' || ev.key === 'Escape')) {
+              ev.preventDefault();
+              post({ type: 'key', key: ev.key });
+              return;
+            }
+
             let dir = 0;
             if (ev.key === ' ' || ev.key === 'Spacebar') dir = ev.shiftKey ? -1 : 1;
             else if (ev.key === 'PageDown') dir = 1;
