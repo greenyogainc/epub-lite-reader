@@ -43,7 +43,11 @@ public static class BookStateStore
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
 
+    /// <summary>Test hook: redirects all persistence to a throwaway directory.</summary>
+    internal static string? RootOverride;
+
     public static string RootDir =>
+        RootOverride ??
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "GreenYogaInc", "EpubLiteReader");
 
@@ -71,8 +75,7 @@ public static class BookStateStore
     {
         try
         {
-            Directory.CreateDirectory(RootDir);
-            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(settings, JsonOptions));
+            WriteAtomic(SettingsPath, JsonSerializer.Serialize(settings, JsonOptions));
         }
         catch (Exception ex)
         {
@@ -99,9 +102,8 @@ public static class BookStateStore
     {
         try
         {
-            Directory.CreateDirectory(BooksDir);
             state.UpdatedUtc = DateTime.UtcNow;
-            File.WriteAllText(BookPath(state.BookId), JsonSerializer.Serialize(state, JsonOptions));
+            WriteAtomic(BookPath(state.BookId), JsonSerializer.Serialize(state, JsonOptions));
         }
         catch (Exception ex)
         {
@@ -111,4 +113,45 @@ public static class BookStateStore
 
     private static string BookPath(string bookId) =>
         Path.Combine(BooksDir, bookId + ".json");
+
+    /// <summary>
+    /// Writes via a same-directory temp file followed by an atomic replace, so an
+    /// interrupted write can never truncate the only copy of the target file.
+    /// </summary>
+    internal static void WriteAtomic(string path, string content)
+    {
+        var dir = Path.GetDirectoryName(path)!;
+        Directory.CreateDirectory(dir);
+        CleanStaleTempFiles(dir);
+
+        var tmp = Path.Combine(dir, Path.GetFileName(path) + "." + Guid.NewGuid().ToString("N") + ".tmp");
+        try
+        {
+            File.WriteAllText(tmp, content);
+            File.Move(tmp, path, overwrite: true);
+        }
+        catch
+        {
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch { /* best effort */ }
+            throw;
+        }
+    }
+
+    /// <summary>Removes orphaned temp files left behind by writes that died mid-flight.</summary>
+    private static void CleanStaleTempFiles(string dir)
+    {
+        try
+        {
+            foreach (var tmp in Directory.EnumerateFiles(dir, "*.json.*.tmp"))
+            {
+                try
+                {
+                    if (DateTime.UtcNow - File.GetLastWriteTimeUtc(tmp) > TimeSpan.FromMinutes(10))
+                        File.Delete(tmp);
+                }
+                catch { /* another writer may hold it; skip */ }
+            }
+        }
+        catch { /* directory enumeration is best effort */ }
+    }
 }
