@@ -57,10 +57,12 @@ public partial class MainWindow : Window
         // Honor any previously saved size, clamped into [minimum, virtual screen]
         // rather than discarded — a layout saved below the new minimum snaps up
         // to the floor instead of silently reverting to the default size.
+        // Max-then-Min (not Math.Clamp) so a pathologically tiny virtual screen
+        // can never make min > max and throw at startup.
         if (_appSettings.WindowWidth is double w && w > 0)
-            Width = Math.Clamp(w, MinWidth, SystemParameters.VirtualScreenWidth);
+            Width = Math.Max(MinWidth, Math.Min(w, SystemParameters.VirtualScreenWidth));
         if (_appSettings.WindowHeight is double h && h > 0)
-            Height = Math.Clamp(h, MinHeight, SystemParameters.VirtualScreenHeight);
+            Height = Math.Max(MinHeight, Math.Min(h, SystemParameters.VirtualScreenHeight));
 
         PageCountText.Text = string.Format(Strings.Get("ChapterCountFormat"), 0);
 
@@ -806,11 +808,11 @@ public partial class MainWindow : Window
         {
             // Highlight inside the chapter frame; the frame is loaded on demand.
             var found = await _left.FindInSpineAsync(hit.SpineIndex, q);
-            if (_doc is null) return; // book closed/replaced during the frame-load wait
             if (!found)
                 await _left.ContinuousGoToAsync(hit.SpineIndex, 0);
-            // Clamp: a hit index captured before a book swap could exceed the
-            // new book's spine count.
+            // Clamp against the current document: a hit index from _searchHits
+            // captured before a concurrent book open must not exceed the live
+            // book's spine count.
             _spineIndex = Math.Clamp(hit.SpineIndex, 0, Math.Max(0, _doc.SpineCount - 1));
             PageBox.Text = (_spineIndex + 1).ToString();
             SyncChapterSelection();
