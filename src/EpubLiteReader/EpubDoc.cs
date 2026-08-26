@@ -365,8 +365,9 @@ public sealed class EpubDoc : IDisposable
                   } catch (e) {}
                   try {
                     var doc = f.contentDocument;
-                    if (doc && typeof ResizeObserver === 'function') {
-                      var ro = new ResizeObserver(function(){ resize(f); });
+                    var RO = f.contentWindow ? f.contentWindow.ResizeObserver : null;
+                    if (doc && typeof RO === 'function') {
+                      var ro = new RO(function(){ resize(f); });
                       ro.observe(doc.documentElement);
                       if (doc.body) ro.observe(doc.body);
                     }
@@ -396,6 +397,9 @@ public sealed class EpubDoc : IDisposable
                         f.contentWindow.__elrApply(eff);
                     } catch (e) {}
                   });
+                  // Typography changes alter chapter heights; re-measure once
+                  // the new styles have applied.
+                  setTimeout(function(){ spineFrames.forEach(resize); }, 60);
                 };
               }
 

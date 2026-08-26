@@ -19,10 +19,16 @@ immediately — no library, no account, no distractions.
 - Chapter sidebar (`F4`) from the book’s built-in table of contents
 - Font size, theme (light / sepia / dark), font family, line spacing, and margins
 - Book search (`Ctrl+F`), bookmarks (`B`)
-- Remembers last reading position and display settings per book (local JSON only)
+- Remembers last reading position and display settings per book (local JSON
+  only, written crash-safely)
 - Open via dialog (`Ctrl+O`), drag & drop, or double-click a `.epub` (file association)
 - Print current chapter (`Ctrl+P`) via the system print UI
-- Scripts from EPUB content are stripped; external network navigation is blocked
+- Scripts from EPUB content are stripped, and book content cannot make any
+  network request — navigation and resource loads are locked to the book's
+  local virtual host
+- About window (⚙ → About) with version, license, and an optional
+  **Contact support** page that loads the Green Yoga website only when you
+  explicitly ask — the reader itself stays fully offline
 
 ## Keyboard reference
 
@@ -52,6 +58,18 @@ immediately — no library, no account, no distractions.
 ```powershell
 dotnet build -c Release
 dotnet run --project src\EpubLiteReader
+```
+
+## Tests
+
+```powershell
+dotnet test EpubLiteReader.slnx -c Release
+```
+
+There is also a headless EPUB pipeline smoke check:
+
+```powershell
+dotnet run --project tools\EpubSmoke\EpubSmoke.csproj -c Release -- tools\fixtures\sample.epub
 ```
 
 ## Distribution

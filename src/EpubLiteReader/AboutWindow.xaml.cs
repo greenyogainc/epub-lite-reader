@@ -23,6 +23,7 @@ public partial class AboutWindow : Window
 
     private WebView2? _supportView;
     private bool _supportViewInitializing;
+    private bool _supportLoaded;
 
     public AboutWindow()
     {
@@ -126,6 +127,14 @@ public partial class AboutWindow : Window
         SupportFailurePanel.Visibility = Visibility.Collapsed;
         SupportLoadingText.Visibility = Visibility.Visible;
 
+        // The WebView2 HwndHost only initializes inside a realized element, so
+        // the host must be Visible during init; opacity keeps the loading text
+        // readable until the page actually arrives.
+        _supportLoaded = false;
+        SupportWebHost.Visibility = Visibility.Visible;
+        SupportWebHost.Opacity = 0;
+        SupportWebHost.IsHitTestVisible = false;
+
         try
         {
             if (_supportView is null)
@@ -222,6 +231,9 @@ public partial class AboutWindow : Window
             SupportLoadingText.Visibility = Visibility.Collapsed;
             SupportFailurePanel.Visibility = Visibility.Collapsed;
             SupportWebHost.Visibility = Visibility.Visible;
+            SupportWebHost.Opacity = 1;
+            SupportWebHost.IsHitTestVisible = true;
+            _supportLoaded = true;
         }
         else
         {
@@ -265,6 +277,7 @@ public partial class AboutWindow : Window
 
     private void ShowSupportFailure()
     {
+        _supportLoaded = false;
         SupportLoadingText.Visibility = Visibility.Collapsed;
         SupportWebHost.Visibility = Visibility.Collapsed;
         SupportFailurePanel.Visibility = Visibility.Visible;
@@ -307,7 +320,7 @@ public partial class AboutWindow : Window
             {
                 aboutOpen = open,
                 supportView = open && SupportView.Visibility == Visibility.Visible,
-                supportLoaded = open && SupportWebHost.Visibility == Visibility.Visible,
+                supportLoaded = open && _supportLoaded,
                 supportFailed = open && SupportFailurePanel.Visibility == Visibility.Visible,
                 timestamp = DateTime.UtcNow.ToString("O")
             };
