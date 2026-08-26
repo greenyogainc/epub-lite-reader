@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Text.Json;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -13,7 +12,10 @@ public partial class MainWindow : Window
     private EpubDoc? _doc;
     private ViewMode _mode = ViewMode.Single;
     private int _spineIndex;
+
+    /// <summary>Scroll position as a fraction inside the current spine item.</summary>
     private double _scrollFraction;
+
     private DisplaySettings _display = new();
     private BookState? _bookState;
     private AppSettings _appSettings = new();
@@ -36,11 +38,14 @@ public partial class MainWindow : Window
     private List<ChapterItem> _navigableChapters = new();
     private ChapterItem? _selectedChapter;
     private bool _suppressChapterNav;
-    private bool _navigating;
+    private bool _suppressModeEvents;
 
     private readonly DispatcherTimer _saveTimer;
     private List<(int SpineIndex, int Offset, string Snippet)> _searchHits = new();
     private int _searchHitIndex = -1;
+    private string? _searchHitsQuery;
+
+    private CancellationTokenSource? _openCts;
 
     public MainWindow()
     {
@@ -49,8 +54,10 @@ public partial class MainWindow : Window
 
         _appSettings = BookStateStore.LoadAppSettings();
         _display = _appSettings.Defaults.Clone();
-        if (_appSettings.WindowWidth is > 400) Width = _appSettings.WindowWidth.Value;
-        if (_appSettings.WindowHeight is > 300) Height = _appSettings.WindowHeight.Value;
+        if (_appSettings.WindowWidth is double w && w >= MinWidth)
+            Width = Math.Min(w, SystemParameters.VirtualScreenWidth);
+        if (_appSettings.WindowHeight is double h && h >= MinHeight)
+            Height = Math.Min(h, SystemParameters.VirtualScreenHeight);
 
         PageCountText.Text = string.Format(Strings.Get("ChapterCountFormat"), 0);
 
@@ -75,6 +82,7 @@ public partial class MainWindow : Window
             var startupFile = ((App)Application.Current).StartupFile;
             if (startupFile is not null)
                 await OpenFileAsync(startupFile);
+            WriteAutomationState();
         }
         catch (Exception ex)
         {
@@ -85,6 +93,7 @@ public partial class MainWindow : Window
 
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
+        _openCts?.Cancel();
         PersistBookState();
         _appSettings.Defaults = _display.Clone();
         _appSettings.WindowWidth = Width;
@@ -115,20 +124,50 @@ public partial class MainWindow : Window
     {
         if (!_hostsReady) return;
 
-        PersistBookState();
-        _doc?.Dispose();
-        _doc = null;
+        // A newer open supersedes any open still in flight.
+        _openCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _openCts = cts;
 
+        var prevChapterState = _chapterState;
+        PersistBookState();
+
+        _chapterState = ChapterLoadState.Loading;
+        ShowChapterState(_chapterState);
+
+        EpubDoc? doc = null;
         try
         {
             var untitled = Strings.Get("UntitledChapter");
-            var (doc, chapters) = await EpubDoc.OpenWithChaptersAsync(path, untitled);
+            var sectionFormat = Strings.Get("ContinuousSectionTitleFormat");
+            List<ChapterItem> chapters;
+            (doc, chapters) = await EpubDoc.OpenWithChaptersAsync(path, untitled, sectionFormat, cts.Token);
+            if (cts.Token.IsCancellationRequested)
+            {
+                doc.Dispose();
+                return;
+            }
+
+            // Commit point: the replacement opened successfully, so the previous
+            // document can now be released and every piece of UI switched over.
+            var old = _doc;
             _doc = doc;
+            old?.Dispose();
+            if (doc.SkippedEntries.Count > 0)
+                App.LogError(new InvalidOperationException(
+                    $"Skipped {doc.SkippedEntries.Count} unsafe or colliding entries while extracting \"{path}\"."));
+
             _chapterRoots = chapters;
             _navigableChapters = FlattenNavigable(chapters);
             _chapterState = chapters.Count == 0 ? ChapterLoadState.Empty : ChapterLoadState.Loaded;
             ChapterTree.ItemsSource = chapters;
             ShowChapterState(_chapterState);
+            _selectedChapter = null;
+
+            _searchHits.Clear();
+            _searchHitsQuery = null;
+            _searchHitIndex = -1;
+            SearchStatus.Text = "";
 
             _bookState = BookStateStore.LoadBook(doc.BookId) ?? new BookState
             {
@@ -139,9 +178,10 @@ public partial class MainWindow : Window
             _bookState.FilePath = path;
             _display = _bookState.Display.Clone();
             _spineIndex = Math.Clamp(_bookState.SpineIndex, 0, Math.Max(0, doc.SpineCount - 1));
-            _scrollFraction = _bookState.ScrollFraction;
+            _scrollFraction = Math.Clamp(_bookState.ScrollFraction, 0, 1);
+            _mode = _display.ViewMode;
+            UpdateModeRadios(_mode);
 
-            ApplyModeFromSettings(_display.ViewMode);
             Title = string.Format(Strings.Get("MainWindowTitleFormat"), doc.Title, Strings.Get("AppTitle"));
             MetaText.Text = string.IsNullOrWhiteSpace(doc.Author)
                 ? doc.Title
@@ -151,12 +191,28 @@ public partial class MainWindow : Window
             PageCountText.Text = string.Format(Strings.Get("ChapterCountFormat"), doc.SpineCount);
             RefreshBookmarksUi();
 
-            await ApplyViewAsync(restoreScroll: true);
+            await RequestViewAsync(new ViewRequest(_mode, _spineIndex, null, _scrollFraction, RestoreScroll: true));
+        }
+        catch (OperationCanceledException)
+        {
+            doc?.Dispose();
+            // Superseded by a newer open; that open owns the UI now.
         }
         catch (Exception ex)
         {
+            doc?.Dispose();
             App.LogError(ex);
+            // The previous book was never torn down, so simply restore its state.
+            _chapterState = prevChapterState;
+            ShowChapterState(_chapterState);
             Strings.ShowError(this, string.Format(Strings.Get("OpenFileErrorMessage"), path, ex.Message));
+        }
+        finally
+        {
+            if (ReferenceEquals(_openCts, cts))
+                _openCts = null;
+            cts.Dispose();
+            WriteAutomationState();
         }
     }
 
@@ -180,91 +236,129 @@ public partial class MainWindow : Window
         e.Data.GetData(DataFormats.FileDrop) is string[] files &&
         files.Any(f => f.EndsWith(".epub", StringComparison.OrdinalIgnoreCase));
 
-    // ---------- Modes ----------
+    // ---------- View requests ----------
+    //
+    // All document navigation funnels through a latest-request-wins pump: requests
+    // made while one is executing replace any still-pending request instead of
+    // being dropped, so rapid mode/page changes always settle on the last one.
 
-    private void Mode_Checked(object sender, RoutedEventArgs e)
+    private sealed record ViewRequest(ViewMode Mode, int Spine, string? Anchor, double Fraction, bool RestoreScroll);
+
+    private ViewRequest? _pendingView;
+    private Task? _viewPump;
+
+    private Task RequestViewAsync(ViewRequest request)
     {
-        if (!IsLoaded || _doc is null) return;
-        _mode = ReferenceEquals(sender, ModeFacing) ? ViewMode.Facing
-              : ReferenceEquals(sender, ModeContinuous) ? ViewMode.Continuous
-              : ViewMode.Single;
-        _display.ViewMode = _mode;
-        ScheduleSave();
-        _ = ApplyViewAsync(restoreScroll: false);
+        _pendingView = request;
+        if (_viewPump is null || _viewPump.IsCompleted)
+            _viewPump = RunViewPumpAsync();
+        return _viewPump;
     }
 
-    private void ApplyModeFromSettings(ViewMode mode)
+    private Task WhenNavIdleAsync() => _viewPump ?? Task.CompletedTask;
+
+    private async Task RunViewPumpAsync()
     {
-        _mode = mode;
-        switch (mode)
+        try
         {
-            case ViewMode.Facing: ModeFacing.IsChecked = true; break;
-            case ViewMode.Continuous: ModeContinuous.IsChecked = true; break;
-            default: ModeSingle.IsChecked = true; break;
+            while (_pendingView is { } request)
+            {
+                _pendingView = null;
+                await ExecuteViewAsync(request);
+            }
         }
-    }
-
-    private void SetMode(ViewMode mode)
-    {
-        switch (mode)
+        catch (Exception ex)
         {
-            case ViewMode.Facing: ModeFacing.IsChecked = true; break;
-            case ViewMode.Continuous: ModeContinuous.IsChecked = true; break;
-            default: ModeSingle.IsChecked = true; break;
+            App.LogError(ex);
+        }
+        finally
+        {
+            WriteAutomationState();
         }
     }
 
     /// <summary>Facing pairs: [0], [1,2], [3,4], …</summary>
     private static int FacingGroupStart(int spine) => spine == 0 ? 0 : (spine % 2 == 1 ? spine : spine - 1);
 
-    private async Task ApplyViewAsync(bool restoreScroll)
+    private async Task ExecuteViewAsync(ViewRequest request)
     {
         if (_doc is null || _left is null || _right is null) return;
-        if (_navigating) return;
-        _navigating = true;
+
+        _mode = request.Mode;
+        _spineIndex = Math.Clamp(request.Spine, 0, Math.Max(0, _doc.SpineCount - 1));
+        _scrollFraction = request.RestoreScroll ? Math.Clamp(request.Fraction, 0, 1) : 0;
+        UpdateModeRadios(_mode);
+
+        _left.SetDisplaySettings(_display);
+        _right.SetDisplaySettings(_display);
+
+        if (_mode == ViewMode.Facing)
+        {
+            RightCol.Width = new GridLength(1, GridUnitType.Star);
+            WebRight.Visibility = Visibility.Visible;
+            int start = FacingGroupStart(_spineIndex);
+            _spineIndex = start;
+            await _left.NavigateSpineAsync(_doc, start, request.Anchor, _scrollFraction);
+            if (start != 0 && start + 1 < _doc.SpineCount)
+                await _right.NavigateSpineAsync(_doc, start + 1);
+            else
+                await _right.NavigateBlankAsync();
+        }
+        else
+        {
+            RightCol.Width = new GridLength(0);
+            WebRight.Visibility = Visibility.Collapsed;
+            if (_mode == ViewMode.Continuous)
+                await _left.NavigateContinuousAsync(_doc, _spineIndex, _scrollFraction);
+            else
+                await _left.NavigateSpineAsync(_doc, _spineIndex, request.Anchor, _scrollFraction);
+        }
+
+        PageBox.Text = (_spineIndex + 1).ToString();
+        UpdateProgress();
+        SyncChapterSelection();
+    }
+
+    // ---------- Modes ----------
+
+    private void Mode_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!IsLoaded || _doc is null || _suppressModeEvents) return;
+        var mode = ReferenceEquals(sender, ModeFacing) ? ViewMode.Facing
+                 : ReferenceEquals(sender, ModeContinuous) ? ViewMode.Continuous
+                 : ViewMode.Single;
+        _display.ViewMode = mode;
+        ScheduleSave();
+        // Keep the reading position when flipping between layouts.
+        _ = RequestViewAsync(new ViewRequest(mode, _spineIndex, null, _scrollFraction, RestoreScroll: true));
+    }
+
+    private void UpdateModeRadios(ViewMode mode)
+    {
+        _suppressModeEvents = true;
         try
         {
-            _left.SetDisplaySettings(_display);
-            _right.SetDisplaySettings(_display);
-
-            if (_mode == ViewMode.Facing)
+            switch (mode)
             {
-                RightCol.Width = new GridLength(1, GridUnitType.Star);
-                WebRight.Visibility = Visibility.Visible;
-                int start = FacingGroupStart(_spineIndex);
-                _spineIndex = start;
-                double scroll = restoreScroll ? _scrollFraction : 0;
-                await _left.NavigateSpineAsync(_doc, start, _pendingAnchor, scroll);
-                _pendingAnchor = null;
-                if (start != 0 && start + 1 < _doc.SpineCount)
-                    await _right.NavigateSpineAsync(_doc, start + 1);
-                else if (_right.Control.CoreWebView2 is not null)
-                    _right.Control.CoreWebView2.Navigate("about:blank");
+                case ViewMode.Facing: ModeFacing.IsChecked = true; break;
+                case ViewMode.Continuous: ModeContinuous.IsChecked = true; break;
+                default: ModeSingle.IsChecked = true; break;
             }
-            else
-            {
-                RightCol.Width = new GridLength(0);
-                WebRight.Visibility = Visibility.Collapsed;
-                double scroll = restoreScroll ? _scrollFraction : 0;
-                if (_mode == ViewMode.Continuous)
-                {
-                    await _left.NavigateContinuousAsync(_doc, _spineIndex, scroll);
-                    _pendingAnchor = null;
-                }
-                else
-                {
-                    await _left.NavigateSpineAsync(_doc, _spineIndex, _pendingAnchor, scroll);
-                    _pendingAnchor = null;
-                }
-            }
-
-            PageBox.Text = (_spineIndex + 1).ToString();
-            UpdateProgress();
-            SyncChapterSelection();
         }
         finally
         {
-            _navigating = false;
+            _suppressModeEvents = false;
+        }
+    }
+
+    private void SetMode(ViewMode mode)
+    {
+        // Keyboard shortcut path: flips the radio, which raises Mode_Checked.
+        switch (mode)
+        {
+            case ViewMode.Facing: ModeFacing.IsChecked = true; break;
+            case ViewMode.Continuous: ModeContinuous.IsChecked = true; break;
+            default: ModeSingle.IsChecked = true; break;
         }
     }
 
@@ -281,9 +375,7 @@ public partial class MainWindow : Window
         {
             var result = await _left.PageTurnAsync(direction);
             if (result is "scrolled") { ScheduleSave(); return; }
-            // Fall through to chapter step at ends of continuous scroll within current viewport
-            // Continuous uses iframes; page-end means move spine highlight only via scroll message.
-            // Still allow spine jump for Home/End style large moves via GoToSpine.
+            // A frame that failed to load can stall the scroll; jump the spine instead.
             if (direction > 0 && _spineIndex < _doc.SpineCount - 1)
                 await GoToSpineAsync(_spineIndex + 1);
             else if (direction < 0 && _spineIndex > 0)
@@ -320,11 +412,8 @@ public partial class MainWindow : Window
     {
         if (_doc is null) return;
         spine = Math.Clamp(spine, 0, _doc.SpineCount - 1);
-        _spineIndex = spine;
-        _scrollFraction = scroll;
-        _pendingAnchor = anchor;
-        PageBox.Text = (spine + 1).ToString();
-        await ApplyViewAsync(restoreScroll: scroll > 0.001 || anchor is not null);
+        bool restore = scroll > 0.001 || anchor is not null;
+        await RequestViewAsync(new ViewRequest(_mode, spine, anchor, scroll, restore));
         if (syncChapters) SyncChapterSelection();
         ScheduleSave();
         UpdateProgress();
@@ -382,6 +471,8 @@ public partial class MainWindow : Window
             ChapterPane.Visibility = Visibility.Collapsed;
             ChapterSplitter.Visibility = Visibility.Collapsed;
         }
+
+        WriteAutomationState();
     }
 
     private static List<ChapterItem> FlattenNavigable(List<ChapterItem> roots)
@@ -539,6 +630,7 @@ public partial class MainWindow : Window
         _left?.SetDisplaySettings(_display);
         _right?.SetDisplaySettings(_display);
         ScheduleSave();
+        WriteAutomationState();
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)
@@ -559,11 +651,15 @@ public partial class MainWindow : Window
         menu.Items.Add(new Separator());
         menu.Items.Add(MakeMenu(Strings.Get("ResetText"), () => { _display.ResetTypography(); PushDisplay(); }));
         menu.Items.Add(new Separator());
-        menu.Items.Add(MakeMenu(Strings.Get("About"), () =>
-            MessageBox.Show(this, Strings.Get("AboutMessage"), Strings.Get("AppTitle"),
-                MessageBoxButton.OK, MessageBoxImage.Information)));
+        menu.Items.Add(MakeMenu(Strings.Get("About"), ShowAboutWindow));
         menu.PlacementTarget = sender as UIElement;
         menu.IsOpen = true;
+    }
+
+    private void ShowAboutWindow()
+    {
+        var about = new AboutWindow { Owner = this };
+        about.ShowDialog();
     }
 
     private static MenuItem MakeMenu(string header, Action action)
@@ -610,15 +706,30 @@ public partial class MainWindow : Window
 
     private async Task RunSearchAsync(bool forward)
     {
-        if (_doc is null || _left is null) return;
+        if (_doc is null || _left is null || _right is null) return;
         var q = SearchBox.Text?.Trim() ?? "";
         if (q.Length == 0) return;
 
-        // Prefer in-page find first on current chapter
-        if (await _left.FindAsync(q, forward))
+        await WhenNavIdleAsync();
+
+        // Prefer in-page find first on the currently displayed chapter panes.
+        // The continuous view keeps chapters in child frames, which in-page find
+        // cannot reach, so it goes straight to the book index below.
+        if (_mode != ViewMode.Continuous)
         {
-            SearchStatus.Text = "";
-            return;
+            if (await _left.FindAsync(q, forward))
+            {
+                SearchStatus.Text = "";
+                WriteAutomationState();
+                return;
+            }
+            if (_mode == ViewMode.Facing && WebRight.Visibility == Visibility.Visible &&
+                await _right.FindAsync(q, forward))
+            {
+                SearchStatus.Text = "";
+                WriteAutomationState();
+                return;
+            }
         }
 
         if (_searchHits.Count == 0 || !string.Equals(_searchHitsQuery, q, StringComparison.Ordinal))
@@ -631,6 +742,7 @@ public partial class MainWindow : Window
         if (_searchHits.Count == 0)
         {
             SearchStatus.Text = Strings.Get("NoSearchResults");
+            WriteAutomationState();
             return;
         }
 
@@ -641,19 +753,46 @@ public partial class MainWindow : Window
             _searchHitIndex = _searchHitIndex <= 0 ? _searchHits.Count - 1 : _searchHitIndex - 1;
 
         var hit = _searchHits[_searchHitIndex];
-        await GoToSpineAsync(hit.SpineIndex);
-        await _left.FindAsync(q, true);
-    }
 
-    private string? _searchHitsQuery;
-    private string? _pendingAnchor;
+        if (_mode == ViewMode.Continuous)
+        {
+            // Highlight inside the chapter frame; the frame is loaded on demand.
+            var found = await _left.FindInSpineAsync(hit.SpineIndex, q);
+            if (!found)
+                await _left.ContinuousGoToAsync(hit.SpineIndex, 0);
+            _spineIndex = hit.SpineIndex;
+            PageBox.Text = (_spineIndex + 1).ToString();
+            SyncChapterSelection();
+            ScheduleSave();
+            UpdateProgress();
+        }
+        else
+        {
+            await GoToSpineAsync(hit.SpineIndex);
+            // In facing mode the hit may sit in the right-hand pane.
+            var host = _mode == ViewMode.Facing && hit.SpineIndex != _spineIndex ? _right : _left;
+            await host.FindAsync(q, true);
+        }
+
+        WriteAutomationState();
+    }
 
     // ---------- Bookmarks ----------
 
     private async Task ToggleBookmarkAsync()
     {
         if (_doc is null || _bookState is null || _left is null) return;
-        _scrollFraction = await _left.GetScrollFractionAsync();
+
+        if (_mode == ViewMode.Continuous)
+        {
+            var (spine, fraction) = await _left.GetSpinePosAsync();
+            _spineIndex = Math.Clamp(spine, 0, Math.Max(0, _doc.SpineCount - 1));
+            _scrollFraction = fraction;
+        }
+        else
+        {
+            _scrollFraction = await _left.GetScrollFractionAsync();
+        }
 
         var existing = _bookState.Bookmarks.FindIndex(b =>
             b.SpineIndex == _spineIndex && Math.Abs(b.ScrollFraction - _scrollFraction) < 0.05);
@@ -714,34 +853,47 @@ public partial class MainWindow : Window
         BookStateStore.SaveBook(_bookState);
     }
 
-    private void OnHostMessage(string json)
+    private void OnHostMessage(ReadingHost host, HostMessage msg)
     {
-        try
+        switch (msg.Type)
         {
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            var type = root.TryGetProperty("type", out var t) ? t.GetString() : null;
-            if (type == "scroll" && root.TryGetProperty("fraction", out var f))
-            {
-                _scrollFraction = f.GetDouble();
-                UpdateProgress();
-                ScheduleSave();
-            }
-            else if (type == "ready")
-            {
-                _left?.SetDisplaySettings(_display);
-                _right?.SetDisplaySettings(_display);
-            }
-            else if (type == "step" && root.TryGetProperty("direction", out var d))
-            {
+            case "scroll":
+                // Only the primary pane's position is the reading position; the
+                // facing right pane must not overwrite it, and the continuous
+                // view reports its logical position through "spinepos" instead.
+                if (ReferenceEquals(host, _left) && _mode != ViewMode.Continuous)
+                {
+                    _scrollFraction = msg.Fraction;
+                    UpdateProgress();
+                    ScheduleSave();
+                }
+                break;
+
+            case "spinepos":
+                if (ReferenceEquals(host, _left) && _mode == ViewMode.Continuous && _doc is not null)
+                {
+                    int spine = Math.Clamp(msg.Spine, 0, Math.Max(0, _doc.SpineCount - 1));
+                    if (spine != _spineIndex)
+                    {
+                        _spineIndex = spine;
+                        PageBox.Text = (spine + 1).ToString();
+                        SyncChapterSelection();
+                    }
+                    _scrollFraction = msg.Fraction;
+                    UpdateProgress();
+                    ScheduleSave();
+                }
+                break;
+
+            case "ready":
+                host.SetDisplaySettings(_display);
+                break;
+
+            case "step":
                 // Clicks and keys inside the WebView both arrive here, so they
                 // share StepAsync's scroll-then-advance behaviour.
-                _ = StepAsync(d.GetInt32() < 0 ? -1 : +1);
-            }
-        }
-        catch
-        {
-            // ignore
+                _ = StepAsync(msg.Direction);
+                break;
         }
     }
 
@@ -791,6 +943,43 @@ public partial class MainWindow : Window
             _fullscreen = false;
             if (_preFsChapterVisible)
                 SetChapterPaneVisible(true);
+        }
+
+        WriteAutomationState();
+    }
+
+    // ---------- Automation ----------
+
+    /// <summary>
+    /// With --statefile=&lt;path&gt; on the command line, mirrors the UI state to a
+    /// small JSON file so scripted captures can wait for real readiness instead
+    /// of sleeping. Inert in normal use.
+    /// </summary>
+    private void WriteAutomationState()
+    {
+        var file = App.AutomationStateFile;
+        if (file is null) return;
+        try
+        {
+            var state = new
+            {
+                book = _doc?.Title,
+                mode = _mode.ToString(),
+                spine = _spineIndex,
+                spineCount = _doc?.SpineCount ?? 0,
+                theme = _display.Theme.ToString(),
+                fontScale = _display.FontScale,
+                navIdle = _viewPump is null || _viewPump.IsCompleted,
+                searchStatus = SearchStatus.Text,
+                fullscreen = _fullscreen,
+                chapterPane = _chapterPaneVisible,
+                timestamp = DateTime.UtcNow.ToString("O")
+            };
+            File.WriteAllText(file, System.Text.Json.JsonSerializer.Serialize(state));
+        }
+        catch
+        {
+            // Automation mirroring must never affect the app.
         }
     }
 

@@ -122,12 +122,17 @@ internal static class ReaderInject
             const a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
             if (!a) return;
             const href = a.getAttribute('href') || '';
-            if (href.startsWith('#') || href.startsWith('https://epub.local/') || href.startsWith('/'))
+            // Allowlist, not blocklist: only fragments, book-relative paths, and
+            // the book's own virtual host may navigate. Everything else —
+            // http(s), mailto, javascript:, vbscript:, data:, file:, custom
+            // schemes — is inert inside the reader.
+            if (href.startsWith('#') || href.startsWith('/') ||
+                href.toLowerCase().startsWith('https://epub.local/'))
               return;
-            if (/^https?:/i.test(href) || /^mailto:/i.test(href)) {
-              ev.preventDefault();
-              post({ type: 'blocked-nav', href });
-            }
+            if (/^[a-z][a-z0-9+.-]*:/i.test(href) === false)
+              return; // scheme-less relative path within the book
+            ev.preventDefault();
+            ev.stopPropagation();
           }, true);
 
           // ----- Click / key page turning -----

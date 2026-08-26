@@ -58,8 +58,17 @@ public sealed class EpubDoc : IDisposable
 
     public List<ChapterItem> GetChapters() => _chapters ?? new List<ChapterItem>();
 
-    public static async Task<(EpubDoc Doc, List<ChapterItem> Chapters)> OpenWithChaptersAsync(
-        string path, string untitledLabel, CancellationToken ct = default)
+    /// <summary>Entries skipped during extraction because their paths were unsafe or collided.</summary>
+    public IReadOnlyList<string> SkippedEntries { get; private set; } = Array.Empty<string>();
+
+    public static Task<(EpubDoc Doc, List<ChapterItem> Chapters)> OpenWithChaptersAsync(
+        string path, string untitledLabel, string? sectionTitleFormat = null, CancellationToken ct = default) =>
+        // Parsing, extraction, and text conversion are CPU/IO heavy; keep all of it
+        // off the caller's (dispatcher) thread so large books cannot freeze the UI.
+        Task.Run(() => OpenWithChaptersCoreAsync(path, untitledLabel, sectionTitleFormat, ct), ct);
+
+    private static async Task<(EpubDoc Doc, List<ChapterItem> Chapters)> OpenWithChaptersCoreAsync(
+        string path, string untitledLabel, string? sectionTitleFormat, CancellationToken ct)
     {
         path = Path.GetFullPath(path);
         var book = await EpubReader.ReadBookAsync(path);
@@ -70,22 +79,41 @@ public sealed class EpubDoc : IDisposable
 
         try
         {
+            var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var skipped = new List<string>();
             foreach (var file in book.Content.AllFiles.Local)
             {
                 ct.ThrowIfCancellationRequested();
-                var dest = MapToDisk(extractRoot, file.FilePath);
-                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-
-                if (file is EpubLocalTextContentFile text)
+                if (!TryMapToDisk(extractRoot, file.FilePath, out var dest) || !written.Add(dest))
                 {
-                    var content = IsHtmlLike(file.FilePath, text.ContentMimeType)
-                        ? StripScripts(text.Content)
-                        : text.Content;
-                    await File.WriteAllTextAsync(dest, content, Encoding.UTF8, ct);
+                    skipped.Add(file.FilePath);
+                    continue;
                 }
-                else if (file is EpubLocalByteContentFile bytes)
+
+                try
                 {
-                    await File.WriteAllBytesAsync(dest, bytes.Content, ct);
+                    Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                    if (file is EpubLocalTextContentFile text)
+                    {
+                        var content = IsHtmlLike(file.FilePath, text.ContentMimeType)
+                            ? StripScripts(text.Content)
+                            : text.Content;
+                        await File.WriteAllTextAsync(dest, content, Encoding.UTF8, ct);
+                    }
+                    else if (file is EpubLocalByteContentFile bytes)
+                    {
+                        await File.WriteAllBytesAsync(dest, bytes.Content, ct);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    // A single hostile or malformed entry (file/directory collision,
+                    // reserved name the OS rejects) must not take the whole book down.
+                    skipped.Add(file.FilePath);
                 }
             }
 
@@ -94,6 +122,7 @@ public sealed class EpubDoc : IDisposable
             var pathToSpine = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             foreach (var item in book.ReadingOrder)
             {
+                ct.ThrowIfCancellationRequested();
                 var rel = NormalizePath(item.FilePath);
                 pathToSpine[rel] = spinePaths.Count;
                 // Also index by filename-only for loose matches
@@ -102,10 +131,11 @@ public sealed class EpubDoc : IDisposable
                 spineText.Add(HtmlToPlainText(item.Content));
             }
 
-            WriteContinuousDocument(extractRoot, spinePaths);
-
             var order = 0;
             var chapters = BuildChapters(book.Navigation, pathToSpine, untitledLabel, depth: 0, parent: null, ref order);
+
+            var spineTitles = BuildSpineTitles(spinePaths.Count, chapters, sectionTitleFormat ?? "Section {0}");
+            WriteContinuousDocument(extractRoot, spinePaths, spineTitles);
 
             var bookId = ComputeBookId(path, book);
             var doc = new EpubDoc(
@@ -119,7 +149,8 @@ public sealed class EpubDoc : IDisposable
                 spinePaths,
                 spineText)
             {
-                _chapters = chapters
+                _chapters = chapters,
+                SkippedEntries = skipped
             };
 
             return (doc, chapters);
@@ -129,6 +160,26 @@ public sealed class EpubDoc : IDisposable
             TryDeleteDirectory(extractRoot);
             throw;
         }
+    }
+
+    /// <summary>Per-spine display titles: the first chapter that points at the spine item, else a numbered fallback.</summary>
+    internal static string[] BuildSpineTitles(int spineCount, List<ChapterItem> chapters, string sectionTitleFormat)
+    {
+        var titles = new string[spineCount];
+        var stack = new Stack<ChapterItem>();
+        for (int i = chapters.Count - 1; i >= 0; i--)
+            stack.Push(chapters[i]);
+        while (stack.Count > 0)
+        {
+            var node = stack.Pop();
+            if (node.SpineIndex is int s && s >= 0 && s < spineCount)
+                titles[s] ??= node.Title;
+            for (int i = node.Children.Count - 1; i >= 0; i--)
+                stack.Push(node.Children[i]);
+        }
+        for (int i = 0; i < spineCount; i++)
+            titles[i] ??= string.Format(sectionTitleFormat, i + 1);
+        return titles;
     }
 
     public string GetSpineUrl(int spineIndex, string? anchor = null)
@@ -244,47 +295,186 @@ public sealed class EpubDoc : IDisposable
         return list;
     }
 
-    private static void WriteContinuousDocument(string extractRoot, List<string> spinePaths)
+    internal static string EscapeHtmlAttribute(string value) =>
+        value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
+
+    private static void WriteContinuousDocument(string extractRoot, List<string> spinePaths, string[] spineTitles)
     {
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
         sb.AppendLine("<html><head><meta charset=\"utf-8\"/>");
         sb.AppendLine("<style>");
         sb.AppendLine("html,body{margin:0;padding:0;background:transparent;}");
-        sb.AppendLine("iframe.elr-spine{width:100%;border:0;display:block;min-height:40vh;}");
+        sb.AppendLine("iframe.elr-spine{width:100%;border:0;display:block;height:60vh;}");
         sb.AppendLine("section.elr-section{margin:0;padding:0;}");
         sb.AppendLine("</style></head><body>");
 
         for (int i = 0; i < spinePaths.Count; i++)
         {
-            var src = spinePaths[i].Replace("\"", "&quot;");
+            var src = EscapeHtmlAttribute(spinePaths[i]);
+            var title = EscapeHtmlAttribute(spineTitles[i]);
             sb.AppendLine($"<section class=\"elr-section\" id=\"spine-{i}\" data-spine=\"{i}\">");
-            sb.AppendLine($"<iframe class=\"elr-spine\" title=\"spine-{i}\" src=\"/{src}\" scrolling=\"no\"></iframe>");
+            // data-src, not src: frames load on demand as they approach the viewport.
+            sb.AppendLine($"<iframe class=\"elr-spine\" title=\"{title}\" data-src=\"/{src}\" scrolling=\"no\"></iframe>");
             sb.AppendLine("</section>");
         }
 
         sb.AppendLine("<script>");
         sb.AppendLine("""
             (function(){
+              var spineFrames = Array.prototype.slice.call(document.querySelectorAll('iframe.elr-spine'));
+              var sections = Array.prototype.slice.call(document.querySelectorAll('section.elr-section'));
+              var pin = null; // {spine, fraction, expires} — hold position while nearby frames load
+
+              function scroller(){ return document.scrollingElement || document.documentElement; }
+
               function resize(f){
                 try {
-                  var doc = f.contentDocument || f.contentWindow.document;
-                  if (!doc) return;
+                  var doc = f.contentDocument;
+                  if (!doc || !doc.documentElement) return;
                   var h = Math.max(
                     doc.documentElement.scrollHeight,
                     doc.body ? doc.body.scrollHeight : 0,
                     200);
-                  f.style.height = h + 'px';
+                  if (Math.abs((parseFloat(f.style.height) || 0) - h) > 1) {
+                    f.style.height = h + 'px';
+                    reapplyPin();
+                  }
                 } catch (e) {}
               }
-              function resizeAll(){
-                document.querySelectorAll('iframe.elr-spine').forEach(resize);
+
+              function reapplyPin(){
+                if (!pin || performance.now() > pin.expires) { pin = null; return; }
+                var sec = sections[pin.spine];
+                if (!sec) return;
+                scroller().scrollTop = sec.offsetTop + pin.fraction * Math.max(0, sec.offsetHeight);
               }
-              document.querySelectorAll('iframe.elr-spine').forEach(function(f){
-                f.addEventListener('load', function(){ resize(f); });
+
+              function loadFrame(f){
+                if (!f || f.getAttribute('src')) return;
+                f.src = f.dataset.src;
+              }
+
+              spineFrames.forEach(function(f){
+                f.addEventListener('load', function(){
+                  resize(f);
+                  try {
+                    // Push the parent's current display settings into the new frame.
+                    if (f.contentWindow && f.contentWindow.__elrApply)
+                      f.contentWindow.__elrApply(window.__elrLastSettings || null);
+                  } catch (e) {}
+                  try {
+                    var doc = f.contentDocument;
+                    if (doc && typeof ResizeObserver === 'function') {
+                      var ro = new ResizeObserver(function(){ resize(f); });
+                      ro.observe(doc.documentElement);
+                      if (doc.body) ro.observe(doc.body);
+                    }
+                    if (f.contentWindow) f.contentWindow.addEventListener('resize', function(){ resize(f); });
+                  } catch (e) {}
+                });
               });
-              window.addEventListener('load', resizeAll);
-              setInterval(resizeAll, 1000);
+
+              var io = new IntersectionObserver(function(entries){
+                entries.forEach(function(en){
+                  if (en.isIntersecting)
+                    loadFrame(en.target.querySelector('iframe.elr-spine'));
+                });
+              }, { rootMargin: '150% 0px 150% 0px' });
+              sections.forEach(function(s){ io.observe(s); });
+
+              // Theme/typography changes applied to this parent document flow into
+              // every loaded chapter frame as well.
+              var baseApply = window.__elrApply;
+              if (baseApply) {
+                window.__elrApply = function(s){
+                  baseApply(s);
+                  var eff = window.__elrLastSettings || null;
+                  spineFrames.forEach(function(f){
+                    try {
+                      if (f.getAttribute('src') && f.contentWindow && f.contentWindow.__elrApply)
+                        f.contentWindow.__elrApply(eff);
+                    } catch (e) {}
+                  });
+                };
+              }
+
+              window.__elrEnsureSpineLoaded = function(n){ loadFrame(spineFrames[n]); };
+
+              window.__elrIsSpineLoaded = function(n){
+                var f = spineFrames[n];
+                try {
+                  return !!(f && f.getAttribute('src') && f.contentDocument &&
+                            f.contentDocument.readyState === 'complete');
+                } catch (e) { return false; }
+              };
+
+              window.__elrSpinePos = function(){
+                var y = scroller().scrollTop + 8;
+                var cur = 0;
+                for (var i = 0; i < sections.length; i++) {
+                  if (sections[i].offsetTop <= y) cur = i; else break;
+                }
+                var sec = sections[cur];
+                var frac = Math.max(0, Math.min(1, (y - sec.offsetTop) / Math.max(1, sec.offsetHeight)));
+                return { spine: cur, fraction: frac };
+              };
+
+              window.__elrContinuousGoTo = function(n, frac){
+                if (n < 0 || n >= sections.length) return false;
+                loadFrame(spineFrames[n]);
+                frac = (typeof frac === 'number' && isFinite(frac)) ? Math.max(0, Math.min(1, frac)) : 0;
+                pin = { spine: n, fraction: frac, expires: performance.now() + 2500 };
+                reapplyPin();
+                return true;
+              };
+
+              window.__elrFindInSpine = function(n, query, forward){
+                var f = spineFrames[n];
+                if (!f || !query) return false;
+                try {
+                  var w = f.contentWindow;
+                  if (!w || !w.find) return false;
+                  var found = w.find(query, false, !forward, true, false, false, false);
+                  if (!found) {
+                    try { w.getSelection().removeAllRanges(); } catch (e) {}
+                    found = w.find(query, false, !forward, true, false, false, false);
+                  }
+                  if (found) {
+                    var offset = 0;
+                    try {
+                      var sel = w.getSelection();
+                      if (sel && sel.rangeCount) offset = sel.getRangeAt(0).getBoundingClientRect().top;
+                    } catch (e) {}
+                    var se = scroller();
+                    pin = null;
+                    se.scrollTop = Math.max(0, f.getBoundingClientRect().top + se.scrollTop + offset - se.clientHeight * 0.3);
+                  }
+                  return found;
+                } catch (e) { return false; }
+              };
+
+              // Report the logical reading position (spine + fraction inside it)
+              // so the host can persist something stable under lazy loading.
+              var posTimer = null;
+              window.addEventListener('scroll', function(){
+                if (posTimer) clearTimeout(posTimer);
+                posTimer = setTimeout(function(){
+                  try {
+                    var p = window.__elrSpinePos();
+                    if (window.chrome && window.chrome.webview)
+                      window.chrome.webview.postMessage({ type: 'spinepos', spine: p.spine, fraction: p.fraction });
+                  } catch (e) {}
+                }, 120);
+              }, { passive: true });
+
+              function onHash(){
+                var m = /^#spine-(\d+)$/.exec(location.hash || '');
+                if (m) window.__elrContinuousGoTo(parseInt(m[1], 10), 0);
+              }
+              window.addEventListener('hashchange', onHash);
+              if (document.readyState !== 'loading') onHash();
+              else document.addEventListener('DOMContentLoaded', onHash);
             })();
             """);
         sb.AppendLine("</script></body></html>");
@@ -303,10 +493,50 @@ public sealed class EpubDoc : IDisposable
         return Convert.ToHexString(hash)[..32].ToLowerInvariant();
     }
 
-    private static string MapToDisk(string extractRoot, string filePath)
+    private static readonly HashSet<string> ReservedDeviceNames = new(StringComparer.OrdinalIgnoreCase)
     {
-        var norm = NormalizePath(filePath).Replace('/', Path.DirectorySeparatorChar);
-        return Path.Combine(extractRoot, norm);
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    };
+
+    /// <summary>
+    /// Maps an EPUB entry path to a destination that is guaranteed to resolve under
+    /// the extraction root. Rejects rooted paths, parent escapes, empty/dot segments,
+    /// drive or stream separators, reserved device names, our generated continuous
+    /// file name, and anything the path APIs cannot normalize.
+    /// </summary>
+    internal static bool TryMapToDisk(string extractRoot, string entryPath, out string dest)
+    {
+        dest = "";
+        if (string.IsNullOrWhiteSpace(entryPath)) return false;
+
+        var norm = NormalizePath(entryPath);
+        if (norm.Length == 0 || norm.Contains(':')) return false;
+        if (string.Equals(norm, ContinuousFileName, StringComparison.OrdinalIgnoreCase)) return false;
+
+        foreach (var segment in norm.Split('/'))
+        {
+            if (segment.Length == 0 || segment is "." or "..") return false;
+            if (segment[^1] is '.' or ' ') return false;
+            var stem = segment.Split('.')[0];
+            if (ReservedDeviceNames.Contains(stem)) return false;
+        }
+
+        try
+        {
+            if (Path.IsPathRooted(norm)) return false;
+            var rootFull = Path.GetFullPath(extractRoot);
+            var combined = Path.GetFullPath(Path.Combine(rootFull, norm.Replace('/', Path.DirectorySeparatorChar)));
+            if (!combined.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                return false;
+            dest = combined;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     internal static string NormalizePath(string path) =>
