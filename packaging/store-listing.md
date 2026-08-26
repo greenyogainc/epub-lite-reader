@@ -10,7 +10,34 @@ across all listings):
 
 - **Category**: Books & Reference
 - **Copyright and trademark info**: `© 2026 Green Yoga Inc`
-- **Website / Support contact**: as used for pdf-lite-viewer
+- **Website**: `https://greenyogainc.com/`
+- **Support contact info**: `https://greenyogainc.com/contact/`
+- **Privacy policy URL**: `https://greenyogainc.com/privacy/`
+
+Privacy boundary (also reflected in the descriptions below): the reader itself
+never connects to the internet — book rendering is fully local and outbound
+requests from book content are blocked. The only network feature is the
+optional **Contact support** page inside the About window, which loads
+`https://greenyogainc.com/contact/` in an embedded view *only after the user
+explicitly asks for it*, restricted to `greenyogainc.com` and
+`api.greenyogainc.com` (analytics and all other third-party hosts are blocked).
+
+---
+
+## What's new in 1.0.4 (en-US)
+
+```
+• Reliability: switching books now fully resets search results, restoring your saved reading position works in every view mode, and rapid view-mode changes always land on the mode you picked
+• Search now finds and highlights matches in Scroll (continuous) mode, and in both pages of the Facing view
+• Stronger offline isolation for EPUB content: book files can no longer trigger any network request, and hardened handling of malformed or hostile EPUB archives
+• New About window with an accessible, keyboard-friendly design, license details, and an opt-in Contact support page (loads greenyogainc.com only when you choose)
+• Large books open without freezing the window, and Scroll mode loads chapters on demand instead of all at once
+• Accessibility: all toolbar controls now expose localized names to screen readers, and the toolbar adapts to narrow windows instead of clipping
+• Reading position, bookmarks, and settings are now saved crash-safely
+```
+
+(Localized "What's new" text for the other 13 languages is in
+`submission-1.0.4/whats-new/` once generated; keep every claim identical.)
 
 ---
 
@@ -31,7 +58,8 @@ FEATURES
 • Bookmarks, and automatic memory of your last reading position per book
 • Open via file dialog, drag-and-drop, or double-click a .epub file
 • Print the current chapter through the standard Windows print dialog
-• Built-in security: scripts embedded in EPUB files are stripped, and external network navigation is blocked
+• Built-in security: scripts embedded in EPUB files are stripped, and book content can make no network request at all
+• Optional Contact support page in the About window — it loads the Green Yoga website only when you explicitly choose; the reader itself stays fully offline
 
 EPUB Lite Reader supports EPUB 2 and EPUB 3 files. It's freeware, released under the MIT License, by Green Yoga Inc — the same publisher behind PDF Lite Viewer.
 
