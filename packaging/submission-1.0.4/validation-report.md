@@ -1,6 +1,6 @@
 # Validation report — EPUB Lite Reader 1.0.4
 
-Source revision: **afbe075e9af195b4d49ca81032ab435b83e48e64** (branch `claude/release-1.0.4`)
+Source revision: **fc489097f7e4614203349942d7368e5fc299eaae** (branch `claude/release-1.0.4`)
 Toolchain: .NET SDK 10.0.111 · Windows 11 Pro 26200 · Windows 10 SDK 10.0.19041.0 · WebView2 Runtime 151.0.4129.101
 
 ## Build, test, smoke — all from the release revision
@@ -29,14 +29,14 @@ manifest-traversal EPUB proving extraction cannot escape its temp root.
 | Property | win-x64 | win-arm64 |
 |---|---|---|
 | File | `packages/EpubLiteReader-1.0.4-win-x64.msix` | `packages/EpubLiteReader-1.0.4-win-arm64.msix` |
-| Size | 70,561,314 bytes | 66,039,163 bytes |
+| Size | 70,561,823 bytes | 66,039,140 bytes |
 | Identity Name | `GreenYogaInc.EPUBLiteReader` | `GreenYogaInc.EPUBLiteReader` |
 | Identity Version | `1.0.4.0` | `1.0.4.0` |
 | Publisher | `CN=1F15826A-1F07-4E59-AC9A-622A84CC59FF` | (same) |
 | ProcessorArchitecture | `x64` | `arm64` |
 | Executable | `EpubLiteReader.exe` | `EpubLiteReader.exe` |
 | Exe FileVersion | `1.0.4.0` | `1.0.4.0` |
-| Exe ProductVersion | `1.0.4+afbe075e9af195b4d49ca81032ab435b83e48e64` | (same) |
+| Exe ProductVersion | `1.0.4+fc489097f7e4614203349942d7368e5fc299eaae` | (same) |
 | File association | `.epub` | `.epub` |
 | Store/tile logos present in payload | StoreLogo, Square150x150, Square44x44, EpubFileLogo | (all present) |
 

@@ -1,7 +1,7 @@
 # EPUB Lite Reader 1.0.4 — Store submission pack
 
 Self-contained handoff for the Microsoft Store update. Built from git rev
-`afbe075e9af195b4d49ca81032ab435b83e48e64` (branch `claude/release-1.0.4`).
+`fc489097f7e4614203349942d7368e5fc299eaae` (branch `claude/release-1.0.4`).
 
 Nothing here has been uploaded or submitted — this is the manual
 Partner Center handoff only.
