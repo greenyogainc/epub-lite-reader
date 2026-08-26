@@ -2,4 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/EpubLiteReader/EpubLiteReader.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EpubLiteReader.Tests/EpubLiteReader.Tests.csproj" />
+  </Folder>
 </Solution>
