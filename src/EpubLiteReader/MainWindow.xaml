@@ -5,6 +5,7 @@
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         Title="{local:Loc AppTitle}"
         Width="1100" Height="850"
+        MinWidth="700" MinHeight="420"
         Background="#FF404040"
         AllowDrop="True"
         Drop="Window_Drop"
@@ -231,57 +232,91 @@
 
     <DockPanel>
         <Border x:Name="ToolbarHost" DockPanel.Dock="Top" Background="{StaticResource BarBg}">
-            <DockPanel Margin="8,5" LastChildFill="False">
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+            <!-- Left cluster wraps onto extra rows at narrow widths instead of
+                 clipping; the right cluster keeps its fixed right-aligned spot. -->
+            <Grid Margin="8,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <WrapPanel Grid.Column="0" Orientation="Horizontal">
                     <Button Style="{StaticResource BarButton}" Content="{local:Loc Open}" Click="Open_Click" ToolTip="{local:Loc OpenTooltip}"/>
                     <ToggleButton x:Name="ChapterToggle" Style="{StaticResource BarToggle}" Content="☰"
                                   Checked="ChapterToggle_Changed" Unchecked="ChapterToggle_Changed"
                                   ToolTip="{local:Loc ChaptersTooltip}"
                                   AutomationProperties.Name="{local:Loc Chapters}"/>
-                    <Rectangle Width="1" Fill="#FF4A4A4A" Margin="6,2"/>
+                    <Rectangle Width="1" Height="20" Fill="#FF4A4A4A" Margin="6,2" VerticalAlignment="Center"/>
                     <StackPanel Orientation="Horizontal" Style="{StaticResource NoMirror}">
-                        <Button Style="{StaticResource BarButton}" Content="◀" Click="Prev_Click" ToolTip="{local:Loc PrevPageTooltip}"/>
+                        <Button Style="{StaticResource BarButton}" Content="◀" Click="Prev_Click" ToolTip="{local:Loc PrevPageTooltip}"
+                                AutomationProperties.Name="{local:Loc PrevPageTooltip}"/>
                         <TextBox x:Name="PageBox" Width="44" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
                                  Background="#FF1E1E1E" Foreground="{StaticResource BarFg}" BorderBrush="#FF4A4A4A"
-                                 KeyDown="PageBox_KeyDown" FontSize="13"/>
+                                 KeyDown="PageBox_KeyDown" FontSize="13"
+                                 AutomationProperties.Name="{local:Loc PageBoxName}"/>
                         <TextBlock x:Name="PageCountText" Foreground="{StaticResource BarFg}"
                                    VerticalAlignment="Center" Margin="6,0" FontSize="13"/>
-                        <Button Style="{StaticResource BarButton}" Content="▶" Click="Next_Click" ToolTip="{local:Loc NextPageTooltip}"/>
+                        <Button Style="{StaticResource BarButton}" Content="▶" Click="Next_Click" ToolTip="{local:Loc NextPageTooltip}"
+                                AutomationProperties.Name="{local:Loc NextPageTooltip}"/>
                     </StackPanel>
-                    <Rectangle Width="1" Fill="#FF4A4A4A" Margin="6,2"/>
-                    <RadioButton x:Name="ModeSingle" Style="{StaticResource ModeButton}" Content="{local:Loc Single}" GroupName="mode"
-                                 IsChecked="True" Checked="Mode_Checked" ToolTip="{local:Loc SingleTooltip}"/>
-                    <RadioButton x:Name="ModeFacing" Style="{StaticResource ModeButton}" Content="{local:Loc Facing}" GroupName="mode"
-                                 Checked="Mode_Checked" ToolTip="{local:Loc FacingTooltip}"/>
-                    <RadioButton x:Name="ModeContinuous" Style="{StaticResource ModeButton}" Content="{local:Loc Scroll}" GroupName="mode"
-                                 Checked="Mode_Checked" ToolTip="{local:Loc ScrollTooltip}"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                    <Button Style="{StaticResource BarButton}" Content="A−" Click="FontOut_Click" ToolTip="{local:Loc FontOutTooltip}"/>
-                    <Button Style="{StaticResource BarButton}" Content="A+" Click="FontIn_Click" ToolTip="{local:Loc FontInTooltip}"/>
+                    <Rectangle Width="1" Height="20" Fill="#FF4A4A4A" Margin="6,2" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton x:Name="ModeSingle" Style="{StaticResource ModeButton}" Content="{local:Loc Single}" GroupName="mode"
+                                     IsChecked="True" Checked="Mode_Checked" ToolTip="{local:Loc SingleTooltip}"/>
+                        <RadioButton x:Name="ModeFacing" Style="{StaticResource ModeButton}" Content="{local:Loc Facing}" GroupName="mode"
+                                     Checked="Mode_Checked" ToolTip="{local:Loc FacingTooltip}"/>
+                        <RadioButton x:Name="ModeContinuous" Style="{StaticResource ModeButton}" Content="{local:Loc Scroll}" GroupName="mode"
+                                     Checked="Mode_Checked" ToolTip="{local:Loc ScrollTooltip}"/>
+                    </StackPanel>
+                </WrapPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                    <Button Style="{StaticResource BarButton}" Content="A−" Click="FontOut_Click" ToolTip="{local:Loc FontOutTooltip}"
+                            AutomationProperties.Name="{local:Loc FontOutTooltip}"/>
+                    <Button Style="{StaticResource BarButton}" Content="A+" Click="FontIn_Click" ToolTip="{local:Loc FontInTooltip}"
+                            AutomationProperties.Name="{local:Loc FontInTooltip}"/>
                     <Button Style="{StaticResource BarButton}" Content="{local:Loc Theme}" Click="Theme_Click" ToolTip="{local:Loc ThemeTooltip}"/>
                     <ToggleButton x:Name="SearchToggle" Style="{StaticResource BarToggle}" Content="{local:Loc Search}"
                                   Checked="SearchToggle_Changed" Unchecked="SearchToggle_Changed"
                                   ToolTip="{local:Loc SearchTooltip}"/>
-                    <Rectangle Width="1" Fill="#FF4A4A4A" Margin="6,2"/>
-                    <Button Style="{StaticResource BarButton}" Content="⚙" Click="Settings_Click" ToolTip="{local:Loc SettingsTooltip}"/>
+                    <Rectangle Width="1" Height="20" Fill="#FF4A4A4A" Margin="6,2" VerticalAlignment="Center"/>
+                    <Button Style="{StaticResource BarButton}" Content="⚙" Click="Settings_Click" ToolTip="{local:Loc SettingsTooltip}"
+                            AutomationProperties.Name="{local:Loc Settings}"/>
                     <Button Style="{StaticResource BarButton}" Content="{local:Loc Print}" Click="Print_Click" ToolTip="{local:Loc PrintTooltip}"/>
-                    <Button Style="{StaticResource BarButton}" Content="⛶" Click="Fullscreen_Click" ToolTip="{local:Loc FullscreenTooltip}"/>
+                    <Button Style="{StaticResource BarButton}" Content="⛶" Click="Fullscreen_Click" ToolTip="{local:Loc FullscreenTooltip}"
+                            AutomationProperties.Name="{local:Loc FullscreenTooltip}"/>
                 </StackPanel>
-            </DockPanel>
+            </Grid>
         </Border>
 
         <Border x:Name="SearchBar" DockPanel.Dock="Top" Background="#FF333333" Padding="8,4" Visibility="Collapsed">
             <DockPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                     <TextBlock x:Name="SearchStatus" Foreground="#FFAAAAAA" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
-                    <Button Style="{StaticResource BarButton}" Content="▲" Click="FindPrev_Click" ToolTip="{local:Loc FindPrev}"/>
-                    <Button Style="{StaticResource BarButton}" Content="▼" Click="FindNext_Click" ToolTip="{local:Loc FindNext}"/>
-                    <Button Style="{StaticResource BarButton}" Content="✕" Click="CloseSearch_Click" ToolTip="{local:Loc CloseSearch}"/>
+                    <Button Style="{StaticResource BarButton}" Content="▲" Click="FindPrev_Click" ToolTip="{local:Loc FindPrev}"
+                            AutomationProperties.Name="{local:Loc FindPrev}"/>
+                    <Button Style="{StaticResource BarButton}" Content="▼" Click="FindNext_Click" ToolTip="{local:Loc FindNext}"
+                            AutomationProperties.Name="{local:Loc FindNext}"/>
+                    <Button Style="{StaticResource BarButton}" Content="✕" Click="CloseSearch_Click" ToolTip="{local:Loc CloseSearch}"
+                            AutomationProperties.Name="{local:Loc CloseSearch}"/>
                 </StackPanel>
-                <TextBox x:Name="SearchBox" Height="26" VerticalContentAlignment="Center"
-                         Background="#FF1E1E1E" Foreground="{StaticResource BarFg}" BorderBrush="#FF4A4A4A"
-                         FontSize="13" KeyDown="SearchBox_KeyDown"/>
+                <Grid>
+                    <TextBox x:Name="SearchBox" Height="26" VerticalContentAlignment="Center"
+                             Background="#FF1E1E1E" Foreground="{StaticResource BarFg}" BorderBrush="#FF4A4A4A"
+                             FontSize="13" KeyDown="SearchBox_KeyDown"
+                             AutomationProperties.Name="{local:Loc SearchPlaceholder}"/>
+                    <TextBlock Text="{local:Loc SearchPlaceholder}" IsHitTestVisible="False"
+                               VerticalAlignment="Center" Margin="8,0" FontSize="13" Foreground="#FF808080">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
             </DockPanel>
         </Border>
 
@@ -307,7 +342,8 @@
                         <Button Style="{StaticResource BarButton}" Content="✕" Padding="6,2"
                                 HorizontalAlignment="Right" VerticalAlignment="Center"
                                 Click="ChapterClose_Click"
-                                ToolTip="{local:Loc CloseChaptersTooltip}"/>
+                                ToolTip="{local:Loc CloseChaptersTooltip}"
+                                AutomationProperties.Name="{local:Loc CloseChaptersTooltip}"/>
                     </Grid>
                     <Expander DockPanel.Dock="Bottom" Header="{local:Loc Bookmarks}" Foreground="{StaticResource BarFg}"
                               Margin="8,4" IsExpanded="False">

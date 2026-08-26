@@ -70,12 +70,26 @@ Details protokolliert unter:
   <data name="Margins" xml:space="preserve"><value>Ränder</value></data>
   <data name="ResetText" xml:space="preserve"><value>Textoptionen zurücksetzen</value></data>
   <data name="About" xml:space="preserve"><value>Über EPUB Lite Reader</value></data>
-  <data name="AboutMessage" xml:space="preserve"><value>EPUB Lite Reader
-Schnelles, klares EPUB-Lesen für Windows.
-Keine Bibliothek, kein Konto, keine Ablenkung.
-
-© 2026 Green Yoga Inc
-Freeware — MIT-Lizenz</value></data>
+  <data name="AboutWindowTitleFormat" xml:space="preserve"><value>Über {0}</value></data>
+  <data name="AboutVersionFormat" xml:space="preserve"><value>Version {0}</value></data>
+  <data name="AboutPublishedBy" xml:space="preserve"><value>Veröffentlicht von Green Yoga Inc.</value></data>
+  <data name="AboutBrandBlurb" xml:space="preserve"><value>Green Yoga Inc entwickelt durchdachte Software und digitale Werkzeuge für Lesen, Wohlbefinden und praktische Technologie.</value></data>
+  <data name="AboutWebsiteLink" xml:space="preserve"><value>Green Yoga Website</value></data>
+  <data name="AboutPrivacyLink" xml:space="preserve"><value>Datenschutzerklärung</value></data>
+  <data name="AboutLicenseLink" xml:space="preserve"><value>MIT-Lizenz</value></data>
+  <data name="AboutContactSupport" xml:space="preserve"><value>Support kontaktieren</value></data>
+  <data name="AboutClose" xml:space="preserve"><value>Schließen</value></data>
+  <data name="AboutLicenseUnavailable" xml:space="preserve"><value>Der Lizenztext konnte nicht geladen werden. Diese Anwendung wird unter der MIT-Lizenz veröffentlicht.</value></data>
+  <data name="SupportDisclosure" xml:space="preserve"><value>„Support kontaktieren" lädt die Green-Yoga-Website (greenyogainc.com) in diesem Fenster. Eine Internetverbindung ist erforderlich, und die Datenschutzerklärung der Green-Yoga-Website gilt für alle Angaben, die Sie übermitteln.</value></data>
+  <data name="SupportLoadButton" xml:space="preserve"><value>Support-Seite laden</value></data>
+  <data name="SupportOpenInBrowser" xml:space="preserve"><value>Im Webbrowser öffnen</value></data>
+  <data name="SupportEmail" xml:space="preserve"><value>Support per E-Mail kontaktieren</value></data>
+  <data name="SupportRetry" xml:space="preserve"><value>Erneut versuchen</value></data>
+  <data name="SupportLoading" xml:space="preserve"><value>Support-Seite wird geladen…</value></data>
+  <data name="SupportLoadFailed" xml:space="preserve"><value>Die Support-Seite konnte nicht geladen werden. Überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut, oder nutzen Sie eine der folgenden Optionen.</value></data>
+  <data name="SupportBack" xml:space="preserve"><value>Zurück</value></data>
+  <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>Abschnitt {0}</value></data>
+  <data name="PageBoxName" xml:space="preserve"><value>Kapitelnummer</value></data>
   <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
   <data name="BookmarkAdded" xml:space="preserve"><value>Lesezeichen hinzugefügt</value></data>
   <data name="BookmarkRemoved" xml:space="preserve"><value>Lesezeichen entfernt</value></data>

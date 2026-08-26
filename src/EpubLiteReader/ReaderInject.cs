@@ -122,12 +122,17 @@ internal static class ReaderInject
             const a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
             if (!a) return;
             const href = a.getAttribute('href') || '';
-            if (href.startsWith('#') || href.startsWith('https://epub.local/') || href.startsWith('/'))
+            // Allowlist, not blocklist: only fragments, book-relative paths, and
+            // the book's own virtual host may navigate. Everything else —
+            // http(s), mailto, javascript:, vbscript:, data:, file:, custom
+            // schemes — is inert inside the reader.
+            if (href.startsWith('#') || href.startsWith('/') ||
+                href.toLowerCase().startsWith('https://epub.local/'))
               return;
-            if (/^https?:/i.test(href) || /^mailto:/i.test(href)) {
-              ev.preventDefault();
-              post({ type: 'blocked-nav', href });
-            }
+            if (/^[a-z][a-z0-9+.-]*:/i.test(href) === false)
+              return; // scheme-less relative path within the book
+            ev.preventDefault();
+            ev.stopPropagation();
           }, true);
 
           // ----- Click / key page turning -----
@@ -167,6 +172,17 @@ internal static class ReaderInject
           document.addEventListener('keydown', (ev) => {
             if (ev.ctrlKey || ev.altKey || ev.metaKey) return;
             if (isTypingTarget(ev.target)) return;
+
+            // App-level shortcuts must keep working while the reading pane has
+            // focus, so forward them to the host instead of letting the
+            // browser swallow them.
+            if (!ev.shiftKey &&
+                (ev.key === '1' || ev.key === '2' || ev.key === '3' ||
+                 ev.key === 'F4' || ev.key === 'F11' || ev.key === 'Escape')) {
+              ev.preventDefault();
+              post({ type: 'key', key: ev.key });
+              return;
+            }
 
             let dir = 0;
             if (ev.key === ' ' || ev.key === 'Spacebar') dir = ev.shiftKey ? -1 : 1;

@@ -70,12 +70,26 @@
   <data name="Margins" xml:space="preserve"><value>الهوامش</value></data>
   <data name="ResetText" xml:space="preserve"><value>إعادة ضبط إعدادات النص</value></data>
   <data name="About" xml:space="preserve"><value>حول EPUB Lite Reader</value></data>
-  <data name="AboutMessage" xml:space="preserve"><value>EPUB Lite Reader
-قراءة EPUB سريعة ونظيفة على ويندوز.
-بلا مكتبة، بلا حساب، بلا تشتيت.
-
-© 2026 Green Yoga Inc
-برنامج مجاني — رخصة MIT</value></data>
+  <data name="AboutWindowTitleFormat" xml:space="preserve"><value>حول {0}</value></data>
+  <data name="AboutVersionFormat" xml:space="preserve"><value>الإصدار {0}</value></data>
+  <data name="AboutPublishedBy" xml:space="preserve"><value>نشرته شركة Green Yoga Inc.</value></data>
+  <data name="AboutBrandBlurb" xml:space="preserve"><value>تبتكر شركة Green Yoga Inc برمجيات وأدوات رقمية مدروسة للقراءة والعافية والتقنية العملية.</value></data>
+  <data name="AboutWebsiteLink" xml:space="preserve"><value>موقع Green Yoga الإلكتروني</value></data>
+  <data name="AboutPrivacyLink" xml:space="preserve"><value>سياسة الخصوصية</value></data>
+  <data name="AboutLicenseLink" xml:space="preserve"><value>رخصة MIT</value></data>
+  <data name="AboutContactSupport" xml:space="preserve"><value>التواصل مع الدعم</value></data>
+  <data name="AboutClose" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="AboutLicenseUnavailable" xml:space="preserve"><value>تعذّر تحميل نص الترخيص. يصدر هذا التطبيق بموجب رخصة MIT.</value></data>
+  <data name="SupportDisclosure" xml:space="preserve"><value>يؤدي التواصل مع الدعم إلى تحميل موقع Green Yoga الإلكتروني (greenyogainc.com) داخل هذه النافذة. يلزم توفر اتصال بالإنترنت، وتنطبق سياسة خصوصية موقع Green Yoga على أي معلومات ترسلها.</value></data>
+  <data name="SupportLoadButton" xml:space="preserve"><value>تحميل صفحة الدعم</value></data>
+  <data name="SupportOpenInBrowser" xml:space="preserve"><value>فتح في متصفح الويب</value></data>
+  <data name="SupportEmail" xml:space="preserve"><value>التواصل مع الدعم عبر البريد الإلكتروني</value></data>
+  <data name="SupportRetry" xml:space="preserve"><value>إعادة المحاولة</value></data>
+  <data name="SupportLoading" xml:space="preserve"><value>جارٍ تحميل صفحة الدعم…</value></data>
+  <data name="SupportLoadFailed" xml:space="preserve"><value>تعذّر تحميل صفحة الدعم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى، أو استخدم أحد الخيارات أدناه.</value></data>
+  <data name="SupportBack" xml:space="preserve"><value>رجوع</value></data>
+  <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>القسم {0}</value></data>
+  <data name="PageBoxName" xml:space="preserve"><value>رقم الفصل</value></data>
   <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
   <data name="BookmarkAdded" xml:space="preserve"><value>تمت إضافة الإشارة المرجعية</value></data>
   <data name="BookmarkRemoved" xml:space="preserve"><value>تمت إزالة الإشارة المرجعية</value></data>

@@ -3,6 +3,10 @@ bin/
 obj/
 dist/
 packaging/out/
+# Built MSIX packages are release artifacts, not source — they ship on the
+# GitHub release / Store, never in the tree. The rest of the submission pack
+# (evidence, listing, checksums, screenshots) is tracked.
+packaging/submission-*/packages/
 *.user
 *.suo
 .vs/
