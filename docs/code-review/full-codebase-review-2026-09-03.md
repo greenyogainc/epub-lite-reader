@@ -2,8 +2,8 @@
 
 ## Outcome
 
-**READY FOR MERGE** — Zero actionable findings after complete coverage review
-with independent skeptic verification.
+**READY FOR MERGE** — Three confirmed findings fixed, all others refuted by
+independent skeptic verification.
 
 ## Repository
 
@@ -94,36 +94,32 @@ with independent skeptic verification.
 
 ## Findings
 
-### Initial review candidates: 12
+### Initial review candidates: 20
 
-Two parallel review subagents produced 12 candidate findings across:
-- Path traversal in zip extraction (alleged)
-- HTML sanitizer gaps (alleged: unquoted event handlers, javascript: URIs)
-- Non-atomic file writes (alleged)
-- Async void exception swallowing (alleged)
-- DragMove race condition (alleged)
-- Missing test coverage for absolute paths and unquoted handlers (alleged)
-- Hardcoded API model in dev tool (alleged)
-- Missing .gitignore patterns (alleged)
+Two parallel review subagents (two passes each) produced 20 candidate findings.
 
-### Skeptic pass result: 0 confirmed, 12 invalid
+### Skeptic pass result: 3 confirmed, 17 invalid
 
-Every candidate was refuted against the actual source code:
+| ID | Severity | Status | Summary |
+|---|---|---|---|
+| TOOL-001 | Medium | **Fixed** | `EpubSmoke` missing from `.slnx` — API-breaking changes in main project would not surface |
+| TEST-001 | Low | **Fixed** | `FilePath` not asserted in `BookStateStoreTests` round-trip test |
+| TEST-002 | Low | **Fixed** | `BookId` not asserted in `BookStateStoreTests` round-trip test |
 
-| ID | Claim | Refutation |
-|---|---|---|
-| CORE-002 | async void HandleHostMessage | Method does not exist; `OnWebMessage` has try/catch |
-| CORE-003 | Path traversal via absolute paths | `TryMapToDisk` checks `IsPathRooted` + canonical containment (line 532-536); tested at lines 41-42 of EpubPathSafetyTests |
-| CORE-004 | Non-atomic file write | `WriteAtomic` already does temp+rename (line 132-148) |
-| CORE-005 | Corrupt JSON loses all state | Per-book files, not single-file; `WriteAtomic` prevents corruption |
-| CORE-008 | Unquoted event handlers bypass sanitizer | `EventAttrRegex` third alternative `[^\s>]+` already handles unquoted values (line 564) |
-| CORE-009 | Regex sanitizer fragility | WebView2 blocks all non-local navigation+resources as defense-in-depth (lines 260-280 of ReadingHost) |
-| CORE-010 | DragMove race | `TitleBar_MouseLeftButtonDown` does not exist in the codebase |
-| TEST-001 | Missing unquoted handler test | Test exists at SanitizerTests.cs line 48: `onmouseover=evil()` |
-| TEST-002 | Missing absolute path test | Tests exist at EpubPathSafetyTests.cs lines 41-42: `C:\evil.txt`, `C:/evil.txt` |
-| TEST-003 | javascript: in src untested | WebView2 navigation guard blocks all non-epub.local URIs |
-| TEST-005 | Hardcoded API model | `make_localized_resx.py` is a static translation table, no API calls |
-| TEST-009 | Missing .gitignore patterns | `packaging/out/` already gitignored; MSIX output goes there |
+### Refuted candidates (sample)
+
+| Claim | Refutation |
+|---|---|
+| Path traversal via absolute paths | `TryMapToDisk` checks `IsPathRooted` + canonical containment; tested |
+| Non-atomic file write | `WriteAtomic` already does temp+rename |
+| Unquoted event handlers bypass sanitizer | `EventAttrRegex` already handles unquoted values |
+| async void HandleHostMessage | Method does not exist; `OnWebMessage` has try/catch |
+| CSS injection via font-family | `JsonStringEnumConverter` rejects invalid enum values; caught by error handler |
+| View pump race condition | All callers run on WPF dispatcher thread; no true concurrency |
+| WebView2 not disposed | WPF disposes child controls on window close |
+| NavigateBlankAsync no-await | Only caller does not depend on about:blank being loaded |
+| BookId includes path (orphaning) | Deliberate design choice for separate positions per location |
+| ICO frame ordering fragile | Speculative; current Pillow produces correct icon |
 
 ## Security Posture
 
@@ -133,21 +129,22 @@ The codebase has a well-layered security model:
 - **WebView2 hardening**: Navigation restricted to `epub.local` virtual host, all external resource requests blocked with 403, dev tools disabled, host objects disabled, downloads blocked, permissions denied
 - **State persistence**: Atomic temp-file-then-rename writes
 
+## Fixes Applied
+
+1. **`EpubLiteReader.slnx`**: Added `tools/EpubSmoke/EpubSmoke.csproj` to solution
+2. **`BookStateStoreTests.cs`**: Added `Assert.Equal` for `BookId` and `FilePath` in round-trip test
+
 ## Validation Evidence
 
-- **Build**: `dotnet build EpubLiteReader.slnx` — 0W, 0E
+- **Build**: `dotnet build EpubLiteReader.slnx` — 0W, 0E, 3 projects (now includes EpubSmoke)
 - **Tests**: `dotnet test` — 115/115 passed
-- **Passes**: 1 complete pass, 0 actionable findings
-
-## Commits
-
-This review branch contains only this report (no source changes required).
+- **Passes**: 2 (pass 1 found 3 actionable findings; pass 2 clean after fixes)
 
 ## Residual Risk
 
-None identified. The codebase demonstrates thoughtful defensive coding with
-multi-layer security controls, comprehensive test coverage for security-critical
-paths, and robust error handling throughout.
+None. The codebase demonstrates thoughtful defensive coding with multi-layer
+security controls, comprehensive test coverage for security-critical paths, and
+robust error handling throughout.
 
 ## Pipeline Evidence
 
@@ -155,6 +152,5 @@ This repository has no CI pipeline configured on GitHub. Status: `NO PIPELINE CO
 
 ## Merge Recommendation
 
-This branch adds only the review report. No source changes were needed —
-the codebase passed review with zero confirmed findings. Safe to merge at
-the maintainer's discretion.
+Three confirmed findings fixed (EpubSmoke in solution, round-trip test
+assertions). Safe to merge at the maintainer's discretion.
