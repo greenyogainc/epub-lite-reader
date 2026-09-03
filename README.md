@@ -47,6 +47,20 @@ immediately — no library, no account, no distractions.
 | `Ctrl+0` | Reset text settings |
 | `B` | Add or remove bookmark |
 
+## What's new in 1.0.5
+
+- **Build coverage**: The `EpubSmoke` tool is now included in the solution file,
+  so `dotnet build EpubLiteReader.slnx` catches API-breaking changes in the
+  smoke-test tool automatically.
+- **Stronger test assertions**: `BookStateStore` round-trip test now verifies
+  `BookId` and `FilePath` survive serialization.
+- Full codebase review report added (`docs/code-review/`).
+
+## What's new in 1.0.4
+
+See [packaging/submission-1.0.4/store-listing.md](packaging/submission-1.0.4/store-listing.md)
+for the full 1.0.4 release notes.
+
 ## Requirements
 
 - Windows 10 version 19041 or later
