@@ -8,7 +8,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>EpubLiteReader</AssemblyName>
     <RootNamespace>EpubLiteReader</RootNamespace>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <Authors>Green Yoga Inc</Authors>
     <Company>Green Yoga Inc</Company>
     <Product>EPUB Lite Reader</Product>
