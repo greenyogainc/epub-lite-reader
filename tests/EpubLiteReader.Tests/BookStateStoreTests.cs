@@ -53,7 +53,9 @@ public sealed class BookStateStoreTests : IDisposable
         var loaded = BookStateStore.LoadBook("book-1");
 
         Assert.NotNull(loaded);
-        Assert.Equal(3, loaded!.SpineIndex);
+        Assert.Equal("book-1", loaded!.BookId);
+        Assert.Equal(@"C:\books\sample.epub", loaded.FilePath);
+        Assert.Equal(3, loaded.SpineIndex);
         Assert.Equal(0.42, loaded.ScrollFraction);
         Assert.Equal(ReadingTheme.Sepia, loaded.Display.Theme);
         Assert.Equal(1.25, loaded.Display.FontScale);
