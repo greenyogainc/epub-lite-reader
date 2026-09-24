@@ -86,6 +86,10 @@ public class SanitizerTests
     [InlineData("<link rel='dns-prefetch' href='//attacker.test'>")]
     [InlineData("<link rel=\"stylesheet preconnect\" href=\"https://attacker.test/x.css\">")]
     [InlineData("<LINK REL=\"PRECONNECT\" HREF=\"https://attacker.test\"/>")]
+    [InlineData("<link foo=\">\" rel=\"preconnect\" href=\"https://attacker.test\">")]
+    [InlineData("<link rel=\"stylesheet\tpreconnect\" href=\"https://attacker.test\">")]
+    [InlineData("<link rel=\"stylesheet\npreconnect\" href=\"https://attacker.test\">")]
+    [InlineData("<link rel=\"stylesheet\rdns-prefetch\" href=\"https://attacker.test\">")]
     public void StripScripts_RemovesNetworkHintLinkTags(string linkTag)
     {
         // Chromium acts on preconnect/dns-prefetch without raising a

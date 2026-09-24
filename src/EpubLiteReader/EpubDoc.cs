@@ -576,7 +576,7 @@ public sealed class EpubDoc : IDisposable
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly Regex LinkTagRegex = new(
-        @"<link\b[^>]*>",
+        @"<link\b(?:[^>""']|""[^""]*""|'[^']*')*>",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly Regex RelAttrRegex = new(
@@ -590,6 +590,9 @@ public sealed class EpubDoc : IDisposable
     /// hints (preconnect / dns-prefetch), which Chromium acts on without ever
     /// raising a WebResourceRequested event and would otherwise defeat the
     /// "book content cannot make any network request" guarantee.
+    /// The tail truncation for a residual unclosed &lt;script&gt; is deliberate:
+    /// a browser would not render content after such a tag either, so dropping
+    /// it loses nothing a reader could see and guarantees no script survives.
     /// </summary>
     internal static string StripScripts(string html)
     {
@@ -609,7 +612,10 @@ public sealed class EpubDoc : IDisposable
     {
         var rel = RelAttrRegex.Match(tag);
         if (!rel.Success) return false;
-        foreach (var token in rel.Groups["v"].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        // HTML5 rel is a space-separated token list where "space" includes
+        // tab/LF/FF/CR; split on all whitespace so "stylesheet\tpreconnect"
+        // cannot slip through as a single unknown token.
+        foreach (var token in rel.Groups["v"].Value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
         {
             if (token.Equals("preconnect", StringComparison.OrdinalIgnoreCase) ||
                 token.Equals("dns-prefetch", StringComparison.OrdinalIgnoreCase))

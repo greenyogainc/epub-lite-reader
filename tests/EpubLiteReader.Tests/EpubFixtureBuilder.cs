@@ -166,8 +166,11 @@ internal static class EpubFixtureBuilder
     /// A minimal single-chapter book that also carries one binary (image) resource
     /// at <paramref name="imageEntryName"/> with the given raw bytes, referenced
     /// from the chapter body. Used to exercise the per-resource extraction cap.
+    /// <paramref name="chapterHeadExtra"/> is inserted verbatim into the chapter's
+    /// &lt;head&gt; (e.g. network-hint link tags for sanitization tests).
     /// </summary>
-    public static void BuildEpubWithBinaryResource(string destPath, string imageEntryName, byte[] imageBytes)
+    public static void BuildEpubWithBinaryResource(
+        string destPath, string imageEntryName, byte[] imageBytes, string chapterHeadExtra = "")
     {
         using var stream = new FileStream(destPath, FileMode.Create, FileAccess.Write);
         using var zip = new ZipArchive(stream, ZipArchiveMode.Create);
@@ -186,7 +189,7 @@ internal static class EpubFixtureBuilder
         WriteEntry(zip, "OEBPS/chapter1.xhtml", $"""
             <?xml version="1.0" encoding="UTF-8"?>
             <html xmlns="http://www.w3.org/1999/xhtml">
-            <head><title>Chapter One</title></head>
+            <head><title>Chapter One</title>{chapterHeadExtra}</head>
             <body><p>Only chapter.</p><img src="{Path.GetFileName(imageEntryName)}" alt=""/></body>
             </html>
             """);

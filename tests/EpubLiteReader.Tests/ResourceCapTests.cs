@@ -41,7 +41,9 @@ public sealed class ResourceCapTests : IDisposable
         }
         finally
         {
+            var root = doc.ExtractRoot;
             doc.Dispose();
+            Assert.False(Directory.Exists(root));
         }
     }
 
