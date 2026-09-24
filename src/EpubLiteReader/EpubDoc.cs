@@ -58,7 +58,7 @@ public sealed class EpubDoc : IDisposable
     /// <summary>Entries skipped during extraction because their paths were unsafe, collided, or exceeded the resource size cap.</summary>
     public IReadOnlyList<string> SkippedEntries { get; private set; } = Array.Empty<string>();
 
-    /// <summary>Default cap for a single binary resource (image, font, ...) extracted from a book.</summary>
+    /// <summary>Default cap for a single resource (text or binary - a chapter, image, font, ...) extracted from a book.</summary>
     public const long DefaultMaxResourceBytes = 64L * 1024 * 1024;
 
     public static Task<(EpubDoc Doc, List<ChapterItem> Chapters)> OpenWithChaptersAsync(
@@ -82,6 +82,10 @@ public sealed class EpubDoc : IDisposable
         {
             var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var skipped = new List<string>();
+            // Relative paths (NormalizePath-keyed, same as pathToSpine below) skipped for
+            // being oversized, so a spine item among them never has HtmlToPlainText run on
+            // its (already in-memory) huge content and never retains that text afterward.
+            var oversizedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var file in book.Content.AllFiles.Local)
             {
                 ct.ThrowIfCancellationRequested();
@@ -97,6 +101,15 @@ public sealed class EpubDoc : IDisposable
                     var ext = Path.GetExtension(file.FilePath);
                     if (file is EpubLocalTextContentFile text)
                     {
+                        if (Encoding.UTF8.GetByteCount(text.Content) > maxResourceBytes)
+                        {
+                            // A single hostile or corrupt oversized resource must not be
+                            // materialized on disk; skip it and record the entry.
+                            skipped.Add(file.FilePath);
+                            oversizedPaths.Add(NormalizePath(file.FilePath));
+                            continue;
+                        }
+
                         // A passive extension served with a non-document MIME type is safe
                         // to leave untouched (this is how CSS survives unmodified today);
                         // everything else is sanitized, including NCX/OPF text entries,
@@ -162,7 +175,10 @@ public sealed class EpubDoc : IDisposable
                 // Also index by filename-only for loose matches
                 pathToSpine.TryAdd(Path.GetFileName(rel), spinePaths.Count);
                 spinePaths.Add(rel);
-                spineText.Add(HtmlToPlainText(item.Content));
+                // A spine item skipped above for being oversized was never written to
+                // disk; also skip running HtmlToPlainText on its (already in-memory)
+                // huge content so the resulting huge string is not retained here either.
+                spineText.Add(oversizedPaths.Contains(rel) ? "" : HtmlToPlainText(item.Content));
             }
 
             var order = 0;
