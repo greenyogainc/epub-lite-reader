@@ -24,6 +24,7 @@ public partial class AboutWindow : Window
     private WebView2? _supportView;
     private bool _supportViewInitializing;
     private bool _supportLoaded;
+    private bool _closed;
 
     public AboutWindow()
     {
@@ -52,7 +53,7 @@ public partial class AboutWindow : Window
         }
 
         LoadLicenseText();
-        Closed += (_, _) => TearDownSupportView();
+        Closed += (_, _) => { _closed = true; TearDownSupportView(); };
         WriteAboutState();
     }
 
@@ -140,13 +141,35 @@ public partial class AboutWindow : Window
             if (_supportView is null)
             {
                 _supportViewInitializing = true;
+                var view = new WebView2 { AllowExternalDrop = false };
                 try
                 {
-                    var view = new WebView2 { AllowExternalDrop = false };
                     SupportWebHost.Child = view;
                     await view.EnsureCoreWebView2Async();
+
+                    if (_closed)
+                    {
+                        // The window closed while the view was still initializing; it
+                        // was never adopted as _supportView, so tear it down here
+                        // instead of configuring, navigating, or touching UI in a
+                        // window that is gone.
+                        view.Dispose();
+                        return;
+                    }
+
                     ConfigureSupportView(view.CoreWebView2);
                     _supportView = view;
+                }
+                catch
+                {
+                    // Initialization failed before the view was adopted as
+                    // _supportView: detach it from the host and dispose it here so it
+                    // cannot leak, then let the outer catch report the failure. Retry
+                    // will create a fresh view next time.
+                    if (ReferenceEquals(SupportWebHost.Child, view))
+                        SupportWebHost.Child = null;
+                    view.Dispose();
+                    throw;
                 }
                 finally
                 {
@@ -159,7 +182,10 @@ public partial class AboutWindow : Window
         catch (Exception ex)
         {
             App.LogError(ex);
-            ShowSupportFailure();
+            // The window is gone; writing aboutOpen=true state (which
+            // ShowSupportFailure does via WriteAboutState) after close would be wrong.
+            if (!_closed)
+                ShowSupportFailure();
         }
     }
 
