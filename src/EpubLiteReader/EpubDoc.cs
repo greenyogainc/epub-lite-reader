@@ -20,7 +20,6 @@ public sealed class EpubDoc : IDisposable
     public string Title { get; }
     public string Author { get; }
     public string? Description { get; }
-    public byte[]? CoverImage { get; }
 
     /// <summary>Spine entries as relative paths under the extract root (forward slashes).</summary>
     public IReadOnlyList<string> SpinePaths { get; }
@@ -38,7 +37,6 @@ public sealed class EpubDoc : IDisposable
         string title,
         string author,
         string? description,
-        byte[]? coverImage,
         string extractRoot,
         IReadOnlyList<string> spinePaths,
         IReadOnlyList<string> spinePlainText)
@@ -48,7 +46,6 @@ public sealed class EpubDoc : IDisposable
         Title = title;
         Author = author;
         Description = description;
-        CoverImage = coverImage;
         _extractRoot = extractRoot;
         SpinePaths = spinePaths;
         SpinePlainText = spinePlainText;
@@ -58,17 +55,21 @@ public sealed class EpubDoc : IDisposable
 
     public List<ChapterItem> GetChapters() => _chapters ?? new List<ChapterItem>();
 
-    /// <summary>Entries skipped during extraction because their paths were unsafe or collided.</summary>
+    /// <summary>Entries skipped during extraction because their paths were unsafe, collided, or exceeded the resource size cap.</summary>
     public IReadOnlyList<string> SkippedEntries { get; private set; } = Array.Empty<string>();
 
+    /// <summary>Default cap for a single binary resource (image, font, ...) extracted from a book.</summary>
+    public const long DefaultMaxResourceBytes = 64L * 1024 * 1024;
+
     public static Task<(EpubDoc Doc, List<ChapterItem> Chapters)> OpenWithChaptersAsync(
-        string path, string untitledLabel, string? sectionTitleFormat = null, CancellationToken ct = default) =>
+        string path, string untitledLabel, string? sectionTitleFormat = null, CancellationToken ct = default,
+        long maxResourceBytes = DefaultMaxResourceBytes) =>
         // Parsing, extraction, and text conversion are CPU/IO heavy; keep all of it
         // off the caller's (dispatcher) thread so large books cannot freeze the UI.
-        Task.Run(() => OpenWithChaptersCoreAsync(path, untitledLabel, sectionTitleFormat, ct), ct);
+        Task.Run(() => OpenWithChaptersCoreAsync(path, untitledLabel, sectionTitleFormat, ct, maxResourceBytes), ct);
 
     private static async Task<(EpubDoc Doc, List<ChapterItem> Chapters)> OpenWithChaptersCoreAsync(
-        string path, string untitledLabel, string? sectionTitleFormat, CancellationToken ct)
+        string path, string untitledLabel, string? sectionTitleFormat, CancellationToken ct, long maxResourceBytes)
     {
         path = Path.GetFullPath(path);
         var book = await EpubReader.ReadBookAsync(path);
@@ -102,6 +103,13 @@ public sealed class EpubDoc : IDisposable
                     }
                     else if (file is EpubLocalByteContentFile bytes)
                     {
+                        if (bytes.Content.LongLength > maxResourceBytes)
+                        {
+                            // A single hostile or corrupt oversized resource must not be
+                            // materialized on disk; skip it and record the entry.
+                            skipped.Add(file.FilePath);
+                            continue;
+                        }
                         await File.WriteAllBytesAsync(dest, bytes.Content, ct);
                     }
                 }
@@ -144,7 +152,6 @@ public sealed class EpubDoc : IDisposable
                 string.IsNullOrWhiteSpace(book.Title) ? Path.GetFileName(path) : book.Title,
                 book.Author ?? "",
                 book.Description,
-                book.CoverImage,
                 extractRoot,
                 spinePaths,
                 spineText)
@@ -560,16 +567,55 @@ public sealed class EpubDoc : IDisposable
         @"<script\b[^>]*>[\s\S]*?</script\s*>|<\s*script\b[^>]*/>",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    private static readonly Regex ResidualScriptOpenRegex = new(
+        @"<\s*script\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private static readonly Regex EventAttrRegex = new(
         @"\s+on\w+\s*=\s*(?:""[^""]*""|'[^']*'|[^\s>]+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    private static readonly Regex LinkTagRegex = new(
+        @"<link\b[^>]*>",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex RelAttrRegex = new(
+        @"\brel\s*=\s*(?:""(?<v>[^""]*)""|'(?<v>[^']*)'|(?<v>[^\s>]+))",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>
+    /// Sanitizes EPUB-supplied HTML: removes script elements — including an
+    /// unclosed one, since an HTML5 parser treats everything after it as script
+    /// data through EOF — event-handler attributes, and &lt;link&gt; network
+    /// hints (preconnect / dns-prefetch), which Chromium acts on without ever
+    /// raising a WebResourceRequested event and would otherwise defeat the
+    /// "book content cannot make any network request" guarantee.
+    /// </summary>
     internal static string StripScripts(string html)
     {
         if (string.IsNullOrEmpty(html)) return html;
         var cleaned = ScriptTagRegex.Replace(html, "");
+        // An unclosed <script> start tag flips the HTML5 parser into script-data
+        // state until EOF: drop everything from a residual start tag onward.
+        var residual = ResidualScriptOpenRegex.Match(cleaned);
+        if (residual.Success)
+            cleaned = cleaned[..residual.Index];
+        cleaned = LinkTagRegex.Replace(cleaned, m => IsNetworkHintLink(m.Value) ? "" : m.Value);
         cleaned = EventAttrRegex.Replace(cleaned, "");
         return cleaned;
+    }
+
+    private static bool IsNetworkHintLink(string tag)
+    {
+        var rel = RelAttrRegex.Match(tag);
+        if (!rel.Success) return false;
+        foreach (var token in rel.Groups["v"].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (token.Equals("preconnect", StringComparison.OrdinalIgnoreCase) ||
+                token.Equals("dns-prefetch", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 
     private static readonly Regex TagRegex = new("<[^>]+>", RegexOptions.Compiled);

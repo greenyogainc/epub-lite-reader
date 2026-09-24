@@ -162,6 +162,67 @@ internal static class EpubFixtureBuilder
         WriteEntry(zip, "escape.txt", "if you can read this outside the extract root, extraction is unsafe");
     }
 
+    /// <summary>
+    /// A minimal single-chapter book that also carries one binary (image) resource
+    /// at <paramref name="imageEntryName"/> with the given raw bytes, referenced
+    /// from the chapter body. Used to exercise the per-resource extraction cap.
+    /// </summary>
+    public static void BuildEpubWithBinaryResource(string destPath, string imageEntryName, byte[] imageBytes)
+    {
+        using var stream = new FileStream(destPath, FileMode.Create, FileAccess.Write);
+        using var zip = new ZipArchive(stream, ZipArchiveMode.Create);
+
+        WriteEntry(zip, "mimetype", "application/epub+zip", CompressionLevel.NoCompression);
+
+        WriteEntry(zip, "META-INF/container.xml", """
+            <?xml version="1.0"?>
+            <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+              <rootfiles>
+                <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+              </rootfiles>
+            </container>
+            """);
+
+        WriteEntry(zip, "OEBPS/chapter1.xhtml", $"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <html xmlns="http://www.w3.org/1999/xhtml">
+            <head><title>Chapter One</title></head>
+            <body><p>Only chapter.</p><img src="{Path.GetFileName(imageEntryName)}" alt=""/></body>
+            </html>
+            """);
+
+        WriteEntry(zip, "OEBPS/nav.xhtml", """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+            <head><title>Nav</title></head>
+            <body><nav epub:type="toc"><ol><li><a href="chapter1.xhtml">Chapter One</a></li></ol></nav></body>
+            </html>
+            """);
+
+        WriteEntry(zip, "OEBPS/content.opf", $"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0" xml:lang="en">
+              <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:identifier id="BookId">urn:uuid:elr-binary-fixture</dc:identifier>
+                <dc:title>Binary Resource Fixture</dc:title>
+                <dc:language>en</dc:language>
+              </metadata>
+              <manifest>
+                <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+                <item id="c1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
+                <item id="img" href="{Path.GetFileName(imageEntryName)}" media-type="image/png"/>
+              </manifest>
+              <spine>
+                <itemref idref="c1"/>
+              </spine>
+            </package>
+            """);
+
+        var entry = zip.CreateEntry(imageEntryName, CompressionLevel.Optimal);
+        using var outStream = entry.Open();
+        outStream.Write(imageBytes, 0, imageBytes.Length);
+    }
+
     private static void WriteEntry(ZipArchive zip, string name, string content,
         CompressionLevel level = CompressionLevel.Optimal)
     {
