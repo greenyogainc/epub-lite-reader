@@ -216,16 +216,29 @@ public partial class MainWindow : Window
         }
         catch (OperationCanceledException)
         {
-            doc?.Dispose();
-            // Superseded by a newer open; that open owns the UI now.
+            // Superseded by a newer open; that open owns the UI now. Only dispose doc
+            // and only restore chapter state if the replacement was never committed -
+            // if it was (doc IS _doc), the finally block's old?.Dispose() already
+            // released the book _doc replaced, and _doc itself must be left alone.
+            if (!ReferenceEquals(doc, _doc))
+                doc?.Dispose();
         }
         catch (Exception ex)
         {
-            doc?.Dispose();
             App.LogError(ex);
-            // The previous book was never torn down, so simply restore its state.
-            _chapterState = prevChapterState;
-            ShowChapterState(_chapterState);
+            if (!ReferenceEquals(doc, _doc))
+            {
+                // Not committed: tear down the failed replacement and restore the
+                // previous book's chapter-pane state, exactly as if this open never
+                // started.
+                doc?.Dispose();
+                _chapterState = prevChapterState;
+                ShowChapterState(_chapterState);
+            }
+            // else: doc IS _doc - the failure happened after the commit point, so the
+            // new book is already live in the UI. Leave it alone: do not dispose the
+            // committed document and do not revert the chapter state. The finally
+            // block's old?.Dispose() still releases the book _doc replaced.
             Strings.ShowError(this, string.Format(Strings.Get("OpenFileErrorMessage"), path, ex.Message));
         }
         finally

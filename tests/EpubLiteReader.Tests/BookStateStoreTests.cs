@@ -190,4 +190,47 @@ public sealed class BookStateStoreTests : IDisposable
         Assert.Equal(0.85, loaded.ScrollFraction);
         Assert.Equal(ViewMode.Continuous, loaded.Display.ViewMode);
     }
+
+    [Fact]
+    public void LoadBook_WithExplicitNullDisplayAndBookmarks_NormalizesToNonNull()
+    {
+        // System.Text.Json deserializes an explicit JSON null into a non-nullable
+        // property without complaint; a hand-edited or corrupted file with
+        // "display": null or "bookmarks": null must not reach the caller as null.
+        Directory.CreateDirectory(BooksDir);
+        File.WriteAllText(Path.Combine(BooksDir, "nulls.json"),
+            "{\"bookId\":\"nulls\",\"display\":null,\"bookmarks\":null}");
+
+        var loaded = BookStateStore.LoadBook("nulls");
+
+        Assert.NotNull(loaded);
+        Assert.NotNull(loaded!.Display);
+        Assert.NotNull(loaded.Bookmarks);
+        Assert.Empty(loaded.Bookmarks);
+    }
+
+    [Fact]
+    public void LoadBook_WithNullBookmarkEntry_DropsIt()
+    {
+        Directory.CreateDirectory(BooksDir);
+        File.WriteAllText(Path.Combine(BooksDir, "nullbookmark.json"),
+            "{\"bookId\":\"nullbookmark\",\"bookmarks\":[null,{\"label\":\"Keep\"}]}");
+
+        var loaded = BookStateStore.LoadBook("nullbookmark");
+
+        Assert.NotNull(loaded);
+        Assert.Single(loaded!.Bookmarks);
+        Assert.Equal("Keep", loaded.Bookmarks[0].Label);
+    }
+
+    [Fact]
+    public void LoadAppSettings_WithExplicitNullDefaults_NormalizesToNonNull()
+    {
+        Directory.CreateDirectory(_tempRoot);
+        File.WriteAllText(Path.Combine(_tempRoot, "settings.json"), "{\"defaults\":null}");
+
+        var loaded = BookStateStore.LoadAppSettings();
+
+        Assert.NotNull(loaded.Defaults);
+    }
 }
