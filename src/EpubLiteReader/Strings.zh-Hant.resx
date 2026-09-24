@@ -91,8 +91,6 @@
   <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>第 {0} 節</value></data>
   <data name="PageBoxName" xml:space="preserve"><value>章節編號</value></data>
   <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
-  <data name="BookmarkAdded" xml:space="preserve"><value>已加入書籤</value></data>
-  <data name="BookmarkRemoved" xml:space="preserve"><value>已移除書籤</value></data>
   <data name="FindNext" xml:space="preserve"><value>尋找下一個</value></data>
   <data name="FindPrev" xml:space="preserve"><value>尋找上一個</value></data>
   <data name="CloseSearch" xml:space="preserve"><value>關閉</value></data>
