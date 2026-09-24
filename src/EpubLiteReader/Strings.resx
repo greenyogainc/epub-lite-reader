@@ -91,8 +91,6 @@ Details logged to:
   <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>Section {0}</value></data>
   <data name="PageBoxName" xml:space="preserve"><value>Chapter number</value></data>
   <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
-  <data name="BookmarkAdded" xml:space="preserve"><value>Bookmark added</value></data>
-  <data name="BookmarkRemoved" xml:space="preserve"><value>Bookmark removed</value></data>
   <data name="FindNext" xml:space="preserve"><value>Find next</value></data>
   <data name="FindPrev" xml:space="preserve"><value>Find previous</value></data>
   <data name="CloseSearch" xml:space="preserve"><value>Close</value></data>

@@ -91,8 +91,6 @@
   <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>Раздел {0}</value></data>
   <data name="PageBoxName" xml:space="preserve"><value>Номер главы</value></data>
   <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
-  <data name="BookmarkAdded" xml:space="preserve"><value>Закладка добавлена</value></data>
-  <data name="BookmarkRemoved" xml:space="preserve"><value>Закладка удалена</value></data>
   <data name="FindNext" xml:space="preserve"><value>Найти далее</value></data>
   <data name="FindPrev" xml:space="preserve"><value>Найти ранее</value></data>
   <data name="CloseSearch" xml:space="preserve"><value>Закрыть</value></data>

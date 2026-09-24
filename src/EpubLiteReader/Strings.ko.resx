@@ -91,8 +91,6 @@
   <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>섹션 {0}</value></data>
   <data name="PageBoxName" xml:space="preserve"><value>장 번호</value></data>
   <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
-  <data name="BookmarkAdded" xml:space="preserve"><value>책갈피 추가됨</value></data>
-  <data name="BookmarkRemoved" xml:space="preserve"><value>책갈피 삭제됨</value></data>
   <data name="FindNext" xml:space="preserve"><value>다음 찾기</value></data>
   <data name="FindPrev" xml:space="preserve"><value>이전 찾기</value></data>
   <data name="CloseSearch" xml:space="preserve"><value>닫기</value></data>

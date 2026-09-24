@@ -91,8 +91,6 @@ Détails consignés dans :
   <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>Section {0}</value></data>
   <data name="PageBoxName" xml:space="preserve"><value>Numéro de chapitre</value></data>
   <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
-  <data name="BookmarkAdded" xml:space="preserve"><value>Signet ajouté</value></data>
-  <data name="BookmarkRemoved" xml:space="preserve"><value>Signet supprimé</value></data>
   <data name="FindNext" xml:space="preserve"><value>Suivant</value></data>
   <data name="FindPrev" xml:space="preserve"><value>Précédent</value></data>
   <data name="CloseSearch" xml:space="preserve"><value>Fermer</value></data>

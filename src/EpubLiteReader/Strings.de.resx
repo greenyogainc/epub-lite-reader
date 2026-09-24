@@ -91,8 +91,6 @@ Details protokolliert unter:
   <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>Abschnitt {0}</value></data>
   <data name="PageBoxName" xml:space="preserve"><value>Kapitelnummer</value></data>
   <data name="MetadataFormat" xml:space="preserve"><value>{0} — {1}</value></data>
-  <data name="BookmarkAdded" xml:space="preserve"><value>Lesezeichen hinzugefügt</value></data>
-  <data name="BookmarkRemoved" xml:space="preserve"><value>Lesezeichen entfernt</value></data>
   <data name="FindNext" xml:space="preserve"><value>Weitersuchen</value></data>
   <data name="FindPrev" xml:space="preserve"><value>Rückwärts suchen</value></data>
   <data name="CloseSearch" xml:space="preserve"><value>Schließen</value></data>
