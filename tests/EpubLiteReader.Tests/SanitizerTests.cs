@@ -204,6 +204,52 @@ public class SanitizerTests
         Assert.Contains(pi, result);
     }
 
+    [Theory]
+    [InlineData("<scr<link rel=\"preconnect\" href=\"x\">ipt>alert(1)</script>")]
+    [InlineData("<scr<?xml-stylesheet type=\"text/xsl\" href=\"t.xsl\"?>ipt>alert(1)</script>")]
+    public void StripScripts_DoesNotLetARemovedTokenSpliceIntoAScriptTag(string html)
+    {
+        // If the link/PI pass had removed its match with "" instead of a single
+        // space, the leftover "<scr" and "ipt>" fragments on either side of it
+        // would rejoin into a live "<script>" once that (already-completed) pass
+        // is behind it - the class of bug a sequential, splice-unaware sanitizer
+        // is prone to.
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("<script", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void StripScripts_DoesNotLetAStylesheetPiSpliceIntoAnEventHandler()
+    {
+        // The PI pass runs before the event-handler pass, so ordering alone
+        // would not save this case: removing the PI with "" would leave onerror
+        // directly preceded by ">" (not a separator), which EventAttrRegex's
+        // lookbehind would never match. The space the PI pass leaves behind is
+        // what makes onerror catchable.
+        var html = "<img src=x <?xml-stylesheet type=\"text/xsl\"?>onerror=alert(1)>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("onerror", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void StripScripts_DoesNotLetAScriptRemovalSpliceIntoALiveLinkTag()
+    {
+        // Removing the <script></script> pair with "" instead of a space would
+        // rejoin "<li" and "nk rel=..." into a genuine "<link rel=\"preconnect\">"
+        // network hint; the space keeps it a harmless (if odd) <li> element
+        // instead. The word "preconnect" can still appear as inert attribute text
+        // on that <li> - what must never happen is a live <link> element being
+        // reformed, since the link-removal pass has already run by this point.
+        var html = "<li<script></script>nk rel=\"preconnect\" href=\"//evil\">";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("<link", result, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void HtmlToPlainText_StripsTagsAndDecodesEntities()
     {

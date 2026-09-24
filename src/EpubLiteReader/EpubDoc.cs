@@ -737,19 +737,30 @@ public sealed class EpubDoc : IDisposable
     /// The tail truncation for a residual unclosed &lt;script&gt; is deliberate:
     /// a browser would not render content after such a tag either, so dropping
     /// it loses nothing a reader could see and guarantees no script survives.
+    /// Pass order and replacement text both matter, and neither is arbitrary: a
+    /// pass that removes a whole delimited token (a PI, a link, a script pair)
+    /// replaces it with a single space rather than "", because a space can never
+    /// be part of "&lt;script", "&lt;link", "&lt;?xml-stylesheet", or "on\w+=" — so
+    /// text left on either side of a removal can never splice together into a
+    /// token an EARLIER pass already scanned for (e.g. "&lt;scr" + a removed link +
+    /// "ipt&gt;" must never re-form "&lt;script&gt;"). The event-handler pass runs
+    /// last and keeps its "" replacement: its lookbehind only fires on an already
+    /// genuine separator (whitespace, "/", or a closing quote — including a space
+    /// left behind by an earlier pass), so it can't be spliced into by anything
+    /// that still has to run after it.
     /// </summary>
     internal static string StripScripts(string html)
     {
         if (string.IsNullOrEmpty(html)) return html;
-        var cleaned = ScriptTagRegex.Replace(html, "");
+        var cleaned = XmlStylesheetPiRegex.Replace(html, m => IsNonCssStylesheetPi(m.Value) ? " " : m.Value);
+        cleaned = LinkTagRegex.Replace(cleaned, m => IsNetworkHintLink(m.Value) ? " " : m.Value);
+        cleaned = ScriptTagRegex.Replace(cleaned, " ");
         // An unclosed <script> start tag flips the HTML5 parser into script-data
         // state until EOF: drop everything from a residual start tag onward.
         var residual = ResidualScriptOpenRegex.Match(cleaned);
         if (residual.Success)
             cleaned = cleaned[..residual.Index];
-        cleaned = LinkTagRegex.Replace(cleaned, m => IsNetworkHintLink(m.Value) ? "" : m.Value);
         cleaned = EventAttrRegex.Replace(cleaned, "");
-        cleaned = XmlStylesheetPiRegex.Replace(cleaned, m => IsNonCssStylesheetPi(m.Value) ? "" : m.Value);
         return cleaned;
     }
 
