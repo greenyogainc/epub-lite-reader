@@ -128,6 +128,11 @@ public static class BookStateStore
     /// <summary>
     /// Writes via a same-directory temp file followed by an atomic replace, so an
     /// interrupted write can never truncate the only copy of the target file.
+    /// Concurrency contract: crash-safety only. If two processes save the same
+    /// target simultaneously, both replaces succeed and the last one to complete
+    /// wins (last-writer-wins); the superseded write is not reported as an error.
+    /// The reader itself serializes saves on its UI thread, so this only matters
+    /// if multiple app instances have the same book open.
     /// </summary>
     internal static void WriteAtomic(string path, string content)
     {
