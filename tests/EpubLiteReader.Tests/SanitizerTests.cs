@@ -209,11 +209,13 @@ public class SanitizerTests
     [InlineData("<scr<?xml-stylesheet type=\"text/xsl\" href=\"t.xsl\"?>ipt>alert(1)</script>")]
     public void StripScripts_DoesNotLetARemovedTokenSpliceIntoAScriptTag(string html)
     {
-        // If the link/PI pass had removed its match with "" instead of a single
-        // space, the leftover "<scr" and "ipt>" fragments on either side of it
-        // would rejoin into a live "<script>" once that (already-completed) pass
-        // is behind it - the class of bug a sequential, splice-unaware sanitizer
-        // is prone to.
+        // This guards ORDERING, not the space substitution by itself: with ""
+        // instead of a space, the leftover "<scr" and "ipt>" fragments would
+        // still rejoin into "<script>" here too, but because script-pair removal
+        // is the very next pass after link/PI removal, that reformed tag would
+        // still be caught immediately, before anything else could see it. See
+        // StripScripts_DoesNotLetAScriptRemovalSpliceIntoALiveStylesheetPi below
+        // for a splice that genuinely depends on the space, not just ordering.
         var result = EpubDoc.StripScripts(html);
 
         Assert.DoesNotContain("<script", result, StringComparison.OrdinalIgnoreCase);
@@ -222,11 +224,13 @@ public class SanitizerTests
     [Fact]
     public void StripScripts_DoesNotLetAStylesheetPiSpliceIntoAnEventHandler()
     {
-        // The PI pass runs before the event-handler pass, so ordering alone
-        // would not save this case: removing the PI with "" would leave onerror
-        // directly preceded by ">" (not a separator), which EventAttrRegex's
-        // lookbehind would never match. The space the PI pass leaves behind is
-        // what makes onerror catchable.
+        // This guards ORDERING (the PI pass must run before the event-handler
+        // pass): this crafted input already has a real space between "src=x"
+        // and the PI, so removing the PI leaves that pre-existing space right
+        // in front of onerror whether the removal replaces with "" or " ". What
+        // actually matters is that the PI pass completes first - if it ran
+        // after EventAttrRegex, onerror would be preceded by ">" (not a
+        // separator) and EventAttrRegex would never see it at all.
         var html = "<img src=x <?xml-stylesheet type=\"text/xsl\"?>onerror=alert(1)>";
 
         var result = EpubDoc.StripScripts(html);
@@ -248,6 +252,23 @@ public class SanitizerTests
         var result = EpubDoc.StripScripts(html);
 
         Assert.DoesNotContain("<link", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void StripScripts_DoesNotLetAScriptRemovalSpliceIntoALiveStylesheetPi()
+    {
+        // This one genuinely depends on the space, not just ordering: the PI
+        // pass has ALREADY completed by the time script-pair removal runs, so
+        // if script-pair removal replaced its match with "" instead of a space,
+        // "<?xml-sty" + "" + "lesheet ...?>" would rejoin into a live, unremoved
+        // "<?xml-stylesheet type=\"text/xsl\" ...?>" PI that nothing downstream
+        // ever scans for again - the mirror image of
+        // StripScripts_DoesNotLetAScriptRemovalSpliceIntoALiveLinkTag above.
+        var html = "<?xml-sty<script></script>lesheet type=\"text/xsl\" href=\"t.xsl\"?>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("<?xml-stylesheet", result, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

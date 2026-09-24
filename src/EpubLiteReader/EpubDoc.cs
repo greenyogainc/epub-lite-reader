@@ -111,9 +111,11 @@ public sealed class EpubDoc : IDisposable
                         }
 
                         // A passive extension served with a non-document MIME type is safe
-                        // to leave untouched (this is how CSS survives unmodified today);
-                        // everything else is sanitized, including NCX/OPF text entries,
-                        // where stripping is a harmless no-op.
+                        // to leave unsanitized (this is how CSS skips StripScripts today -
+                        // though File.WriteAllTextAsync with Encoding.UTF8 below still
+                        // re-encodes it and prepends a UTF-8 BOM, so it is not written
+                        // byte-for-byte); everything else is sanitized, including
+                        // NCX/OPF text entries, where stripping is a harmless no-op.
                         var content = IsPassiveExtension(ext) && !IsDeclaredHtmlLike(text.ContentMimeType)
                             ? text.Content
                             : StripScripts(text.Content);
@@ -611,8 +613,12 @@ public sealed class EpubDoc : IDisposable
 
     /// <summary>Extensions the virtual host serves with a MIME type Chromium never treats
     /// as a script-capable document and never HTML-sniffs: images, fonts, audio/video,
-    /// and CSS. A resource under one of these is safe to leave byte-for-byte untouched,
-    /// as long as its declared media-type does not itself claim html/xml.</summary>
+    /// and CSS. A resource under one of these is safe to leave unsanitized (StripScripts
+    /// is skipped), as long as its declared media-type does not itself claim html/xml. A
+    /// byte entry (image, font, audio/video) is then written byte-for-byte; a text entry
+    /// (CSS) is written via File.WriteAllTextAsync with Encoding.UTF8, which re-encodes
+    /// it and prepends a UTF-8 BOM, so that one is unsanitized but not byte-identical.
+    /// </summary>
     private static readonly HashSet<string> PassiveExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".avif", ".tif", ".tiff",
