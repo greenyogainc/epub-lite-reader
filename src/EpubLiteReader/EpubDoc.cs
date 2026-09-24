@@ -690,36 +690,39 @@ public sealed class EpubDoc : IDisposable
 
     private static readonly Regex ScriptTagRegex = new(
         $@"<{ScriptNamePattern}\b[^>]*>[\s\S]*?</{ScriptNamePattern}\s*>|<\s*{ScriptNamePattern}\b[^>]*/>",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
 
     private static readonly Regex ResidualScriptOpenRegex = new(
         $@"<\s*{ScriptNamePattern}\b",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
 
     // The HTML5 tokenizer starts a new attribute right after "/" or the closing
     // quote of the previous attribute's value, not only after whitespace (this is a
     // parse error, but the attribute is still created) - a lookbehind for any of
     // those separators, instead of consuming leading "\s+", catches an event handler
     // in "<img/onerror=...>" or "<img src=\"x\"onerror=...>" without requiring space.
+    // The lookbehind means this one can't use RegexOptions.NonBacktracking (unlike
+    // every other regex below); SanitizerPerformanceTests measures that it still
+    // stays linear on adversarial input instead of just assuming so.
     private static readonly Regex EventAttrRegex = new(
         @"(?<=[\s/""'])on\w+\s*=\s*(?:""[^""]*""|'[^']*'|[^\s>]+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly Regex LinkTagRegex = new(
         @"<link\b(?:[^>""']|""[^""]*""|'[^']*')*>",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
 
     private static readonly Regex RelAttrRegex = new(
         @"\brel\s*=\s*(?:""(?<v>[^""]*)""|'(?<v>[^']*)'|(?<v>[^\s>]+))",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
 
     private static readonly Regex XmlStylesheetPiRegex = new(
         @"<\?xml-stylesheet\b[\s\S]*?\?>",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
 
     private static readonly Regex PiTypeAttrRegex = new(
         @"\btype\s*=\s*(?:""(?<v>[^""]*)""|'(?<v>[^']*)')",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
 
     /// <summary>
     /// Sanitizes EPUB-supplied HTML/XML: removes script elements — including a
@@ -794,8 +797,8 @@ public sealed class EpubDoc : IDisposable
         return value.Length > 0 && !value.Equals("text/css", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static readonly Regex TagRegex = new("<[^>]+>", RegexOptions.Compiled);
-    private static readonly Regex WsRegex = new(@"\s+", RegexOptions.Compiled);
+    private static readonly Regex TagRegex = new("<[^>]+>", RegexOptions.NonBacktracking);
+    private static readonly Regex WsRegex = new(@"\s+", RegexOptions.NonBacktracking);
 
     internal static string HtmlToPlainText(string html)
     {
