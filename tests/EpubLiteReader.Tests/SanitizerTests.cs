@@ -115,6 +115,95 @@ public class SanitizerTests
         Assert.Contains("f.woff2", result);
     }
 
+    [Theory]
+    [InlineData("<p>keep</p><svg:script>alert(1)</svg:script><p>after</p>")]
+    [InlineData("<p>keep</p><h:script xmlns:h=\"http://www.w3.org/1999/xhtml\">alert(1)</h:script><p>after</p>")]
+    public void StripScripts_RemovesNamespacePrefixedScriptElement(string html)
+    {
+        // Element identity in an XML-parsed document (every .xhtml chapter, every
+        // .svg) is by namespace, not prefix: a namespace-prefixed "script" element
+        // is a real, executing script element, not just plain "<script>".
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain(":script", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<script", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("alert(1)", result);
+        Assert.Contains("<p>keep</p>", result);
+        Assert.Contains("<p>after</p>", result);
+    }
+
+    [Fact]
+    public void StripScripts_RemovesSelfClosingNamespacePrefixedScriptTag()
+    {
+        var html = "<p>a</p><svg:script href=\"x.js\"/><p>b</p>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain(":script", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("x.js", result);
+        Assert.Contains("<p>a</p>", result);
+        Assert.Contains("<p>b</p>", result);
+    }
+
+    [Fact]
+    public void StripScripts_RemovesUnclosedNamespacePrefixedScriptTagAndEverythingAfterIt()
+    {
+        var html = "<p>keep</p><svg:script>alert('pwned')";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain(":script", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("pwned", result);
+        Assert.Contains("<p>keep</p>", result);
+    }
+
+    [Theory]
+    [InlineData("<img src=\"x\"onerror=\"alert(1)\">", "onerror", "src=\"x\"")]
+    [InlineData("<img src='x'onerror='a()'>", "onerror", "src='x'")]
+    [InlineData("<img/onerror=alert(1) src=x>", "onerror", "src=x")]
+    [InlineData("<img src=\"x\"/onerror=\"a()\">", "onerror", "src=\"x\"")]
+    [InlineData("<svg/onload=a()>", "onload", "<svg")]
+    public void StripScripts_RemovesEventAttributesWithoutPrecedingWhitespace(
+        string html, string attrName, string survivingSubstring)
+    {
+        // The HTML5 tokenizer starts a new attribute right after "/" or the closing
+        // quote of the previous attribute's value, not only after whitespace - a
+        // missing-whitespace parse error still leaves the attribute created.
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain(attrName + "=", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(survivingSubstring, result);
+    }
+
+    [Theory]
+    [InlineData("<?xml-stylesheet type=\"text/xsl\" href=\"t.xsl\"?>")]
+    [InlineData("<?xml-stylesheet type='application/xml' href='t.xsl'?>")]
+    [InlineData("<?xml-stylesheet type=\"TEXT/XSL\" href=\"t.xsl\"?>")]
+    public void StripScripts_RemovesNonCssXmlStylesheetPi(string pi)
+    {
+        // Chromium runs XSLT for a stylesheet PI whose type is neither absent/empty
+        // nor text/css, and an XSL stylesheet can emit a <script> element no regex
+        // over this document could ever see - the PI itself must go.
+        var html = $"<?xml version=\"1.0\"?>{pi}<html><body><p>x</p></body></html>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("xml-stylesheet", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("<p>x</p>", result);
+    }
+
+    [Theory]
+    [InlineData("<?xml-stylesheet type=\"text/css\" href=\"s.css\"?>")]
+    [InlineData("<?xml-stylesheet href=\"s.css\"?>")]
+    public void StripScripts_KeepsCssXmlStylesheetPi(string pi)
+    {
+        var html = $"<?xml version=\"1.0\"?>{pi}<html><body><p>x</p></body></html>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.Contains(pi, result);
+    }
+
     [Fact]
     public void HtmlToPlainText_StripsTagsAndDecodesEntities()
     {

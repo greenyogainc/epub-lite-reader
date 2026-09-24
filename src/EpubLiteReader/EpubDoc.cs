@@ -142,13 +142,27 @@ public sealed class EpubDoc : IDisposable
                         {
                             await File.WriteAllBytesAsync(dest, bytes.Content, ct);
                         }
+                        else if (IsMarkupExtension(ext) || declaredHtmlLike)
+                        {
+                            // Already known to need sanitizing; decode the full resource once.
+                            var decoded = DecodeResourceText(bytes.Content);
+                            await File.WriteAllTextAsync(dest, StripScripts(decoded), Encoding.UTF8, ct);
+                        }
                         else
                         {
-                            var decoded = DecodeResourceText(bytes.Content);
-                            if (IsMarkupExtension(ext) || declaredHtmlLike || LooksLikeMarkup(decoded))
+                            // Unknown extension with a media-type that isn't html/xml-like
+                            // either: sniff a small prefix first, and only pay to decode
+                            // (and sanitize) the whole resource when that sniff calls for it.
+                            var prefix = DecodeResourceTextPrefix(bytes.Content, MarkupSniffPrefixBytes);
+                            if (LooksLikeMarkup(prefix))
+                            {
+                                var decoded = DecodeResourceText(bytes.Content);
                                 await File.WriteAllTextAsync(dest, StripScripts(decoded), Encoding.UTF8, ct);
+                            }
                             else
+                            {
                                 await File.WriteAllBytesAsync(dest, bytes.Content, ct);
+                            }
                         }
                     }
                 }
@@ -637,6 +651,24 @@ public sealed class EpubDoc : IDisposable
         return reader.ReadToEnd();
     }
 
+    /// <summary>How many leading bytes <see cref="DecodeResourceTextPrefix"/> decodes to
+    /// sniff for markup - comfortably more than any BOM plus leading whitespace before
+    /// real content starts.</summary>
+    private const int MarkupSniffPrefixBytes = 1024;
+
+    /// <summary>Decodes at most <paramref name="maxBytes"/> leading bytes of a resource to
+    /// text, honoring the same BOM detection as <see cref="DecodeResourceText"/>. Lets a
+    /// large resource be sniffed for markup without paying to decode all of it up front;
+    /// the caller only needs the very start of the string, so a byte-boundary cut
+    /// mid-character near the end of the prefix is harmless.</summary>
+    internal static string DecodeResourceTextPrefix(byte[] content, int maxBytes)
+    {
+        var length = Math.Min(content.Length, maxBytes);
+        using var stream = new MemoryStream(content, 0, length, writable: false);
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
+    }
+
     /// <summary>True when, after an optional BOM and leading ASCII whitespace, the first
     /// character is '&lt;' — the same leading-byte sniff Chromium uses to recognize
     /// HTML/XML content no matter what Content-Type it was served with.</summary>
@@ -649,16 +681,28 @@ public sealed class EpubDoc : IDisposable
 
     private static bool IsAsciiWhitespace(char c) => c is ' ' or '\t' or '\r' or '\n' or '\f' or '\v';
 
+    // A namespace-prefixed element ("svg:script") is a distinct tag name to an XML
+    // parser but is still the real script element the namespace resolves to - allow
+    // an optional prefix wherever "script" appears; the open and close tag's
+    // prefixes need not match each other, since a sanitizer should err toward
+    // stripping too much rather than missing a real script.
+    private const string ScriptNamePattern = @"(?:[A-Za-z_][\w.-]*:)?script";
+
     private static readonly Regex ScriptTagRegex = new(
-        @"<script\b[^>]*>[\s\S]*?</script\s*>|<\s*script\b[^>]*/>",
+        $@"<{ScriptNamePattern}\b[^>]*>[\s\S]*?</{ScriptNamePattern}\s*>|<\s*{ScriptNamePattern}\b[^>]*/>",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly Regex ResidualScriptOpenRegex = new(
-        @"<\s*script\b",
+        $@"<\s*{ScriptNamePattern}\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    // The HTML5 tokenizer starts a new attribute right after "/" or the closing
+    // quote of the previous attribute's value, not only after whitespace (this is a
+    // parse error, but the attribute is still created) - a lookbehind for any of
+    // those separators, instead of consuming leading "\s+", catches an event handler
+    // in "<img/onerror=...>" or "<img src=\"x\"onerror=...>" without requiring space.
     private static readonly Regex EventAttrRegex = new(
-        @"\s+on\w+\s*=\s*(?:""[^""]*""|'[^']*'|[^\s>]+)",
+        @"(?<=[\s/""'])on\w+\s*=\s*(?:""[^""]*""|'[^']*'|[^\s>]+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly Regex LinkTagRegex = new(
@@ -669,13 +713,27 @@ public sealed class EpubDoc : IDisposable
         @"\brel\s*=\s*(?:""(?<v>[^""]*)""|'(?<v>[^']*)'|(?<v>[^\s>]+))",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    private static readonly Regex XmlStylesheetPiRegex = new(
+        @"<\?xml-stylesheet\b[\s\S]*?\?>",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex PiTypeAttrRegex = new(
+        @"\btype\s*=\s*(?:""(?<v>[^""]*)""|'(?<v>[^']*)')",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     /// <summary>
-    /// Sanitizes EPUB-supplied HTML: removes script elements — including an
-    /// unclosed one, since an HTML5 parser treats everything after it as script
-    /// data through EOF — event-handler attributes, and &lt;link&gt; network
-    /// hints (preconnect / dns-prefetch), which Chromium acts on without ever
-    /// raising a WebResourceRequested event and would otherwise defeat the
-    /// "book content cannot make any network request" guarantee.
+    /// Sanitizes EPUB-supplied HTML/XML: removes script elements — including a
+    /// namespace-prefixed one (&lt;svg:script&gt; is a real, executing element to
+    /// an XML parser) and an unclosed one, since an HTML5 parser treats everything
+    /// after it as script data through EOF — event-handler attributes (even one the
+    /// HTML5 tokenizer starts without preceding whitespace, e.g. right after "/" or
+    /// a closing attribute quote), &lt;link&gt; network hints (preconnect /
+    /// dns-prefetch), which Chromium acts on without ever raising a
+    /// WebResourceRequested event, and a non-CSS &lt;?xml-stylesheet?&gt; processing
+    /// instruction, since Chromium runs XSLT for one and an XSL stylesheet can emit
+    /// a &lt;script&gt; element no regex over this document could ever see. Left
+    /// unhandled, any of these would defeat the "book content cannot make any
+    /// network request" and "scripts are stripped" guarantees.
     /// The tail truncation for a residual unclosed &lt;script&gt; is deliberate:
     /// a browser would not render content after such a tag either, so dropping
     /// it loses nothing a reader could see and guarantees no script survives.
@@ -691,6 +749,7 @@ public sealed class EpubDoc : IDisposable
             cleaned = cleaned[..residual.Index];
         cleaned = LinkTagRegex.Replace(cleaned, m => IsNetworkHintLink(m.Value) ? "" : m.Value);
         cleaned = EventAttrRegex.Replace(cleaned, "");
+        cleaned = XmlStylesheetPiRegex.Replace(cleaned, m => IsNonCssStylesheetPi(m.Value) ? "" : m.Value);
         return cleaned;
     }
 
@@ -708,6 +767,20 @@ public sealed class EpubDoc : IDisposable
                 return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// Chromium treats an &lt;?xml-stylesheet?&gt; PI as CSS - and otherwise ignores
+    /// it - only when its "type" pseudo-attribute is absent, empty, or "text/css";
+    /// any other type (text/xsl, application/xslt+xml, application/xml, ...) makes
+    /// it run XSLT, which can synthesize a script element.
+    /// </summary>
+    private static bool IsNonCssStylesheetPi(string pi)
+    {
+        var type = PiTypeAttrRegex.Match(pi);
+        if (!type.Success) return false;
+        var value = type.Groups["v"].Value.Trim();
+        return value.Length > 0 && !value.Equals("text/css", StringComparison.OrdinalIgnoreCase);
     }
 
     private static readonly Regex TagRegex = new("<[^>]+>", RegexOptions.Compiled);
