@@ -165,12 +165,16 @@ internal static class EpubFixtureBuilder
     /// <summary>
     /// A minimal single-chapter book that also carries one binary (image) resource
     /// at <paramref name="imageEntryName"/> with the given raw bytes, referenced
-    /// from the chapter body. Used to exercise the per-resource extraction cap.
-    /// <paramref name="chapterHeadExtra"/> is inserted verbatim into the chapter's
-    /// &lt;head&gt; (e.g. network-hint link tags for sanitization tests).
+    /// from the chapter body. Used to exercise the per-resource extraction cap and
+    /// served-extension-vs-declared-media-type sanitization. <paramref name="chapterHeadExtra"/>
+    /// is inserted verbatim into the chapter's &lt;head&gt; (e.g. network-hint link tags for
+    /// sanitization tests). <paramref name="mediaType"/> is the manifest's declared
+    /// media-type for the resource; it defaults to "image/png" (the mislabel case), and
+    /// callers exercising a correctly-labeled entry (e.g. "image/svg+xml") can override it.
     /// </summary>
     public static void BuildEpubWithBinaryResource(
-        string destPath, string imageEntryName, byte[] imageBytes, string chapterHeadExtra = "")
+        string destPath, string imageEntryName, byte[] imageBytes, string chapterHeadExtra = "",
+        string mediaType = "image/png")
     {
         using var stream = new FileStream(destPath, FileMode.Create, FileAccess.Write);
         using var zip = new ZipArchive(stream, ZipArchiveMode.Create);
@@ -213,7 +217,7 @@ internal static class EpubFixtureBuilder
               <manifest>
                 <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
                 <item id="c1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
-                <item id="img" href="{Path.GetFileName(imageEntryName)}" media-type="image/png"/>
+                <item id="img" href="{Path.GetFileName(imageEntryName)}" media-type="{mediaType}"/>
               </manifest>
               <spine>
                 <itemref idref="c1"/>

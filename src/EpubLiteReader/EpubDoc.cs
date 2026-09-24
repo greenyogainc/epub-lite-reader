@@ -94,11 +94,16 @@ public sealed class EpubDoc : IDisposable
                 try
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                    var ext = Path.GetExtension(file.FilePath);
                     if (file is EpubLocalTextContentFile text)
                     {
-                        var content = IsHtmlLike(file.FilePath, text.ContentMimeType)
-                            ? StripScripts(text.Content)
-                            : text.Content;
+                        // A passive extension served with a non-document MIME type is safe
+                        // to leave untouched (this is how CSS survives unmodified today);
+                        // everything else is sanitized, including NCX/OPF text entries,
+                        // where stripping is a harmless no-op.
+                        var content = IsPassiveExtension(ext) && !IsDeclaredHtmlLike(text.ContentMimeType)
+                            ? text.Content
+                            : StripScripts(text.Content);
                         await File.WriteAllTextAsync(dest, content, Encoding.UTF8, ct);
                     }
                     else if (file is EpubLocalByteContentFile bytes)
@@ -110,7 +115,28 @@ public sealed class EpubDoc : IDisposable
                             skipped.Add(file.FilePath);
                             continue;
                         }
-                        await File.WriteAllBytesAsync(dest, bytes.Content, ct);
+
+                        // The manifest media-type is attacker-controlled: VersOne.Epub
+                        // returns every non-text manifest item as bytes, including a
+                        // genuine image/svg+xml SVG and any item mislabeled as e.g.
+                        // image/png, and the virtual host serves each file by its
+                        // on-disk EXTENSION, not by the manifest's claim. So the
+                        // sanitize-or-not decision below is driven by extension and, for
+                        // anything not obviously safe either way, by sniffing the content
+                        // the same way Chromium sniffs for HTML/XML.
+                        var declaredHtmlLike = IsDeclaredHtmlLike(bytes.ContentMimeType);
+                        if (IsPassiveExtension(ext) && !declaredHtmlLike)
+                        {
+                            await File.WriteAllBytesAsync(dest, bytes.Content, ct);
+                        }
+                        else
+                        {
+                            var decoded = DecodeResourceText(bytes.Content);
+                            if (IsMarkupExtension(ext) || declaredHtmlLike || LooksLikeMarkup(decoded))
+                                await File.WriteAllTextAsync(dest, StripScripts(decoded), Encoding.UTF8, ct);
+                            else
+                                await File.WriteAllBytesAsync(dest, bytes.Content, ct);
+                        }
                     }
                 }
                 catch (OperationCanceledException)
@@ -553,15 +579,59 @@ public sealed class EpubDoc : IDisposable
     internal static string NormalizePath(string path) =>
         path.Replace('\\', '/').TrimStart('/');
 
-    private static bool IsHtmlLike(string filePath, string? mime)
+    /// <summary>Extensions the virtual host serves with a MIME type Chromium never treats
+    /// as a script-capable document and never HTML-sniffs: images, fonts, audio/video,
+    /// and CSS. A resource under one of these is safe to leave byte-for-byte untouched,
+    /// as long as its declared media-type does not itself claim html/xml.</summary>
+    private static readonly HashSet<string> PassiveExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        if (mime is not null &&
-            (mime.Contains("html", StringComparison.OrdinalIgnoreCase) ||
-             mime.Contains("xml", StringComparison.OrdinalIgnoreCase)))
-            return true;
-        var ext = Path.GetExtension(filePath);
-        return ext is ".xhtml" or ".html" or ".htm" or ".xml" or ".svg";
+        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".avif", ".tif", ".tiff",
+        ".ttf", ".otf", ".woff", ".woff2", ".eot",
+        ".mp3", ".mp4", ".m4a", ".m4v", ".aac", ".ogg", ".oga", ".opus", ".webm", ".wav", ".flac",
+        ".css"
+    };
+
+    /// <summary>Extensions Chromium can render or parse as markup (HTML/XML/SVG and
+    /// friends), regardless of what the manifest declares for the entry.</summary>
+    private static readonly HashSet<string> MarkupExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".xhtml", ".xht", ".html", ".htm", ".shtml", ".xml", ".svg", ".xsl", ".xslt", ".mht", ".mhtml"
+    };
+
+    internal static bool IsPassiveExtension(string extension) => PassiveExtensions.Contains(extension);
+
+    internal static bool IsMarkupExtension(string extension) => MarkupExtensions.Contains(extension);
+
+    /// <summary>Whether the EPUB manifest declares this entry's media-type as HTML or
+    /// XML-like (this includes image/svg+xml). The declared media-type is
+    /// attacker-controlled, so this must never be the only signal used to decide
+    /// whether content is sanitized — see <see cref="IsPassiveExtension"/> and
+    /// <see cref="IsMarkupExtension"/>.</summary>
+    private static bool IsDeclaredHtmlLike(string? mime) =>
+        mime is not null &&
+        (mime.Contains("html", StringComparison.OrdinalIgnoreCase) ||
+         mime.Contains("xml", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Decodes a resource's raw bytes to text, honoring a UTF-8 or UTF-16
+    /// (LE/BE) byte-order mark and defaulting to UTF-8 when none is present.</summary>
+    internal static string DecodeResourceText(byte[] content)
+    {
+        using var stream = new MemoryStream(content);
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
     }
+
+    /// <summary>True when, after an optional BOM and leading ASCII whitespace, the first
+    /// character is '&lt;' — the same leading-byte sniff Chromium uses to recognize
+    /// HTML/XML content no matter what Content-Type it was served with.</summary>
+    internal static bool LooksLikeMarkup(string decoded)
+    {
+        int i = 0;
+        while (i < decoded.Length && IsAsciiWhitespace(decoded[i])) i++;
+        return i < decoded.Length && decoded[i] == '<';
+    }
+
+    private static bool IsAsciiWhitespace(char c) => c is ' ' or '\t' or '\r' or '\n' or '\f' or '\v';
 
     private static readonly Regex ScriptTagRegex = new(
         @"<script\b[^>]*>[\s\S]*?</script\s*>|<\s*script\b[^>]*/>",
