@@ -151,10 +151,10 @@ public sealed class EpubDoc : IDisposable
                         else
                         {
                             // Unknown extension with a media-type that isn't html/xml-like
-                            // either: sniff a small prefix first, and only pay to decode
-                            // (and sanitize) the whole resource when that sniff calls for it.
-                            var prefix = DecodeResourceTextPrefix(bytes.Content, MarkupSniffPrefixBytes);
-                            if (LooksLikeMarkup(prefix))
+                            // either: sniff at the byte level first, and only pay to
+                            // decode (and sanitize) the whole resource when that sniff
+                            // calls for it.
+                            if (LooksLikeMarkup(bytes.Content))
                             {
                                 var decoded = DecodeResourceText(bytes.Content);
                                 await File.WriteAllTextAsync(dest, StripScripts(decoded), Encoding.UTF8, ct);
@@ -651,35 +651,51 @@ public sealed class EpubDoc : IDisposable
         return reader.ReadToEnd();
     }
 
-    /// <summary>How many leading bytes <see cref="DecodeResourceTextPrefix"/> decodes to
-    /// sniff for markup - comfortably more than any BOM plus leading whitespace before
-    /// real content starts.</summary>
-    private const int MarkupSniffPrefixBytes = 1024;
-
-    /// <summary>Decodes at most <paramref name="maxBytes"/> leading bytes of a resource to
-    /// text, honoring the same BOM detection as <see cref="DecodeResourceText"/>. Lets a
-    /// large resource be sniffed for markup without paying to decode all of it up front;
-    /// the caller only needs the very start of the string, so a byte-boundary cut
-    /// mid-character near the end of the prefix is harmless.</summary>
-    internal static string DecodeResourceTextPrefix(byte[] content, int maxBytes)
+    /// <summary>
+    /// True when, after an optional UTF-8/UTF-16(LE/BE) byte-order mark and leading
+    /// ASCII whitespace, the first code unit is '&lt;' — the same leading-byte sniff
+    /// Chromium uses to recognize HTML/XML content no matter what Content-Type it was
+    /// served with. Works directly on the raw bytes with no full decode and no fixed
+    /// lookahead window (an earlier, 1024-byte-prefix version of this sniff could be
+    /// pushed past with more leading whitespace than the window covered); this is
+    /// O(leading whitespace), not O(resource size) or bounded by a window.
+    /// </summary>
+    internal static bool LooksLikeMarkup(byte[] content)
     {
-        var length = Math.Min(content.Length, maxBytes);
-        using var stream = new MemoryStream(content, 0, length, writable: false);
-        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-        return reader.ReadToEnd();
+        if (content.Length >= 3 && content[0] == 0xEF && content[1] == 0xBB && content[2] == 0xBF)
+            return LooksLikeMarkupSingleByte(content, 3);
+        if (content.Length >= 2 && content[0] == 0xFF && content[1] == 0xFE)
+            return LooksLikeMarkupUtf16(content, 2, littleEndian: true);
+        if (content.Length >= 2 && content[0] == 0xFE && content[1] == 0xFF)
+            return LooksLikeMarkupUtf16(content, 2, littleEndian: false);
+        // No BOM: same "default UTF-8" assumption as DecodeResourceText, and ASCII
+        // whitespace/'<' are single bytes under UTF-8 regardless of what follows.
+        return LooksLikeMarkupSingleByte(content, 0);
     }
 
-    /// <summary>True when, after an optional BOM and leading ASCII whitespace, the first
-    /// character is '&lt;' — the same leading-byte sniff Chromium uses to recognize
-    /// HTML/XML content no matter what Content-Type it was served with.</summary>
-    internal static bool LooksLikeMarkup(string decoded)
+    private static bool LooksLikeMarkupSingleByte(byte[] content, int start)
     {
-        int i = 0;
-        while (i < decoded.Length && IsAsciiWhitespace(decoded[i])) i++;
-        return i < decoded.Length && decoded[i] == '<';
+        int i = start;
+        while (i < content.Length && IsAsciiWhitespaceByte(content[i])) i++;
+        return i < content.Length && content[i] == (byte)'<';
     }
 
-    private static bool IsAsciiWhitespace(char c) => c is ' ' or '\t' or '\r' or '\n' or '\f' or '\v';
+    private static bool LooksLikeMarkupUtf16(byte[] content, int start, bool littleEndian)
+    {
+        int i = start;
+        while (i + 1 < content.Length)
+        {
+            var low = littleEndian ? content[i] : content[i + 1];
+            var high = littleEndian ? content[i + 1] : content[i];
+            if (high != 0) return false; // not an ASCII code unit: not whitespace, not '<'
+            if (!IsAsciiWhitespaceByte(low)) return low == (byte)'<';
+            i += 2;
+        }
+        return false;
+    }
+
+    private static bool IsAsciiWhitespaceByte(byte b) =>
+        b is (byte)' ' or (byte)'\t' or (byte)'\r' or (byte)'\n' or (byte)'\f' or (byte)'\v';
 
     // A namespace-prefixed element ("svg:script") is a distinct tag name to an XML
     // parser but is still the real script element the namespace resolves to - allow

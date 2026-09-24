@@ -101,6 +101,73 @@ public sealed class MislabeledResourceSanitizationTests : IDisposable
         }
     }
 
+    [Theory]
+    [InlineData(2_000)]
+    [InlineData(100_000)]
+    public async Task Open_SanitizesMarkupAfterManyLeadingSpaces(int paddingSpaces)
+    {
+        // The byte-level sniff has no fixed lookahead window - unlike an earlier,
+        // fixed-size-prefix version of this sniff, it cannot be pushed past by
+        // padding the resource with more leading whitespace than a window covered.
+        var padded = new string(' ', paddingSpaces) + HostileMarkup;
+        EpubFixtureBuilder.BuildEpubWithBinaryResource(_epubPath, "OEBPS/evil.dat", Encoding.UTF8.GetBytes(padded));
+
+        var (doc, _) = await EpubDoc.OpenWithChaptersAsync(_epubPath, "Untitled");
+        try
+        {
+            var extracted = File.ReadAllText(Path.Combine(doc.ExtractRoot, "OEBPS", "evil.dat"));
+
+            Assert.DoesNotContain("<script", extracted, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("hi", extracted);
+        }
+        finally
+        {
+            doc.Dispose();
+        }
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Open_SanitizesUtf16MarkupWithBomAfterLeadingWhitespace(bool littleEndian)
+    {
+        var encoding = littleEndian ? Encoding.Unicode : Encoding.BigEndianUnicode;
+        var padded = new string(' ', 500) + HostileMarkup;
+        var bytes = encoding.GetPreamble().Concat(encoding.GetBytes(padded)).ToArray();
+        EpubFixtureBuilder.BuildEpubWithBinaryResource(_epubPath, "OEBPS/evil.dat", bytes);
+
+        var (doc, _) = await EpubDoc.OpenWithChaptersAsync(_epubPath, "Untitled");
+        try
+        {
+            var extracted = File.ReadAllText(Path.Combine(doc.ExtractRoot, "OEBPS", "evil.dat"));
+
+            Assert.DoesNotContain("<script", extracted, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("hi", extracted);
+        }
+        finally
+        {
+            doc.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task Open_WritesWhitespaceThenNonMarkupBlobByteIdentical()
+    {
+        var blob = new byte[] { 0x20, 0x20, 0x20, 0x00, 0x01, 0x02 };
+        EpubFixtureBuilder.BuildEpubWithBinaryResource(_epubPath, "OEBPS/blob2.bin", blob);
+
+        var (doc, _) = await EpubDoc.OpenWithChaptersAsync(_epubPath, "Untitled");
+        try
+        {
+            var extracted = File.ReadAllBytes(Path.Combine(doc.ExtractRoot, "OEBPS", "blob2.bin"));
+            Assert.Equal(blob, extracted);
+        }
+        finally
+        {
+            doc.Dispose();
+        }
+    }
+
     [Fact]
     public async Task Open_WritesRealPngByteIdentical()
     {
