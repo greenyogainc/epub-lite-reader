@@ -141,6 +141,7 @@ public partial class MainWindow : Window
         ShowChapterState(_chapterState);
 
         EpubDoc? doc = null;
+        EpubDoc? old = null;
         try
         {
             var untitled = Strings.Get("UntitledChapter");
@@ -155,12 +156,11 @@ public partial class MainWindow : Window
 
             // Commit point: the replacement opened successfully, so the previous
             // document can now be released and every piece of UI switched over.
-            var old = _doc;
+            old = _doc;
             _doc = doc;
-            old?.Dispose();
             if (doc.SkippedEntries.Count > 0)
                 App.LogError(new InvalidOperationException(
-                    $"Skipped {doc.SkippedEntries.Count} unsafe or colliding entries while extracting \"{path}\"."));
+                    $"Skipped {doc.SkippedEntries.Count} unsafe, colliding, or oversized entries while extracting \"{path}\"."));
 
             _chapterRoots = chapters;
             _navigableChapters = FlattenNavigable(chapters);
@@ -206,6 +206,13 @@ public partial class MainWindow : Window
             RefreshBookmarksUi();
 
             await RequestViewAsync(new ViewRequest(_mode, _spineIndex, null, _scrollFraction, RestoreScroll: true));
+
+            // Dispose the previous document only after the hosts have re-mapped the
+            // virtual host to the new extract root; deleting it at the commit point
+            // races in-flight resource loads that still resolve against the old
+            // mapping (transient 404 flicker).
+            old?.Dispose();
+            old = null;
         }
         catch (OperationCanceledException)
         {
@@ -223,6 +230,9 @@ public partial class MainWindow : Window
         }
         finally
         {
+            // Failure after the commit point still replaced _doc; release the old
+            // document here so its extract root cannot leak.
+            old?.Dispose();
             if (ReferenceEquals(_openCts, cts))
                 _openCts = null;
             cts.Dispose();
