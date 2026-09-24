@@ -28,7 +28,7 @@ explicitly asks for it*, restricted to `greenyogainc.com` and
 
 ```
 • Internal quality: full codebase review with all confirmed findings fixed
-• Build coverage: the EpubSmoke tool is now included in the solution, so API-breaking changes are caught automatically
+• Build coverage: the EpubSmoke tool is now included in the solution, so building the solution also catches API-breaking changes in it
 • Stronger test assertions for reading-position persistence
 ```
 
