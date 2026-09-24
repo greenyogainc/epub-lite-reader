@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using EpubLiteReader;
+using VersOne.Epub;
 using Xunit;
 
 namespace EpubLiteReader.Tests;
@@ -41,9 +42,12 @@ public sealed class MaliciousEpubTests : IDisposable
         {
             (doc, _) = await EpubDoc.OpenWithChaptersAsync(_epubPath, "Untitled");
         }
-        catch
+        catch (EpubReaderException)
         {
-            // Outcome (1): the library rejected the malformed manifest entry. Acceptable.
+            // Outcome (1): the EPUB library itself rejected the malformed manifest
+            // entry. Only library-thrown rejections are acceptable here; any other
+            // exception type (e.g. a NullReferenceException from our own code) must
+            // fail the test loudly instead of silently skipping the invariant below.
             return;
         }
 
