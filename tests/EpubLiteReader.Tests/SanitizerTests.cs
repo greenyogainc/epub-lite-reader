@@ -115,6 +115,162 @@ public class SanitizerTests
         Assert.Contains("f.woff2", result);
     }
 
+    [Theory]
+    [InlineData("<p>keep</p><svg:script>alert(1)</svg:script><p>after</p>")]
+    [InlineData("<p>keep</p><h:script xmlns:h=\"http://www.w3.org/1999/xhtml\">alert(1)</h:script><p>after</p>")]
+    public void StripScripts_RemovesNamespacePrefixedScriptElement(string html)
+    {
+        // Element identity in an XML-parsed document (every .xhtml chapter, every
+        // .svg) is by namespace, not prefix: a namespace-prefixed "script" element
+        // is a real, executing script element, not just plain "<script>".
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain(":script", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<script", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("alert(1)", result);
+        Assert.Contains("<p>keep</p>", result);
+        Assert.Contains("<p>after</p>", result);
+    }
+
+    [Fact]
+    public void StripScripts_RemovesSelfClosingNamespacePrefixedScriptTag()
+    {
+        var html = "<p>a</p><svg:script href=\"x.js\"/><p>b</p>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain(":script", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("x.js", result);
+        Assert.Contains("<p>a</p>", result);
+        Assert.Contains("<p>b</p>", result);
+    }
+
+    [Fact]
+    public void StripScripts_RemovesUnclosedNamespacePrefixedScriptTagAndEverythingAfterIt()
+    {
+        var html = "<p>keep</p><svg:script>alert('pwned')";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain(":script", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("pwned", result);
+        Assert.Contains("<p>keep</p>", result);
+    }
+
+    [Theory]
+    [InlineData("<img src=\"x\"onerror=\"alert(1)\">", "onerror", "src=\"x\"")]
+    [InlineData("<img src='x'onerror='a()'>", "onerror", "src='x'")]
+    [InlineData("<img/onerror=alert(1) src=x>", "onerror", "src=x")]
+    [InlineData("<img src=\"x\"/onerror=\"a()\">", "onerror", "src=\"x\"")]
+    [InlineData("<svg/onload=a()>", "onload", "<svg")]
+    public void StripScripts_RemovesEventAttributesWithoutPrecedingWhitespace(
+        string html, string attrName, string survivingSubstring)
+    {
+        // The HTML5 tokenizer starts a new attribute right after "/" or the closing
+        // quote of the previous attribute's value, not only after whitespace - a
+        // missing-whitespace parse error still leaves the attribute created.
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain(attrName + "=", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(survivingSubstring, result);
+    }
+
+    [Theory]
+    [InlineData("<?xml-stylesheet type=\"text/xsl\" href=\"t.xsl\"?>")]
+    [InlineData("<?xml-stylesheet type='application/xml' href='t.xsl'?>")]
+    [InlineData("<?xml-stylesheet type=\"TEXT/XSL\" href=\"t.xsl\"?>")]
+    public void StripScripts_RemovesNonCssXmlStylesheetPi(string pi)
+    {
+        // Chromium runs XSLT for a stylesheet PI whose type is neither absent/empty
+        // nor text/css, and an XSL stylesheet can emit a <script> element no regex
+        // over this document could ever see - the PI itself must go.
+        var html = $"<?xml version=\"1.0\"?>{pi}<html><body><p>x</p></body></html>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("xml-stylesheet", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("<p>x</p>", result);
+    }
+
+    [Theory]
+    [InlineData("<?xml-stylesheet type=\"text/css\" href=\"s.css\"?>")]
+    [InlineData("<?xml-stylesheet href=\"s.css\"?>")]
+    public void StripScripts_KeepsCssXmlStylesheetPi(string pi)
+    {
+        var html = $"<?xml version=\"1.0\"?>{pi}<html><body><p>x</p></body></html>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.Contains(pi, result);
+    }
+
+    [Theory]
+    [InlineData("<scr<link rel=\"preconnect\" href=\"x\">ipt>alert(1)</script>")]
+    [InlineData("<scr<?xml-stylesheet type=\"text/xsl\" href=\"t.xsl\"?>ipt>alert(1)</script>")]
+    public void StripScripts_DoesNotLetARemovedTokenSpliceIntoAScriptTag(string html)
+    {
+        // This guards ORDERING, not the space substitution by itself: with ""
+        // instead of a space, the leftover "<scr" and "ipt>" fragments would
+        // still rejoin into "<script>" here too, but because script-pair removal
+        // is the very next pass after link/PI removal, that reformed tag would
+        // still be caught immediately, before anything else could see it. See
+        // StripScripts_DoesNotLetAScriptRemovalSpliceIntoALiveStylesheetPi below
+        // for a splice that genuinely depends on the space, not just ordering.
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("<script", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void StripScripts_DoesNotLetAStylesheetPiSpliceIntoAnEventHandler()
+    {
+        // This guards ORDERING (the PI pass must run before the event-handler
+        // pass): this crafted input already has a real space between "src=x"
+        // and the PI, so removing the PI leaves that pre-existing space right
+        // in front of onerror whether the removal replaces with "" or " ". What
+        // actually matters is that the PI pass completes first - if it ran
+        // after EventAttrRegex, onerror would be preceded by ">" (not a
+        // separator) and EventAttrRegex would never see it at all.
+        var html = "<img src=x <?xml-stylesheet type=\"text/xsl\"?>onerror=alert(1)>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("onerror", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void StripScripts_DoesNotLetAScriptRemovalSpliceIntoALiveLinkTag()
+    {
+        // Removing the <script></script> pair with "" instead of a space would
+        // rejoin "<li" and "nk rel=..." into a genuine "<link rel=\"preconnect\">"
+        // network hint; the space keeps it a harmless (if odd) <li> element
+        // instead. The word "preconnect" can still appear as inert attribute text
+        // on that <li> - what must never happen is a live <link> element being
+        // reformed, since the link-removal pass has already run by this point.
+        var html = "<li<script></script>nk rel=\"preconnect\" href=\"//evil\">";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("<link", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void StripScripts_DoesNotLetAScriptRemovalSpliceIntoALiveStylesheetPi()
+    {
+        // This one genuinely depends on the space, not just ordering: the PI
+        // pass has ALREADY completed by the time script-pair removal runs, so
+        // if script-pair removal replaced its match with "" instead of a space,
+        // "<?xml-sty" + "" + "lesheet ...?>" would rejoin into a live, unremoved
+        // "<?xml-stylesheet type=\"text/xsl\" ...?>" PI that nothing downstream
+        // ever scans for again - the mirror image of
+        // StripScripts_DoesNotLetAScriptRemovalSpliceIntoALiveLinkTag above.
+        var html = "<?xml-sty<script></script>lesheet type=\"text/xsl\" href=\"t.xsl\"?>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("<?xml-stylesheet", result, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void HtmlToPlainText_StripsTagsAndDecodesEntities()
     {

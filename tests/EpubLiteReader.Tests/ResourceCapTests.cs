@@ -66,4 +66,50 @@ public sealed class ResourceCapTests : IDisposable
             Assert.False(Directory.Exists(root));
         }
     }
+
+    [Fact]
+    public async Task Open_SkipsTextResourceOverCap()
+    {
+        EpubFixtureBuilder.BuildEpubWithLargeChapter(_epubPath, paddingChars: 1024);
+
+        var (doc, _) = await EpubDoc.OpenWithChaptersAsync(
+            _epubPath, "Untitled", null, default, maxResourceBytes: 64);
+        try
+        {
+            Assert.Contains(doc.SkippedEntries, e => e.EndsWith("chapter1.xhtml", StringComparison.OrdinalIgnoreCase));
+            Assert.False(File.Exists(Path.Combine(doc.ExtractRoot, "OEBPS", "chapter1.xhtml")),
+                "an oversized text resource must not be written to the extract root");
+            // The oversized chapter is still a spine item, but its plain-text
+            // entry must stay empty instead of retaining the huge string.
+            Assert.Equal(1, doc.SpineCount);
+            Assert.Equal("", doc.SpinePlainText[0]);
+        }
+        finally
+        {
+            var root = doc.ExtractRoot;
+            doc.Dispose();
+            Assert.False(Directory.Exists(root));
+        }
+    }
+
+    [Fact]
+    public async Task Open_WritesTextResourceUnderCap()
+    {
+        EpubFixtureBuilder.BuildEpubWithLargeChapter(_epubPath, paddingChars: 16);
+
+        var (doc, _) = await EpubDoc.OpenWithChaptersAsync(_epubPath, "Untitled");
+        try
+        {
+            Assert.DoesNotContain(doc.SkippedEntries, e => e.EndsWith("chapter1.xhtml", StringComparison.OrdinalIgnoreCase));
+            Assert.True(File.Exists(Path.Combine(doc.ExtractRoot, "OEBPS", "chapter1.xhtml")),
+                "a text resource under the cap must be extracted to disk");
+            Assert.NotEqual("", doc.SpinePlainText[0]);
+        }
+        finally
+        {
+            var root = doc.ExtractRoot;
+            doc.Dispose();
+            Assert.False(Directory.Exists(root));
+        }
+    }
 }

@@ -58,7 +58,7 @@ public sealed class EpubDoc : IDisposable
     /// <summary>Entries skipped during extraction because their paths were unsafe, collided, or exceeded the resource size cap.</summary>
     public IReadOnlyList<string> SkippedEntries { get; private set; } = Array.Empty<string>();
 
-    /// <summary>Default cap for a single binary resource (image, font, ...) extracted from a book.</summary>
+    /// <summary>Default cap for a single resource (text or binary - a chapter, image, font, ...) extracted from a book.</summary>
     public const long DefaultMaxResourceBytes = 64L * 1024 * 1024;
 
     public static Task<(EpubDoc Doc, List<ChapterItem> Chapters)> OpenWithChaptersAsync(
@@ -82,6 +82,10 @@ public sealed class EpubDoc : IDisposable
         {
             var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var skipped = new List<string>();
+            // Relative paths (NormalizePath-keyed, same as pathToSpine below) skipped for
+            // being oversized, so a spine item among them never has HtmlToPlainText run on
+            // its (already in-memory) huge content and never retains that text afterward.
+            var oversizedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var file in book.Content.AllFiles.Local)
             {
                 ct.ThrowIfCancellationRequested();
@@ -94,11 +98,27 @@ public sealed class EpubDoc : IDisposable
                 try
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                    var ext = Path.GetExtension(file.FilePath);
                     if (file is EpubLocalTextContentFile text)
                     {
-                        var content = IsHtmlLike(file.FilePath, text.ContentMimeType)
-                            ? StripScripts(text.Content)
-                            : text.Content;
+                        if (Encoding.UTF8.GetByteCount(text.Content) > maxResourceBytes)
+                        {
+                            // A single hostile or corrupt oversized resource must not be
+                            // materialized on disk; skip it and record the entry.
+                            skipped.Add(file.FilePath);
+                            oversizedPaths.Add(NormalizePath(file.FilePath));
+                            continue;
+                        }
+
+                        // A passive extension served with a non-document MIME type is safe
+                        // to leave unsanitized (this is how CSS skips StripScripts today -
+                        // though File.WriteAllTextAsync with Encoding.UTF8 below still
+                        // re-encodes it and prepends a UTF-8 BOM, so it is not written
+                        // byte-for-byte); everything else is sanitized, including
+                        // NCX/OPF text entries, where stripping is a harmless no-op.
+                        var content = IsPassiveExtension(ext) && !IsDeclaredHtmlLike(text.ContentMimeType)
+                            ? text.Content
+                            : StripScripts(text.Content);
                         await File.WriteAllTextAsync(dest, content, Encoding.UTF8, ct);
                     }
                     else if (file is EpubLocalByteContentFile bytes)
@@ -110,7 +130,42 @@ public sealed class EpubDoc : IDisposable
                             skipped.Add(file.FilePath);
                             continue;
                         }
-                        await File.WriteAllBytesAsync(dest, bytes.Content, ct);
+
+                        // The manifest media-type is attacker-controlled: VersOne.Epub
+                        // returns every non-text manifest item as bytes, including a
+                        // genuine image/svg+xml SVG and any item mislabeled as e.g.
+                        // image/png, and the virtual host serves each file by its
+                        // on-disk EXTENSION, not by the manifest's claim. So the
+                        // sanitize-or-not decision below is driven by extension and, for
+                        // anything not obviously safe either way, by sniffing the content
+                        // the same way Chromium sniffs for HTML/XML.
+                        var declaredHtmlLike = IsDeclaredHtmlLike(bytes.ContentMimeType);
+                        if (IsPassiveExtension(ext) && !declaredHtmlLike)
+                        {
+                            await File.WriteAllBytesAsync(dest, bytes.Content, ct);
+                        }
+                        else if (IsMarkupExtension(ext) || declaredHtmlLike)
+                        {
+                            // Already known to need sanitizing; decode the full resource once.
+                            var decoded = DecodeResourceText(bytes.Content);
+                            await File.WriteAllTextAsync(dest, StripScripts(decoded), Encoding.UTF8, ct);
+                        }
+                        else
+                        {
+                            // Unknown extension with a media-type that isn't html/xml-like
+                            // either: sniff at the byte level first, and only pay to
+                            // decode (and sanitize) the whole resource when that sniff
+                            // calls for it.
+                            if (LooksLikeMarkup(bytes.Content))
+                            {
+                                var decoded = DecodeResourceText(bytes.Content);
+                                await File.WriteAllTextAsync(dest, StripScripts(decoded), Encoding.UTF8, ct);
+                            }
+                            else
+                            {
+                                await File.WriteAllBytesAsync(dest, bytes.Content, ct);
+                            }
+                        }
                     }
                 }
                 catch (OperationCanceledException)
@@ -136,7 +191,10 @@ public sealed class EpubDoc : IDisposable
                 // Also index by filename-only for loose matches
                 pathToSpine.TryAdd(Path.GetFileName(rel), spinePaths.Count);
                 spinePaths.Add(rel);
-                spineText.Add(HtmlToPlainText(item.Content));
+                // A spine item skipped above for being oversized was never written to
+                // disk; also skip running HtmlToPlainText on its (already in-memory)
+                // huge content so the resulting huge string is not retained here either.
+                spineText.Add(oversizedPaths.Contains(rel) ? "" : HtmlToPlainText(item.Content));
             }
 
             var order = 0;
@@ -553,57 +611,180 @@ public sealed class EpubDoc : IDisposable
     internal static string NormalizePath(string path) =>
         path.Replace('\\', '/').TrimStart('/');
 
-    private static bool IsHtmlLike(string filePath, string? mime)
+    /// <summary>Extensions the virtual host serves with a MIME type Chromium never treats
+    /// as a script-capable document and never HTML-sniffs: images, fonts, audio/video,
+    /// and CSS. A resource under one of these is safe to leave unsanitized (StripScripts
+    /// is skipped), as long as its declared media-type does not itself claim html/xml. A
+    /// byte entry (image, font, audio/video) is then written byte-for-byte; a text entry
+    /// (CSS) is written via File.WriteAllTextAsync with Encoding.UTF8, which re-encodes
+    /// it and prepends a UTF-8 BOM, so that one is unsanitized but not byte-identical.
+    /// </summary>
+    private static readonly HashSet<string> PassiveExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        if (mime is not null &&
-            (mime.Contains("html", StringComparison.OrdinalIgnoreCase) ||
-             mime.Contains("xml", StringComparison.OrdinalIgnoreCase)))
-            return true;
-        var ext = Path.GetExtension(filePath);
-        return ext is ".xhtml" or ".html" or ".htm" or ".xml" or ".svg";
+        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".avif", ".tif", ".tiff",
+        ".ttf", ".otf", ".woff", ".woff2", ".eot",
+        ".mp3", ".mp4", ".m4a", ".m4v", ".aac", ".ogg", ".oga", ".opus", ".webm", ".wav", ".flac",
+        ".css"
+    };
+
+    /// <summary>Extensions Chromium can render or parse as markup (HTML/XML/SVG and
+    /// friends), regardless of what the manifest declares for the entry.</summary>
+    private static readonly HashSet<string> MarkupExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".xhtml", ".xht", ".html", ".htm", ".shtml", ".xml", ".svg", ".xsl", ".xslt", ".mht", ".mhtml"
+    };
+
+    internal static bool IsPassiveExtension(string extension) => PassiveExtensions.Contains(extension);
+
+    internal static bool IsMarkupExtension(string extension) => MarkupExtensions.Contains(extension);
+
+    /// <summary>Whether the EPUB manifest declares this entry's media-type as HTML or
+    /// XML-like (this includes image/svg+xml). The declared media-type is
+    /// attacker-controlled, so this must never be the only signal used to decide
+    /// whether content is sanitized — see <see cref="IsPassiveExtension"/> and
+    /// <see cref="IsMarkupExtension"/>.</summary>
+    private static bool IsDeclaredHtmlLike(string? mime) =>
+        mime is not null &&
+        (mime.Contains("html", StringComparison.OrdinalIgnoreCase) ||
+         mime.Contains("xml", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Decodes a resource's raw bytes to text, honoring a UTF-8 or UTF-16
+    /// (LE/BE) byte-order mark and defaulting to UTF-8 when none is present.</summary>
+    internal static string DecodeResourceText(byte[] content)
+    {
+        using var stream = new MemoryStream(content);
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
     }
 
+    /// <summary>
+    /// True when, after an optional UTF-8/UTF-16(LE/BE) byte-order mark and leading
+    /// ASCII whitespace, the first code unit is '&lt;' — the same leading-byte sniff
+    /// Chromium uses to recognize HTML/XML content no matter what Content-Type it was
+    /// served with. Works directly on the raw bytes with no full decode and no fixed
+    /// lookahead window (an earlier, 1024-byte-prefix version of this sniff could be
+    /// pushed past with more leading whitespace than the window covered); this is
+    /// O(leading whitespace), not O(resource size) or bounded by a window.
+    /// </summary>
+    internal static bool LooksLikeMarkup(byte[] content)
+    {
+        if (content.Length >= 3 && content[0] == 0xEF && content[1] == 0xBB && content[2] == 0xBF)
+            return LooksLikeMarkupSingleByte(content, 3);
+        if (content.Length >= 2 && content[0] == 0xFF && content[1] == 0xFE)
+            return LooksLikeMarkupUtf16(content, 2, littleEndian: true);
+        if (content.Length >= 2 && content[0] == 0xFE && content[1] == 0xFF)
+            return LooksLikeMarkupUtf16(content, 2, littleEndian: false);
+        // No BOM: same "default UTF-8" assumption as DecodeResourceText, and ASCII
+        // whitespace/'<' are single bytes under UTF-8 regardless of what follows.
+        return LooksLikeMarkupSingleByte(content, 0);
+    }
+
+    private static bool LooksLikeMarkupSingleByte(byte[] content, int start)
+    {
+        int i = start;
+        while (i < content.Length && IsAsciiWhitespaceByte(content[i])) i++;
+        return i < content.Length && content[i] == (byte)'<';
+    }
+
+    private static bool LooksLikeMarkupUtf16(byte[] content, int start, bool littleEndian)
+    {
+        int i = start;
+        while (i + 1 < content.Length)
+        {
+            var low = littleEndian ? content[i] : content[i + 1];
+            var high = littleEndian ? content[i + 1] : content[i];
+            if (high != 0) return false; // not an ASCII code unit: not whitespace, not '<'
+            if (!IsAsciiWhitespaceByte(low)) return low == (byte)'<';
+            i += 2;
+        }
+        return false;
+    }
+
+    private static bool IsAsciiWhitespaceByte(byte b) =>
+        b is (byte)' ' or (byte)'\t' or (byte)'\r' or (byte)'\n' or (byte)'\f' or (byte)'\v';
+
+    // A namespace-prefixed element ("svg:script") is a distinct tag name to an XML
+    // parser but is still the real script element the namespace resolves to - allow
+    // an optional prefix wherever "script" appears; the open and close tag's
+    // prefixes need not match each other, since a sanitizer should err toward
+    // stripping too much rather than missing a real script.
+    private const string ScriptNamePattern = @"(?:[A-Za-z_][\w.-]*:)?script";
+
     private static readonly Regex ScriptTagRegex = new(
-        @"<script\b[^>]*>[\s\S]*?</script\s*>|<\s*script\b[^>]*/>",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        $@"<{ScriptNamePattern}\b[^>]*>[\s\S]*?</{ScriptNamePattern}\s*>|<\s*{ScriptNamePattern}\b[^>]*/>",
+        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
 
     private static readonly Regex ResidualScriptOpenRegex = new(
-        @"<\s*script\b",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        $@"<\s*{ScriptNamePattern}\b",
+        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
 
+    // The HTML5 tokenizer starts a new attribute right after "/" or the closing
+    // quote of the previous attribute's value, not only after whitespace (this is a
+    // parse error, but the attribute is still created) - a lookbehind for any of
+    // those separators, instead of consuming leading "\s+", catches an event handler
+    // in "<img/onerror=...>" or "<img src=\"x\"onerror=...>" without requiring space.
+    // The lookbehind means this one can't use RegexOptions.NonBacktracking (unlike
+    // every other regex below); SanitizerPerformanceTests measures that it still
+    // stays linear on adversarial input instead of just assuming so.
     private static readonly Regex EventAttrRegex = new(
-        @"\s+on\w+\s*=\s*(?:""[^""]*""|'[^']*'|[^\s>]+)",
+        @"(?<=[\s/""'])on\w+\s*=\s*(?:""[^""]*""|'[^']*'|[^\s>]+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly Regex LinkTagRegex = new(
         @"<link\b(?:[^>""']|""[^""]*""|'[^']*')*>",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
 
     private static readonly Regex RelAttrRegex = new(
         @"\brel\s*=\s*(?:""(?<v>[^""]*)""|'(?<v>[^']*)'|(?<v>[^\s>]+))",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
+
+    private static readonly Regex XmlStylesheetPiRegex = new(
+        @"<\?xml-stylesheet\b[\s\S]*?\?>",
+        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
+
+    private static readonly Regex PiTypeAttrRegex = new(
+        @"\btype\s*=\s*(?:""(?<v>[^""]*)""|'(?<v>[^']*)')",
+        RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
 
     /// <summary>
-    /// Sanitizes EPUB-supplied HTML: removes script elements — including an
-    /// unclosed one, since an HTML5 parser treats everything after it as script
-    /// data through EOF — event-handler attributes, and &lt;link&gt; network
-    /// hints (preconnect / dns-prefetch), which Chromium acts on without ever
-    /// raising a WebResourceRequested event and would otherwise defeat the
-    /// "book content cannot make any network request" guarantee.
+    /// Sanitizes EPUB-supplied HTML/XML: removes script elements — including a
+    /// namespace-prefixed one (&lt;svg:script&gt; is a real, executing element to
+    /// an XML parser) and an unclosed one, since an HTML5 parser treats everything
+    /// after it as script data through EOF — event-handler attributes (even one the
+    /// HTML5 tokenizer starts without preceding whitespace, e.g. right after "/" or
+    /// a closing attribute quote), &lt;link&gt; network hints (preconnect /
+    /// dns-prefetch), which Chromium acts on without ever raising a
+    /// WebResourceRequested event, and a non-CSS &lt;?xml-stylesheet?&gt; processing
+    /// instruction, since Chromium runs XSLT for one and an XSL stylesheet can emit
+    /// a &lt;script&gt; element no regex over this document could ever see. Left
+    /// unhandled, any of these would defeat the "book content cannot make any
+    /// network request" and "scripts are stripped" guarantees.
     /// The tail truncation for a residual unclosed &lt;script&gt; is deliberate:
     /// a browser would not render content after such a tag either, so dropping
     /// it loses nothing a reader could see and guarantees no script survives.
+    /// Pass order and replacement text both matter, and neither is arbitrary: a
+    /// pass that removes a whole delimited token (a PI, a link, a script pair)
+    /// replaces it with a single space rather than "", because a space can never
+    /// be part of "&lt;script", "&lt;link", "&lt;?xml-stylesheet", or "on\w+=" — so
+    /// text left on either side of a removal can never splice together into a
+    /// token an EARLIER pass already scanned for (e.g. "&lt;scr" + a removed link +
+    /// "ipt&gt;" must never re-form "&lt;script&gt;"). The event-handler pass runs
+    /// last and keeps its "" replacement: its lookbehind only fires on an already
+    /// genuine separator (whitespace, "/", or a closing quote — including a space
+    /// left behind by an earlier pass), so it can't be spliced into by anything
+    /// that still has to run after it.
     /// </summary>
     internal static string StripScripts(string html)
     {
         if (string.IsNullOrEmpty(html)) return html;
-        var cleaned = ScriptTagRegex.Replace(html, "");
+        var cleaned = XmlStylesheetPiRegex.Replace(html, m => IsNonCssStylesheetPi(m.Value) ? " " : m.Value);
+        cleaned = LinkTagRegex.Replace(cleaned, m => IsNetworkHintLink(m.Value) ? " " : m.Value);
+        cleaned = ScriptTagRegex.Replace(cleaned, " ");
         // An unclosed <script> start tag flips the HTML5 parser into script-data
         // state until EOF: drop everything from a residual start tag onward.
         var residual = ResidualScriptOpenRegex.Match(cleaned);
         if (residual.Success)
             cleaned = cleaned[..residual.Index];
-        cleaned = LinkTagRegex.Replace(cleaned, m => IsNetworkHintLink(m.Value) ? "" : m.Value);
         cleaned = EventAttrRegex.Replace(cleaned, "");
         return cleaned;
     }
@@ -624,8 +805,22 @@ public sealed class EpubDoc : IDisposable
         return false;
     }
 
-    private static readonly Regex TagRegex = new("<[^>]+>", RegexOptions.Compiled);
-    private static readonly Regex WsRegex = new(@"\s+", RegexOptions.Compiled);
+    /// <summary>
+    /// Chromium treats an &lt;?xml-stylesheet?&gt; PI as CSS - and otherwise ignores
+    /// it - only when its "type" pseudo-attribute is absent, empty, or "text/css";
+    /// any other type (text/xsl, application/xslt+xml, application/xml, ...) makes
+    /// it run XSLT, which can synthesize a script element.
+    /// </summary>
+    private static bool IsNonCssStylesheetPi(string pi)
+    {
+        var type = PiTypeAttrRegex.Match(pi);
+        if (!type.Success) return false;
+        var value = type.Groups["v"].Value.Trim();
+        return value.Length > 0 && !value.Equals("text/css", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static readonly Regex TagRegex = new("<[^>]+>", RegexOptions.NonBacktracking);
+    private static readonly Regex WsRegex = new(@"\s+", RegexOptions.NonBacktracking);
 
     internal static string HtmlToPlainText(string html)
     {

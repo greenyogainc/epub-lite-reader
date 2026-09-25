@@ -163,14 +163,76 @@ internal static class EpubFixtureBuilder
     }
 
     /// <summary>
+    /// A minimal single-chapter book whose only chapter's body is padded with
+    /// <paramref name="paddingChars"/> filler characters. Used to exercise the
+    /// per-resource extraction cap against a TEXT spine entry, as opposed to
+    /// <see cref="BuildEpubWithBinaryResource"/>, which exercises it against a binary one.
+    /// </summary>
+    public static void BuildEpubWithLargeChapter(string destPath, int paddingChars)
+    {
+        using var stream = new FileStream(destPath, FileMode.Create, FileAccess.Write);
+        using var zip = new ZipArchive(stream, ZipArchiveMode.Create);
+
+        WriteEntry(zip, "mimetype", "application/epub+zip", CompressionLevel.NoCompression);
+
+        WriteEntry(zip, "META-INF/container.xml", """
+            <?xml version="1.0"?>
+            <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+              <rootfiles>
+                <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+              </rootfiles>
+            </container>
+            """);
+
+        var filler = new string('x', paddingChars);
+        WriteEntry(zip, "OEBPS/chapter1.xhtml", $"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <html xmlns="http://www.w3.org/1999/xhtml">
+            <head><title>Chapter One</title></head>
+            <body><p>{filler}</p></body>
+            </html>
+            """);
+
+        WriteEntry(zip, "OEBPS/nav.xhtml", """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+            <head><title>Nav</title></head>
+            <body><nav epub:type="toc"><ol><li><a href="chapter1.xhtml">Chapter One</a></li></ol></nav></body>
+            </html>
+            """);
+
+        WriteEntry(zip, "OEBPS/content.opf", """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0" xml:lang="en">
+              <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:identifier id="BookId">urn:uuid:elr-large-chapter-fixture</dc:identifier>
+                <dc:title>Large Chapter Fixture</dc:title>
+                <dc:language>en</dc:language>
+              </metadata>
+              <manifest>
+                <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+                <item id="c1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
+              </manifest>
+              <spine>
+                <itemref idref="c1"/>
+              </spine>
+            </package>
+            """);
+    }
+
+    /// <summary>
     /// A minimal single-chapter book that also carries one binary (image) resource
     /// at <paramref name="imageEntryName"/> with the given raw bytes, referenced
-    /// from the chapter body. Used to exercise the per-resource extraction cap.
-    /// <paramref name="chapterHeadExtra"/> is inserted verbatim into the chapter's
-    /// &lt;head&gt; (e.g. network-hint link tags for sanitization tests).
+    /// from the chapter body. Used to exercise the per-resource extraction cap and
+    /// served-extension-vs-declared-media-type sanitization. <paramref name="chapterHeadExtra"/>
+    /// is inserted verbatim into the chapter's &lt;head&gt; (e.g. network-hint link tags for
+    /// sanitization tests). <paramref name="mediaType"/> is the manifest's declared
+    /// media-type for the resource; it defaults to "image/png" (the mislabel case), and
+    /// callers exercising a correctly-labeled entry (e.g. "image/svg+xml") can override it.
     /// </summary>
     public static void BuildEpubWithBinaryResource(
-        string destPath, string imageEntryName, byte[] imageBytes, string chapterHeadExtra = "")
+        string destPath, string imageEntryName, byte[] imageBytes, string chapterHeadExtra = "",
+        string mediaType = "image/png")
     {
         using var stream = new FileStream(destPath, FileMode.Create, FileAccess.Write);
         using var zip = new ZipArchive(stream, ZipArchiveMode.Create);
@@ -213,7 +275,7 @@ internal static class EpubFixtureBuilder
               <manifest>
                 <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
                 <item id="c1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
-                <item id="img" href="{Path.GetFileName(imageEntryName)}" media-type="image/png"/>
+                <item id="img" href="{Path.GetFileName(imageEntryName)}" media-type="{mediaType}"/>
               </manifest>
               <spine>
                 <itemref idref="c1"/>

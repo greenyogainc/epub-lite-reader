@@ -71,7 +71,9 @@ public static class BookStateStore
             if (File.Exists(SettingsPath))
             {
                 var json = File.ReadAllText(SettingsPath);
-                return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+                var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+                settings.Defaults ??= new();
+                return settings;
             }
         }
         catch (Exception ex)
@@ -99,13 +101,29 @@ public static class BookStateStore
         {
             var path = BookPath(bookId);
             if (!File.Exists(path)) return null;
-            return JsonSerializer.Deserialize<BookState>(File.ReadAllText(path), JsonOptions);
+            var state = JsonSerializer.Deserialize<BookState>(File.ReadAllText(path), JsonOptions);
+            if (state is not null) NormalizeBook(state);
+            return state;
         }
         catch (Exception ex)
         {
             App.LogError(ex);
             return null;
         }
+    }
+
+    /// <summary>
+    /// System.Text.Json deserializes an explicit JSON null into a non-nullable property
+    /// without complaint, so a hand-edited or corrupted state file (e.g. "display": null)
+    /// would otherwise reach the caller with null where a reference is assumed - fill in
+    /// the same defaults the property initializers use, and drop null bookmark entries.
+    /// </summary>
+    private static void NormalizeBook(BookState state)
+    {
+        state.Display ??= new();
+        state.Bookmarks ??= new();
+        state.Bookmarks.RemoveAll(b => b is null);
+        state.BookId ??= "";
     }
 
     public static void SaveBook(BookState state)

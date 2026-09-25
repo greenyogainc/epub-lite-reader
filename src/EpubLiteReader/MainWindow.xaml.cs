@@ -142,6 +142,12 @@ public partial class MainWindow : Window
 
         EpubDoc? doc = null;
         EpubDoc? old = null;
+        // Explicit commit tracking: on the very first open of a session _doc is
+        // still null, so if the replacement also fails before the commit point
+        // (doc is null too), ReferenceEquals(doc, _doc) would read as "committed"
+        // (null == null) even though nothing was - a bool set only at the actual
+        // commit point cannot be fooled by that coincidence.
+        var committed = false;
         try
         {
             var untitled = Strings.Get("UntitledChapter");
@@ -158,6 +164,7 @@ public partial class MainWindow : Window
             // document can now be released and every piece of UI switched over.
             old = _doc;
             _doc = doc;
+            committed = true;
             if (doc.SkippedEntries.Count > 0)
                 App.LogError(new InvalidOperationException(
                     $"Skipped {doc.SkippedEntries.Count} unsafe, colliding, or oversized entries while extracting \"{path}\"."));
@@ -216,16 +223,29 @@ public partial class MainWindow : Window
         }
         catch (OperationCanceledException)
         {
-            doc?.Dispose();
-            // Superseded by a newer open; that open owns the UI now.
+            // Superseded by a newer open; that open owns the UI now. Only dispose doc
+            // if the replacement was never committed - if it was, the finally block's
+            // old?.Dispose() already released the book _doc replaced, and _doc itself
+            // must be left alone.
+            if (!committed)
+                doc?.Dispose();
         }
         catch (Exception ex)
         {
-            doc?.Dispose();
             App.LogError(ex);
-            // The previous book was never torn down, so simply restore its state.
-            _chapterState = prevChapterState;
-            ShowChapterState(_chapterState);
+            if (!committed)
+            {
+                // Not committed: tear down the failed replacement and restore the
+                // previous book's chapter-pane state, exactly as if this open never
+                // started.
+                doc?.Dispose();
+                _chapterState = prevChapterState;
+                ShowChapterState(_chapterState);
+            }
+            // else: committed - the failure happened after the commit point, so the
+            // new book is already live in the UI. Leave it alone: do not dispose the
+            // committed document and do not revert the chapter state. The finally
+            // block's old?.Dispose() still releases the book _doc replaced.
             Strings.ShowError(this, string.Format(Strings.Get("OpenFileErrorMessage"), path, ex.Message));
         }
         finally
