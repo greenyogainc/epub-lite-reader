@@ -47,6 +47,27 @@ immediately — no library, no account, no distractions.
 | `Ctrl+0` | Reset text settings |
 | `B` | Add or remove bookmark |
 
+## What's new in 1.0.6
+
+- **Scripts stripped from every page-capable file**: sanitization is now decided
+  by how a file is actually served (its extension, plus a content sniff), not by
+  the book's own declared media type — so SVG images and mislabeled HTML/XML
+  resources are cleaned too, not only chapters. The sanitizer also removes
+  namespace-prefixed script elements (`<svg:script>`), event handlers written
+  without a preceding space (`<img src="x"onerror=…>`), and XSLT stylesheet
+  instructions, and its passes can no longer splice fragments back into a live
+  tag.
+- **Hostile books can't hang opening**: the sanitizer's regexes run in linear
+  time, so crafted content can no longer pin the CPU for minutes or hours, and
+  the 64 MB per-resource extraction cap now applies to chapters and other text
+  resources too.
+- **Reliability**: a corrupted saved-state file (`"display": null`, etc.) no
+  longer stops a book from opening or the app from starting, and a failed open
+  never deletes the files of the book that is already on screen.
+- **About window**: closing it while the Contact support page is still loading
+  no longer leaks a background WebView2 process.
+- Code review report: `docs/code-review/code-review-2026-09-24-release-1.0.6.md`.
+
 ## What's new in 1.0.5
 
 - **Build coverage**: The `EpubSmoke` tool is now included in the solution file,
