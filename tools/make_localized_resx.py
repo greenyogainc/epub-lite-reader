@@ -34,6 +34,7 @@ ORDER = [
     "SupportLoadFailed", "SupportBack", "ContinuousSectionTitleFormat",
     "PageBoxName", "MetadataFormat",
     "FindNext", "FindPrev", "CloseSearch", "NoSearchResults", "SearchResultsFormat",
+    "NoReadableContent",
 ]
 
 # Format strings and brand name are language-agnostic; the same literal is
@@ -95,6 +96,7 @@ TRANSLATIONS = {
         "MetadataFormat": DASH_FMT,
         "FindNext": "Buscar siguiente", "FindPrev": "Buscar anterior", "CloseSearch": "Cerrar",
         "NoSearchResults": "Sin coincidencias", "SearchResultsFormat": "{0} coincidencias",
+        "NoReadableContent": "Este libro no tiene páginas legibles.",
     },
     "fr": {
         "AppTitle": APP_TITLE, "MainWindowTitleFormat": DASH_FMT,
@@ -147,6 +149,7 @@ TRANSLATIONS = {
         "MetadataFormat": DASH_FMT,
         "FindNext": "Suivant", "FindPrev": "Précédent", "CloseSearch": "Fermer",
         "NoSearchResults": "Aucun résultat", "SearchResultsFormat": "{0} résultats",
+        "NoReadableContent": "Ce livre ne contient aucune page lisible.",
     },
     "de": {
         "AppTitle": APP_TITLE, "MainWindowTitleFormat": DASH_FMT,
@@ -199,6 +202,7 @@ TRANSLATIONS = {
         "MetadataFormat": DASH_FMT,
         "FindNext": "Weitersuchen", "FindPrev": "Rückwärts suchen", "CloseSearch": "Schließen",
         "NoSearchResults": "Keine Treffer", "SearchResultsFormat": "{0} Treffer",
+        "NoReadableContent": "Dieses Buch enthält keine lesbaren Seiten.",
     },
     "it": {
         "AppTitle": APP_TITLE, "MainWindowTitleFormat": DASH_FMT,
@@ -251,6 +255,7 @@ TRANSLATIONS = {
         "MetadataFormat": DASH_FMT,
         "FindNext": "Trova successivo", "FindPrev": "Trova precedente", "CloseSearch": "Chiudi",
         "NoSearchResults": "Nessun risultato", "SearchResultsFormat": "{0} risultati",
+        "NoReadableContent": "Questo libro non contiene pagine leggibili.",
     },
     "pt-BR": {
         "AppTitle": APP_TITLE, "MainWindowTitleFormat": DASH_FMT,
@@ -303,6 +308,7 @@ TRANSLATIONS = {
         "MetadataFormat": DASH_FMT,
         "FindNext": "Buscar próxima", "FindPrev": "Buscar anterior", "CloseSearch": "Fechar",
         "NoSearchResults": "Nenhum resultado", "SearchResultsFormat": "{0} resultados",
+        "NoReadableContent": "Este livro não tem páginas legíveis.",
     },
     "ja": {
         "AppTitle": APP_TITLE, "MainWindowTitleFormat": DASH_FMT,
@@ -355,6 +361,7 @@ TRANSLATIONS = {
         "MetadataFormat": DASH_FMT,
         "FindNext": "次を検索", "FindPrev": "前を検索", "CloseSearch": "閉じる",
         "NoSearchResults": "一致なし", "SearchResultsFormat": "{0} 件一致",
+        "NoReadableContent": "この本には表示できるページがありません。",
     },
     "ko": {
         "AppTitle": APP_TITLE, "MainWindowTitleFormat": DASH_FMT,
@@ -407,6 +414,7 @@ TRANSLATIONS = {
         "MetadataFormat": DASH_FMT,
         "FindNext": "다음 찾기", "FindPrev": "이전 찾기", "CloseSearch": "닫기",
         "NoSearchResults": "일치하는 항목 없음", "SearchResultsFormat": "{0}개 일치",
+        "NoReadableContent": "이 책에는 읽을 수 있는 페이지가 없습니다.",
     },
     "zh-Hans": {
         "AppTitle": APP_TITLE, "MainWindowTitleFormat": DASH_FMT,
@@ -459,6 +467,7 @@ TRANSLATIONS = {
         "MetadataFormat": DASH_FMT,
         "FindNext": "查找下一个", "FindPrev": "查找上一个", "CloseSearch": "关闭",
         "NoSearchResults": "无匹配项", "SearchResultsFormat": "{0} 处匹配",
+        "NoReadableContent": "此书没有可阅读的页面。",
     },
     "zh-Hant": {
         "AppTitle": APP_TITLE, "MainWindowTitleFormat": DASH_FMT,
@@ -511,6 +520,7 @@ TRANSLATIONS = {
         "MetadataFormat": DASH_FMT,
         "FindNext": "尋找下一個", "FindPrev": "尋找上一個", "CloseSearch": "關閉",
         "NoSearchResults": "沒有相符項目", "SearchResultsFormat": "{0} 個相符項目",
+        "NoReadableContent": "此書沒有可閱讀的頁面。",
     },
     "ru": {
         "AppTitle": APP_TITLE, "MainWindowTitleFormat": DASH_FMT,
@@ -563,6 +573,7 @@ TRANSLATIONS = {
         "MetadataFormat": DASH_FMT,
         "FindNext": "Найти далее", "FindPrev": "Найти ранее", "CloseSearch": "Закрыть",
         "NoSearchResults": "Совпадений нет", "SearchResultsFormat": "Совпадений: {0}",
+        "NoReadableContent": "В этой книге нет страниц для чтения.",
     },
     "uk": {
         "AppTitle": APP_TITLE, "MainWindowTitleFormat": DASH_FMT,
@@ -615,6 +626,7 @@ TRANSLATIONS = {
         "MetadataFormat": DASH_FMT,
         "FindNext": "Знайти далі", "FindPrev": "Знайти раніше", "CloseSearch": "Закрити",
         "NoSearchResults": "Немає збігів", "SearchResultsFormat": "Збігів: {0}",
+        "NoReadableContent": "У цій книзі немає сторінок для читання.",
     },
     "ar": {
         "AppTitle": APP_TITLE, "MainWindowTitleFormat": DASH_FMT,
@@ -667,6 +679,7 @@ TRANSLATIONS = {
         "MetadataFormat": DASH_FMT,
         "FindNext": "البحث عن التالي", "FindPrev": "البحث عن السابق", "CloseSearch": "إغلاق",
         "NoSearchResults": "لا توجد نتائج", "SearchResultsFormat": "{0} نتيجة مطابقة",
+        "NoReadableContent": "لا يحتوي هذا الكتاب على صفحات قابلة للقراءة.",
     },
 }
 # European Portuguese: same base as pt-BR, overriding the classic PT-PT vs

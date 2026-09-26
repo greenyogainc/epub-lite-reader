@@ -96,4 +96,5 @@ Details logged to:
   <data name="CloseSearch" xml:space="preserve"><value>Close</value></data>
   <data name="NoSearchResults" xml:space="preserve"><value>No matches</value></data>
   <data name="SearchResultsFormat" xml:space="preserve"><value>{0} matches</value></data>
+  <data name="NoReadableContent" xml:space="preserve"><value>This book has no readable pages.</value></data>
 </root>

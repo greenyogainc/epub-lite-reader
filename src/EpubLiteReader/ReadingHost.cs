@@ -15,6 +15,7 @@ public sealed class ReadingHost
 
     private readonly WebView2 _webView;
     private readonly string _role;
+    private BookResourceServer? _server;
     private string? _mappedFolder;
     private bool _initialized;
     private DisplaySettings _settings = new();
@@ -71,13 +72,22 @@ public sealed class ReadingHost
     {
         await EnsureReadyAsync();
         var core = _webView.CoreWebView2!;
+
+        // Primary path: every epub.local request is answered by this server in
+        // OnWebResourceRequested, which serves the book's files with a script-blocking
+        // CSP, an explicit Content-Type, and nosniff — the fix for javascript: URLs and
+        // mislabeled resources running.
+        _server = new BookResourceServer(doc.ExtractRoot);
+
+        // Kept only as a functional fallback for any request the handler does not
+        // override: the folder mapping still resolves the file (without CSP). Under
+        // normal operation the handler answers every epub.local request, so the mapping
+        // is never actually used to serve content. DenyCors keeps other origins from
+        // reading book resources cross-origin.
         if (string.Equals(_mappedFolder, doc.ExtractRoot, StringComparison.OrdinalIgnoreCase))
             return;
         if (_mappedFolder is not null)
             core.ClearVirtualHostNameToFolderMapping(EpubDoc.VirtualHost);
-
-        // DenyCors: the reader origin can load its own book resources, but no
-        // other origin can read them through cross-origin requests.
         core.SetVirtualHostNameToFolderMapping(
             EpubDoc.VirtualHost,
             doc.ExtractRoot,
@@ -259,31 +269,36 @@ public sealed class ReadingHost
 
     private void OnNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e)
     {
+        // Book content stays on epub.local (and about:blank); everything else is
+        // silently cancelled. The page CSP is the primary block; this is the
+        // navigation-level backstop.
         if (IsAllowedReaderUri(e.Uri)) return;
         e.Cancel = true;
-        RaiseBlockedNavigation(e.Uri ?? "");
     }
 
     private void OnFrameNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e)
     {
         if (IsAllowedReaderUri(e.Uri)) return;
         e.Cancel = true;
-        RaiseBlockedNavigation(e.Uri ?? "");
     }
 
     private void OnWebResourceRequested(object? sender, CoreWebView2WebResourceRequestedEventArgs e)
     {
-        var uri = e.Request.Uri ?? "";
-        if (uri.StartsWith($"https://{EpubDoc.VirtualHost}/", StringComparison.OrdinalIgnoreCase))
+        var environment = _webView.CoreWebView2!.Environment;
+        var server = _server;
+        if (server is not null && BookResourceServer.IsBookUri(e.Request.Uri))
+        {
+            // The book's own resources: served with CSP + nosniff + explicit type.
+            e.Response = server.CreateResponse(environment, e.Request) ??
+                environment.CreateWebResourceResponse(null, 404, "Not Found",
+                    "Content-Type: text/plain\r\nX-Content-Type-Options: nosniff");
             return;
-        e.Response = _webView.CoreWebView2!.Environment.CreateWebResourceResponse(
-            null, 403, "Forbidden", "Content-Type: text/plain");
-    }
+        }
 
-    private void RaiseBlockedNavigation(string uri)
-    {
-        var href = uri.Length > 2048 ? uri[..2048] : uri;
-        MessageReceived?.Invoke(this, new HostMessage("blocked-nav", Href: href));
+        // Anything not on epub.local (or before a book is mapped) is blocked: book
+        // content must never reach the network.
+        e.Response = environment.CreateWebResourceResponse(
+            null, 403, "Forbidden", "Content-Type: text/plain\r\nX-Content-Type-Options: nosniff");
     }
 
     private void OnWebMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs e)

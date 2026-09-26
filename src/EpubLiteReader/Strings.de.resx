@@ -96,4 +96,5 @@ Details protokolliert unter:
   <data name="CloseSearch" xml:space="preserve"><value>Schließen</value></data>
   <data name="NoSearchResults" xml:space="preserve"><value>Keine Treffer</value></data>
   <data name="SearchResultsFormat" xml:space="preserve"><value>{0} Treffer</value></data>
+  <data name="NoReadableContent" xml:space="preserve"><value>Dieses Buch enthält keine lesbaren Seiten.</value></data>
 </root>

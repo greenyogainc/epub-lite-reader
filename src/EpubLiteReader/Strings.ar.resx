@@ -96,4 +96,5 @@
   <data name="CloseSearch" xml:space="preserve"><value>إغلاق</value></data>
   <data name="NoSearchResults" xml:space="preserve"><value>لا توجد نتائج</value></data>
   <data name="SearchResultsFormat" xml:space="preserve"><value>{0} نتيجة مطابقة</value></data>
+  <data name="NoReadableContent" xml:space="preserve"><value>لا يحتوي هذا الكتاب على صفحات قابلة للقراءة.</value></data>
 </root>

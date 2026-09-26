@@ -96,8 +96,11 @@ internal static class ReaderInject
           window.__elrFind = function(query, forward) {
             if (!query) return false;
             try {
+              // wrapAround = false: once this chapter has no more matches in the
+              // search direction, find() returns false and the caller advances to
+              // the next chapter instead of cycling inside this one forever.
               if (window.find) {
-                return window.find(query, false, !forward, true, false, false, false);
+                return window.find(query, false, !forward, false, false, false, false);
               }
             } catch (e) {}
             return false;
@@ -118,19 +121,56 @@ internal static class ReaderInject
             }, 120);
           }, { passive: true });
 
+          // Only same-origin book navigations are allowed. The page CSP already
+          // blocks javascript:/network loads; this is a second layer that also
+          // covers link shapes closest('a[href]') misses (SVG <a xlink:href>,
+          // <area>, and hrefs the URL parser trims, e.g. a leading space or an
+          // embedded tab) and reports nothing to the host either way.
+          function anchorFromEvent(ev) {
+            const path = (ev.composedPath && ev.composedPath()) || [];
+            for (const el of path) {
+              if (!el || el.nodeType !== 1) continue;
+              const tag = (el.tagName || '').toLowerCase();
+              if (tag === 'a' || tag === 'area') return el;
+            }
+            return null;
+          }
+
+          function isSameOriginBookTarget(raw) {
+            const href = (raw == null ? '' : String(raw)).trim();
+            if (href === '') return true; // no navigation
+            try {
+              // Resolves relative paths and normalizes the scheme the way the
+              // browser would, so " javascript:x" / "java	script:x" are seen as
+              // the javascript: URLs they are.
+              const u = new URL(href, document.baseURI);
+              return u.protocol === 'https:' && u.hostname === 'epub.local';
+            } catch (e) {
+              // Not parseable as absolute: a book-relative path or bare fragment.
+              return true;
+            }
+          }
+
           document.addEventListener('click', (ev) => {
-            const a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+            const a = anchorFromEvent(ev);
             if (!a) return;
-            const href = a.getAttribute('href') || '';
-            // Allowlist, not blocklist: only fragments, book-relative paths, and
-            // the book's own virtual host may navigate. Everything else —
-            // http(s), mailto, javascript:, vbscript:, data:, file:, custom
-            // schemes — is inert inside the reader.
-            if (href.startsWith('#') || href.startsWith('/') ||
-                href.toLowerCase().startsWith('https://epub.local/'))
-              return;
-            if (/^[a-z][a-z0-9+.-]*:/i.test(href) === false)
-              return; // scheme-less relative path within the book
+            const raw = a.getAttribute ? (a.getAttribute('href') ||
+              (a.href && a.href.baseVal) || '') : '';
+            if (isSameOriginBookTarget(raw)) return;
+            ev.preventDefault();
+            ev.stopPropagation();
+          }, true);
+
+          // A form whose action leaves the book (or is a javascript: action) must
+          // not submit. CSP form-action 'none' already blocks it; this keeps it
+          // from even trying.
+          document.addEventListener('submit', (ev) => {
+            const form = ev.target;
+            if (!form) return;
+            const action = (ev.submitter && ev.submitter.getAttribute &&
+              ev.submitter.getAttribute('formaction')) ||
+              (form.getAttribute && form.getAttribute('action')) || '';
+            if (isSameOriginBookTarget(action)) return;
             ev.preventDefault();
             ev.stopPropagation();
           }, true);

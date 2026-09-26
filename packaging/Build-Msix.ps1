@@ -48,6 +48,20 @@ $arch = switch ($Rid) {
 # became "a-circumflex euro" bytes) in the packed 1.0.3 manifest.
 $xml = New-Object System.Xml.XmlDocument
 $xml.Load($manifestPath)
+
+# The csproj <Version> and the manifest Identity/@Version must agree (the manifest
+# carries a 4th ".0" revision). A mismatch means the version bump missed one of the two
+# files - fail here rather than shipping a package whose store version disagrees with the
+# built binary.
+$csprojXml = New-Object System.Xml.XmlDocument
+$csprojXml.Load($proj)
+$csprojVersion = ($csprojXml.SelectSingleNode("//Version")).InnerText
+$manifestVersion = $xml.Package.Identity.Version
+$manifestVersion3 = ($manifestVersion -split '\.')[0..2] -join '.'
+if ($csprojVersion -ne $manifestVersion3) {
+    throw "Version mismatch: csproj <Version> is '$csprojVersion' but Package.appxmanifest Identity/@Version is '$manifestVersion' ('$manifestVersion3'). Bump both together."
+}
+
 $xml.Package.Identity.SetAttribute("ProcessorArchitecture", $arch)
 $xml.Save($manifestPath)
 
@@ -74,8 +88,11 @@ Write-Host "== Packing $msix ==" -ForegroundColor Cyan
 if ($LASTEXITCODE -ne 0) { throw "makeappx failed" }
 
 if ($SignThumbprint) {
-    $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" |
+    $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
         Sort-Object FullName -Descending | Select-Object -First 1
+    if (-not $signtool) {
+        throw "signtool.exe not found. Install the Windows 10/11 SDK (winget install Microsoft.WindowsSDK.10.0.26100)."
+    }
     Write-Host "== Signing ==" -ForegroundColor Cyan
     & $signtool.FullName sign /fd SHA256 /sha1 $SignThumbprint $msix
     if ($LASTEXITCODE -ne 0) { throw "signtool failed" }

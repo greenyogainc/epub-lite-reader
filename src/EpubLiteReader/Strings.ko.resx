@@ -96,4 +96,5 @@
   <data name="CloseSearch" xml:space="preserve"><value>닫기</value></data>
   <data name="NoSearchResults" xml:space="preserve"><value>일치하는 항목 없음</value></data>
   <data name="SearchResultsFormat" xml:space="preserve"><value>{0}개 일치</value></data>
+  <data name="NoReadableContent" xml:space="preserve"><value>이 책에는 읽을 수 있는 페이지가 없습니다.</value></data>
 </root>
