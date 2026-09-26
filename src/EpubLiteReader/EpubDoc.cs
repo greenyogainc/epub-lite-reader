@@ -6,6 +6,13 @@ using VersOne.Epub;
 
 namespace EpubLiteReader;
 
+/// <summary>Thrown when an EPUB parses but has no spine items to display.</summary>
+public sealed class EpubNoReadableContentException : Exception
+{
+    public EpubNoReadableContentException()
+        : base("The EPUB contains no readable spine items.") { }
+}
+
 /// <summary>Opened EPUB: extracted local content, spine, TOC, and metadata.</summary>
 public sealed class EpubDoc : IDisposable
 {
@@ -13,6 +20,7 @@ public sealed class EpubDoc : IDisposable
     public const string ContinuousFileName = "elr-continuous.html";
 
     private readonly string _extractRoot;
+    private FileStream? _extractLock;
     private bool _disposed;
 
     public string FilePath { get; }
@@ -75,11 +83,20 @@ public sealed class EpubDoc : IDisposable
         var book = await EpubReader.ReadBookAsync(path);
         ct.ThrowIfCancellationRequested();
 
-        var extractRoot = Path.Combine(Path.GetTempPath(), "EpubLiteReader", Guid.NewGuid().ToString("N"));
+        // VersOne.Epub accepts an empty <spine/>; a book with nothing to display must be
+        // rejected here, before anything is extracted or the UI commits to it.
+        if (book.ReadingOrder.Count == 0)
+            throw new EpubNoReadableContentException();
+
+        var extractRoot = Path.Combine(ExtractBaseDir, Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(extractRoot);
+        FileStream? extractLock = null;
 
         try
         {
+            // Held for the document's lifetime; a startup sweep treats an extract root
+            // whose lock can be taken exclusively as orphaned (crash, kill, failed delete).
+            extractLock = AcquireExtractLock(extractRoot);
             var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var skipped = new List<string>();
             // Relative paths (NormalizePath-keyed, same as pathToSpine below) skipped for
@@ -140,11 +157,13 @@ public sealed class EpubDoc : IDisposable
                         // anything not obviously safe either way, by sniffing the content
                         // the same way Chromium sniffs for HTML/XML.
                         var declaredHtmlLike = IsDeclaredHtmlLike(bytes.ContentMimeType);
-                        if (IsPassiveExtension(ext) && !declaredHtmlLike)
+                        if (IsPassiveExtension(ext) && !declaredHtmlLike && !LooksLikeMarkup(bytes.Content))
                         {
+                            // No genuine image, font, or media file starts with '<'; one
+                            // that does is treated as markup below, never trusted by name.
                             await File.WriteAllBytesAsync(dest, bytes.Content, ct);
                         }
-                        else if (IsMarkupExtension(ext) || declaredHtmlLike)
+                        else if (IsMarkupExtension(ext) || declaredHtmlLike || IsPassiveExtension(ext))
                         {
                             // Already known to need sanitizing; decode the full resource once.
                             var decoded = DecodeResourceText(bytes.Content);
@@ -215,13 +234,15 @@ public sealed class EpubDoc : IDisposable
                 spineText)
             {
                 _chapters = chapters,
-                SkippedEntries = skipped
+                SkippedEntries = skipped,
+                _extractLock = extractLock
             };
 
             return (doc, chapters);
         }
         catch
         {
+            ReleaseExtractLock(extractRoot, extractLock);
             TryDeleteDirectory(extractRoot);
             throw;
         }
@@ -252,7 +273,7 @@ public sealed class EpubDoc : IDisposable
         if (spineIndex < 0 || spineIndex >= SpinePaths.Count)
             throw new ArgumentOutOfRangeException(nameof(spineIndex));
         var path = SpinePaths[spineIndex];
-        var url = $"https://{VirtualHost}/{path}";
+        var url = $"https://{VirtualHost}/{ToUrlPath(path)}";
         if (!string.IsNullOrEmpty(anchor))
             url += "#" + anchor;
         return url;
@@ -315,6 +336,104 @@ public sealed class EpubDoc : IDisposable
         if (_disposed) return;
         _disposed = true;
         TryDeleteDirectory(_extractRoot);
+        ReleaseExtractLock(_extractRoot, _extractLock);
+        _extractLock = null;
+    }
+
+    /// <summary>Parent of every per-book extract root.</summary>
+    internal static string ExtractBaseDir => Path.Combine(Path.GetTempPath(), "EpubLiteReader");
+
+    private const string ExtractLockSuffix = ".lock";
+
+    /// <summary>Extract roots without a lock file (written by 1.0.6 and earlier) are only
+    /// swept once they are at least this old, so a still-running older build is not hit.</summary>
+    internal static readonly TimeSpan LegacyExtractMaxAge = TimeSpan.FromDays(1);
+
+    private static FileStream AcquireExtractLock(string extractRoot) =>
+        new(extractRoot + ExtractLockSuffix, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+
+    private static void ReleaseExtractLock(string extractRoot, FileStream? extractLock)
+    {
+        if (extractLock is null) return;
+        try
+        {
+            extractLock.Dispose();
+            File.Delete(extractRoot + ExtractLockSuffix);
+        }
+        catch
+        {
+            // Best effort: an orphaned, unheld lock file is cleaned up by the next sweep.
+        }
+    }
+
+    /// <summary>
+    /// Deletes extract roots left behind by a crash, a kill, or a delete that failed
+    /// while the WebView still held file handles. A root is orphaned when its sibling
+    /// lock file exists but can be opened exclusively (no live instance holds it), or
+    /// when it has no lock file and is older than <paramref name="legacyMaxAge"/>.
+    /// Best effort throughout; returns the number of roots removed.
+    /// </summary>
+    internal static int SweepOrphanedExtracts(string baseDir, TimeSpan legacyMaxAge)
+    {
+        var removed = 0;
+        try
+        {
+            if (!Directory.Exists(baseDir)) return 0;
+            foreach (var dir in Directory.EnumerateDirectories(baseDir))
+            {
+                try
+                {
+                    var lockPath = dir + ExtractLockSuffix;
+                    if (File.Exists(lockPath))
+                    {
+                        FileStream probe;
+                        try
+                        {
+                            probe = new FileStream(lockPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                        }
+                        catch (IOException)
+                        {
+                            continue; // held by a live instance
+                        }
+                        using (probe)
+                        {
+                            Directory.Delete(dir, recursive: true);
+                        }
+                        File.Delete(lockPath);
+                        removed++;
+                    }
+                    else if (DateTime.UtcNow - Directory.GetLastWriteTimeUtc(dir) > legacyMaxAge)
+                    {
+                        Directory.Delete(dir, recursive: true);
+                        removed++;
+                    }
+                }
+                catch
+                {
+                    // Skip anything we cannot inspect or remove right now.
+                }
+            }
+
+            // Lock files whose extract root is already gone.
+            foreach (var lockPath in Directory.EnumerateFiles(baseDir, "*" + ExtractLockSuffix))
+            {
+                try
+                {
+                    if (Directory.Exists(lockPath[..^ExtractLockSuffix.Length])) continue;
+                    using (new FileStream(lockPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
+                    File.Delete(lockPath);
+                }
+                catch
+                {
+                    // Held or already gone.
+                }
+            }
+        }
+        catch
+        {
+            // Enumeration is best effort.
+        }
+        return removed;
     }
 
     private static List<ChapterItem> BuildChapters(
@@ -360,6 +479,14 @@ public sealed class EpubDoc : IDisposable
         return list;
     }
 
+    /// <summary>
+    /// Percent-encodes each segment of a book-relative path for use in an epub.local URL.
+    /// VersOne.Epub hands back decoded paths, so a file named "C#.xhtml" or "100%.xhtml"
+    /// must be re-escaped or the '#', '?' or '%' is read as URL syntax.
+    /// </summary>
+    internal static string ToUrlPath(string relativePath) =>
+        string.Join('/', NormalizePath(relativePath).Split('/').Select(Uri.EscapeDataString));
+
     internal static string EscapeHtmlAttribute(string value) =>
         value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
 
@@ -376,7 +503,7 @@ public sealed class EpubDoc : IDisposable
 
         for (int i = 0; i < spinePaths.Count; i++)
         {
-            var src = EscapeHtmlAttribute(spinePaths[i]);
+            var src = EscapeHtmlAttribute(ToUrlPath(spinePaths[i]));
             var title = EscapeHtmlAttribute(spineTitles[i]);
             sb.AppendLine($"<section class=\"elr-section\" id=\"spine-{i}\" data-spine=\"{i}\">");
             // data-src, not src: frames load on demand as they approach the viewport.
@@ -384,8 +511,21 @@ public sealed class EpubDoc : IDisposable
             sb.AppendLine("</section>");
         }
 
-        sb.AppendLine("<script>");
-        sb.AppendLine("""
+        // No whitespace between the tags and the script text: the CSP hash below is
+        // computed over exactly these characters.
+        sb.Append("<script>").Append(ContinuousScript).AppendLine("</script></body></html>");
+
+        File.WriteAllText(Path.Combine(extractRoot, ContinuousFileName), sb.ToString(), Encoding.UTF8);
+    }
+
+    /// <summary>The continuous document's only script. Book documents are served with
+    /// script-src 'none'; the continuous document is allowed exactly this script by hash.
+    /// Line endings are normalized to LF because the HTML parser normalizes CRLF before
+    /// the browser hashes the script, and a Windows checkout (core.autocrlf) would
+    /// otherwise compile this literal with CRLF and break the hash match.</summary>
+    internal static readonly string ContinuousScript = ContinuousScriptSource.Replace("\r\n", "\n");
+
+    private const string ContinuousScriptSource = """
             (function(){
               var spineFrames = Array.prototype.slice.call(document.querySelectorAll('iframe.elr-spine'));
               var sections = Array.prototype.slice.call(document.querySelectorAll('section.elr-section'));
@@ -545,12 +685,15 @@ public sealed class EpubDoc : IDisposable
               if (document.readyState !== 'loading') onHash();
               else document.addEventListener('DOMContentLoaded', onHash);
             })();
-            """);
-        sb.AppendLine("</script></body></html>");
+            """;
 
-        File.WriteAllText(Path.Combine(extractRoot, ContinuousFileName), sb.ToString(), Encoding.UTF8);
-    }
+    /// <summary>CSP source expression ('sha256-…') for <see cref="ContinuousScript"/>.</summary>
+    internal static readonly string ContinuousScriptCspSource =
+        "'sha256-" + Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(ContinuousScript))) + "'";
 
+    /// <summary>Stable per-book key for persisted state. It deliberately includes the full
+    /// file path, so the same book at two locations keeps two independent reading
+    /// positions; moving or renaming the file starts it fresh.</summary>
     private static string ComputeBookId(string path, EpubBook book)
     {
         var id = book.Schema?.Package?.Metadata?.Identifiers?
@@ -628,10 +771,13 @@ public sealed class EpubDoc : IDisposable
     };
 
     /// <summary>Extensions Chromium can render or parse as markup (HTML/XML/SVG and
-    /// friends), regardless of what the manifest declares for the entry.</summary>
+    /// friends), regardless of what the manifest declares for the entry. Kept in step
+    /// with Chromium's built-in extension table (net/base/mime_util.cc) and with
+    /// <see cref="BookResourceServer"/>'s served Content-Type map.</summary>
     private static readonly HashSet<string> MarkupExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".xhtml", ".xht", ".html", ".htm", ".shtml", ".xml", ".svg", ".xsl", ".xslt", ".mht", ".mhtml"
+        ".xhtml", ".xht", ".xhtm", ".html", ".htm", ".shtml", ".shtm", ".ehtml",
+        ".xml", ".svg", ".xsl", ".xslt", ".xbl", ".xul", ".rdf", ".rss", ".mht", ".mhtml"
     };
 
     internal static bool IsPassiveExtension(string extension) => PassiveExtensions.Contains(extension);
@@ -730,6 +876,14 @@ public sealed class EpubDoc : IDisposable
         @"(?<=[\s/""'])on\w+\s*=\s*(?:""[^""]*""|'[^']*'|[^\s>]+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    // A start tag, quote-aware so a '>' inside an attribute value does not end it.
+    // Event-handler removal is confined to these matches: run over the whole document it
+    // also deleted prose and code ("int one = 1;") and, through the unquoted-value branch,
+    // could swallow a following end tag and break XHTML well-formedness.
+    private static readonly Regex StartTagRegex = new(
+        @"<[A-Za-z](?:[^>""']|""[^""]*""|'[^']*')*>",
+        RegexOptions.NonBacktracking);
+
     private static readonly Regex LinkTagRegex = new(
         @"<link\b(?:[^>""']|""[^""]*""|'[^']*')*>",
         RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
@@ -750,9 +904,9 @@ public sealed class EpubDoc : IDisposable
     /// Sanitizes EPUB-supplied HTML/XML: removes script elements — including a
     /// namespace-prefixed one (&lt;svg:script&gt; is a real, executing element to
     /// an XML parser) and an unclosed one, since an HTML5 parser treats everything
-    /// after it as script data through EOF — event-handler attributes (even one the
-    /// HTML5 tokenizer starts without preceding whitespace, e.g. right after "/" or
-    /// a closing attribute quote), &lt;link&gt; network hints (preconnect /
+    /// after it as script data through EOF — event-handler attributes inside start
+    /// tags (even one the HTML5 tokenizer starts without preceding whitespace, e.g.
+    /// right after "/" or a closing attribute quote; text content is left alone), &lt;link&gt; network hints (preconnect /
     /// dns-prefetch), which Chromium acts on without ever raising a
     /// WebResourceRequested event, and a non-CSS &lt;?xml-stylesheet?&gt; processing
     /// instruction, since Chromium runs XSLT for one and an XSL stylesheet can emit
@@ -772,7 +926,10 @@ public sealed class EpubDoc : IDisposable
     /// last and keeps its "" replacement: its lookbehind only fires on an already
     /// genuine separator (whitespace, "/", or a closing quote — including a space
     /// left behind by an earlier pass), so it can't be spliced into by anything
-    /// that still has to run after it.
+    /// that still has to run after it. It also only rewrites the inside of a single
+    /// start-tag match, so it can never reach across a '&gt;' into text or another tag.
+    /// This sanitizer is defense-in-depth: <see cref="BookResourceServer"/> serves every
+    /// book document with a script-src 'none' Content-Security-Policy.
     /// </summary>
     internal static string StripScripts(string html)
     {
@@ -785,7 +942,7 @@ public sealed class EpubDoc : IDisposable
         var residual = ResidualScriptOpenRegex.Match(cleaned);
         if (residual.Success)
             cleaned = cleaned[..residual.Index];
-        cleaned = EventAttrRegex.Replace(cleaned, "");
+        cleaned = StartTagRegex.Replace(cleaned, m => EventAttrRegex.Replace(m.Value, ""));
         return cleaned;
     }
 

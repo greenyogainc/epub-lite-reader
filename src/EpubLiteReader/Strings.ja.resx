@@ -96,4 +96,5 @@
   <data name="CloseSearch" xml:space="preserve"><value>閉じる</value></data>
   <data name="NoSearchResults" xml:space="preserve"><value>一致なし</value></data>
   <data name="SearchResultsFormat" xml:space="preserve"><value>{0} 件一致</value></data>
+  <data name="NoReadableContent" xml:space="preserve"><value>この本には表示できるページがありません。</value></data>
 </root>

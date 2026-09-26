@@ -288,6 +288,99 @@ internal static class EpubFixtureBuilder
         outStream.Write(imageBytes, 0, imageBytes.Length);
     }
 
+    /// <summary>A structurally valid EPUB whose &lt;spine&gt; has no itemrefs, so it opens
+    /// with zero readable content. VersOne.Epub accepts this without error.</summary>
+    public static void BuildEmptySpineEpub(string destPath)
+    {
+        using var stream = new FileStream(destPath, FileMode.Create, FileAccess.Write);
+        using var zip = new ZipArchive(stream, ZipArchiveMode.Create);
+
+        WriteEntry(zip, "mimetype", "application/epub+zip", CompressionLevel.NoCompression);
+        WriteEntry(zip, "META-INF/container.xml", """
+            <?xml version="1.0"?>
+            <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+              <rootfiles>
+                <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+              </rootfiles>
+            </container>
+            """);
+        WriteEntry(zip, "OEBPS/nav.xhtml", """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+            <head><title>Nav</title></head>
+            <body><nav epub:type="toc"><ol></ol></nav></body>
+            </html>
+            """);
+        WriteEntry(zip, "OEBPS/content.opf", """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0" xml:lang="en">
+              <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:identifier id="BookId">urn:uuid:elr-empty-spine</dc:identifier>
+                <dc:title>Empty Spine</dc:title>
+                <dc:language>en</dc:language>
+              </metadata>
+              <manifest>
+                <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+              </manifest>
+              <spine></spine>
+            </package>
+            """);
+    }
+
+    /// <summary>A single-chapter EPUB whose chapter file name contains a character that is
+    /// URL syntax ('#', '%', space). The manifest href is percent-encoded (as a real EPUB
+    /// would be), and VersOne hands the decoded name back, so extraction and URL building
+    /// must round-trip it. Returns the decoded chapter file name.</summary>
+    public static string BuildEpubWithReservedCharChapterName(string destPath, string chapterFileName)
+    {
+        using var stream = new FileStream(destPath, FileMode.Create, FileAccess.Write);
+        using var zip = new ZipArchive(stream, ZipArchiveMode.Create);
+
+        var encoded = Uri.EscapeDataString(chapterFileName);
+
+        WriteEntry(zip, "mimetype", "application/epub+zip", CompressionLevel.NoCompression);
+        WriteEntry(zip, "META-INF/container.xml", """
+            <?xml version="1.0"?>
+            <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+              <rootfiles>
+                <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+              </rootfiles>
+            </container>
+            """);
+        WriteEntry(zip, $"OEBPS/{chapterFileName}", """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <html xmlns="http://www.w3.org/1999/xhtml">
+            <head><title>Reserved</title></head>
+            <body><h1>Reserved</h1><p>Body with gizmoword inside.</p></body>
+            </html>
+            """);
+        WriteEntry(zip, "OEBPS/nav.xhtml", $"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+            <head><title>Nav</title></head>
+            <body><nav epub:type="toc"><ol><li><a href="{encoded}">Reserved</a></li></ol></nav></body>
+            </html>
+            """);
+        WriteEntry(zip, "OEBPS/content.opf", $"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0" xml:lang="en">
+              <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:identifier id="BookId">urn:uuid:elr-reserved-char</dc:identifier>
+                <dc:title>Reserved Char</dc:title>
+                <dc:language>en</dc:language>
+              </metadata>
+              <manifest>
+                <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+                <item id="c1" href="{encoded}" media-type="application/xhtml+xml"/>
+              </manifest>
+              <spine>
+                <itemref idref="c1"/>
+              </spine>
+            </package>
+            """);
+        return chapterFileName;
+    }
+
     private static void WriteEntry(ZipArchive zip, string name, string content,
         CompressionLevel level = CompressionLevel.Optimal)
     {

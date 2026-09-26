@@ -233,4 +233,34 @@ public sealed class BookStateStoreTests : IDisposable
 
         Assert.NotNull(loaded.Defaults);
     }
+
+    [Theory]
+    [InlineData(1000.0, 2.5)]  // absurdly large -> clamped to max
+    [InlineData(0.01, 0.7)]    // tiny -> clamped to min
+    public void LoadBook_ClampsOutOfRangeFontScale(double stored, double expected)
+    {
+        Directory.CreateDirectory(BooksDir);
+        var json = "{\"schemaVersion\":1,\"bookId\":\"clamp\",\"display\":{\"fontScale\":" +
+            stored.ToString(System.Globalization.CultureInfo.InvariantCulture) + "}}";
+        File.WriteAllText(Path.Combine(BooksDir, "clamp.json"), json);
+
+        var loaded = BookStateStore.LoadBook("clamp");
+
+        Assert.NotNull(loaded);
+        Assert.Equal(expected, loaded!.Display.FontScale);
+    }
+
+    [Fact]
+    public void LoadBook_ClampsOutOfRangeLineHeightAndMargin()
+    {
+        Directory.CreateDirectory(BooksDir);
+        File.WriteAllText(Path.Combine(BooksDir, "clamp2.json"),
+            "{\"schemaVersion\":1,\"bookId\":\"clamp2\",\"display\":{\"lineHeight\":99,\"marginEm\":-5}}");
+
+        var loaded = BookStateStore.LoadBook("clamp2");
+
+        Assert.NotNull(loaded);
+        Assert.Equal(2.4, loaded!.Display.LineHeight);
+        Assert.Equal(0.4, loaded.Display.MarginEm);
+    }
 }

@@ -96,4 +96,5 @@
   <data name="CloseSearch" xml:space="preserve"><value>关闭</value></data>
   <data name="NoSearchResults" xml:space="preserve"><value>无匹配项</value></data>
   <data name="SearchResultsFormat" xml:space="preserve"><value>{0} 处匹配</value></data>
+  <data name="NoReadableContent" xml:space="preserve"><value>此书没有可阅读的页面。</value></data>
 </root>

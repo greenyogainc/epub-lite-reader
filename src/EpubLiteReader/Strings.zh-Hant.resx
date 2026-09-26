@@ -96,4 +96,5 @@
   <data name="CloseSearch" xml:space="preserve"><value>關閉</value></data>
   <data name="NoSearchResults" xml:space="preserve"><value>沒有相符項目</value></data>
   <data name="SearchResultsFormat" xml:space="preserve"><value>{0} 個相符項目</value></data>
+  <data name="NoReadableContent" xml:space="preserve"><value>此書沒有可閱讀的頁面。</value></data>
 </root>

@@ -84,6 +84,10 @@ public partial class MainWindow : Window
             _right.MessageReceived += OnHostMessage;
             _hostsReady = true;
 
+            // Reclaim extract roots left by a crash, a kill, or a delete that lost a
+            // race with the WebView's file handles. Best effort, off the UI thread.
+            _ = Task.Run(() => EpubDoc.SweepOrphanedExtracts(EpubDoc.ExtractBaseDir, EpubDoc.LegacyExtractMaxAge));
+
             var startupFile = ((App)Application.Current).StartupFile;
             if (startupFile is not null)
                 await OpenFileAsync(startupFile);
@@ -229,6 +233,15 @@ public partial class MainWindow : Window
             // must be left alone.
             if (!committed)
                 doc?.Dispose();
+        }
+        catch (EpubNoReadableContentException ex)
+        {
+            // Thrown before the commit point, so nothing was swapped in.
+            App.LogError(ex);
+            doc?.Dispose();
+            _chapterState = prevChapterState;
+            ShowChapterState(_chapterState);
+            Strings.ShowError(this, Strings.Get("NoReadableContent"));
         }
         catch (Exception ex)
         {
@@ -469,7 +482,7 @@ public partial class MainWindow : Window
 
     private async Task GoToSpineAsync(int spine, string? anchor = null, double scroll = 0, bool syncChapters = true)
     {
-        if (_doc is null) return;
+        if (_doc is null || _doc.SpineCount == 0) return;
         spine = Math.Clamp(spine, 0, _doc.SpineCount - 1);
         bool restore = scroll > 0.001 || anchor is not null;
         await RequestViewAsync(new ViewRequest(_mode, spine, anchor, scroll, restore));
@@ -827,10 +840,20 @@ public partial class MainWindow : Window
         }
 
         SearchStatus.Text = string.Format(Strings.Get("SearchResultsFormat"), _searchHits.Count);
-        if (forward)
-            _searchHitIndex = (_searchHitIndex + 1) % _searchHits.Count;
+        // In single/facing modes the in-page find above already walked every hit in
+        // the current chapter (it returned false, or we would have left already), so
+        // the index must jump to a hit in a DIFFERENT spine. In continuous mode there
+        // is no in-page find, so the index walks hit-by-hit.
+        if (_mode == ViewMode.Continuous)
+        {
+            _searchHitIndex = forward
+                ? (_searchHitIndex + 1) % _searchHits.Count
+                : (_searchHitIndex <= 0 ? _searchHits.Count - 1 : _searchHitIndex - 1);
+        }
         else
-            _searchHitIndex = _searchHitIndex <= 0 ? _searchHits.Count - 1 : _searchHitIndex - 1;
+        {
+            _searchHitIndex = NextHitIndexInOtherSpine(forward);
+        }
 
         var hit = _searchHits[_searchHitIndex];
 
@@ -863,6 +886,30 @@ public partial class MainWindow : Window
         {
             _searching = false;
         }
+    }
+
+    /// <summary>Picks the next hit in a spine other than the current one, wrapping at the
+    /// book's ends. Used after in-page find has exhausted the current chapter, so Find Next
+    /// moves forward through the book instead of cycling inside one chapter.</summary>
+    private int NextHitIndexInOtherSpine(bool forward) =>
+        NextHitIndexInOtherSpine(_searchHits, _spineIndex, forward);
+
+    /// <summary>Pure core of the spine-aware advance, split out for tests: the next hit in
+    /// a spine other than <paramref name="currentSpine"/>, wrapping at the book's ends.
+    /// Assumes hits are ordered by spine (as EpubDoc.Search yields them).</summary>
+    internal static int NextHitIndexInOtherSpine(
+        IReadOnlyList<(int SpineIndex, int Offset, string Snippet)> hits, int currentSpine, bool forward)
+    {
+        int count = hits.Count;
+        if (forward)
+        {
+            for (int i = 0; i < count; i++)
+                if (hits[i].SpineIndex > currentSpine) return i;
+            return 0; // wrap to the first hit
+        }
+        for (int i = count - 1; i >= 0; i--)
+            if (hits[i].SpineIndex < currentSpine) return i;
+        return count - 1; // wrap to the last hit
     }
 
     // ---------- Bookmarks ----------

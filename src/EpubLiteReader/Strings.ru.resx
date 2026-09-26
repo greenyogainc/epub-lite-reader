@@ -96,4 +96,5 @@
   <data name="CloseSearch" xml:space="preserve"><value>Закрыть</value></data>
   <data name="NoSearchResults" xml:space="preserve"><value>Совпадений нет</value></data>
   <data name="SearchResultsFormat" xml:space="preserve"><value>Совпадений: {0}</value></data>
+  <data name="NoReadableContent" xml:space="preserve"><value>В этой книге нет страниц для чтения.</value></data>
 </root>

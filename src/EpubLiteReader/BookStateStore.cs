@@ -73,6 +73,7 @@ public static class BookStateStore
                 var json = File.ReadAllText(SettingsPath);
                 var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
                 settings.Defaults ??= new();
+                ClampDisplay(settings.Defaults);
                 return settings;
             }
         }
@@ -121,10 +122,25 @@ public static class BookStateStore
     private static void NormalizeBook(BookState state)
     {
         state.Display ??= new();
+        ClampDisplay(state.Display);
         state.Bookmarks ??= new();
         state.Bookmarks.RemoveAll(b => b is null);
         state.BookId ??= "";
     }
+
+    /// <summary>Forces persisted typography into the same ranges the UI enforces, so a
+    /// hand-edited or corrupted state file (e.g. "fontScale": 1000, or NaN) can never
+    /// render the reader unusable. Bounds mirror MainWindow's clamps and
+    /// DisplaySettings' defaults.</summary>
+    private static void ClampDisplay(DisplaySettings d)
+    {
+        d.FontScale = ClampOrDefault(d.FontScale, 0.7, 2.5, 1.0);
+        d.LineHeight = ClampOrDefault(d.LineHeight, 1.1, 2.4, 1.5);
+        d.MarginEm = ClampOrDefault(d.MarginEm, 0.4, 3.0, 1.2);
+    }
+
+    private static double ClampOrDefault(double value, double min, double max, double fallback) =>
+        double.IsFinite(value) ? Math.Clamp(value, min, max) : fallback;
 
     public static void SaveBook(BookState state)
     {
@@ -161,7 +177,14 @@ public static class BookStateStore
         var tmp = Path.Combine(dir, Path.GetFileName(path) + "." + Guid.NewGuid().ToString("N") + ".tmp");
         try
         {
-            File.WriteAllText(tmp, content);
+            // Flush the temp file's bytes to disk before the rename, so a power loss
+            // right after the rename cannot surface a renamed-but-empty file.
+            var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+            using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                fs.Write(bytes, 0, bytes.Length);
+                fs.Flush(flushToDisk: true);
+            }
             File.Move(tmp, path, overwrite: true);
         }
         catch

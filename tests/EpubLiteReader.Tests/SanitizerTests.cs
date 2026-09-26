@@ -305,4 +305,62 @@ public class SanitizerTests
         Assert.DoesNotContain("document.write", text);
         Assert.Contains("keep", text);
     }
+
+    // ----- F3: the event-handler pass must not touch text or end tags -----
+
+    [Fact]
+    public void StripScripts_LeavesCodeSampleTextIntact()
+    {
+        // "on..." appears in ordinary prose and code; only real attributes inside a
+        // start tag may be removed.
+        var html = "<pre><code>int one = 1;\nbool online = false;\nvar onTimeout = cb;</code></pre>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.Equal(html, result);
+    }
+
+    [Fact]
+    public void StripScripts_LeavesProseContainingOnWordsIntact()
+    {
+        var html = "<p>Set only = true, and turn onboarding on.</p>";
+        Assert.Equal(html, EpubDoc.StripScripts(html));
+    }
+
+    [Fact]
+    public void StripScripts_KeepsXhtmlWellFormedAroundHandlerRemoval()
+    {
+        // The handler must be gone, but the closing </code></pre> must survive so the
+        // XHTML still parses.
+        var html = "<pre><code onclick=\"x()\">int onValue = cb;</code></pre>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("onclick", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("int onValue = cb;", result);
+        Assert.Contains("</code></pre>", result);
+    }
+
+    [Fact]
+    public void StripScripts_RemovesRealEventHandlerInsideTag()
+    {
+        var html = "<img src=\"x\" onerror=\"steal()\"/>";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("onerror", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("steal()", result);
+        Assert.Contains("src=\"x\"", result);
+    }
+
+    [Fact]
+    public void StripScripts_RemovesSeparatorlessEventHandler()
+    {
+        // No space before onerror; the tokenizer still creates the attribute.
+        var html = "<img src=\"x\"onerror=\"steal()\">";
+
+        var result = EpubDoc.StripScripts(html);
+
+        Assert.DoesNotContain("onerror", result, StringComparison.OrdinalIgnoreCase);
+    }
 }
