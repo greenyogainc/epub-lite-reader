@@ -101,6 +101,18 @@ dotnet run --project src\EpubLiteReader
 dotnet test EpubLiteReader.slnx -c Release
 ```
 
+The window suite opens the real reader and WebView2. It is skipped unless
+`ELR_UI` is set, and it needs an interactive desktop plus the WebView2 runtime.
+It writes reading state to a temporary `--datadir`, not the user profile.
+
+```powershell
+$env:ELR_UI = "1"
+dotnet test EpubLiteReader.slnx -c Release --collect:"Code Coverage;Format=Cobertura" --results-directory TestResults
+```
+
+Each test project records its own coverage file. App coverage is the union of
+those reports: for each line, keep the higher hit count.
+
 There is also a headless EPUB pipeline smoke check:
 
 ```powershell

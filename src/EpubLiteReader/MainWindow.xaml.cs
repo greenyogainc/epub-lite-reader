@@ -900,6 +900,7 @@ public partial class MainWindow : Window
 
         RefreshBookmarksUi();
         PersistBookState();
+        WriteAutomationState();
     }
 
     private void RefreshBookmarksUi()
@@ -1077,6 +1078,7 @@ public partial class MainWindow : Window
                 searchStatus = SearchStatus.Text,
                 fullscreen = _fullscreen,
                 chapterPane = _chapterPaneVisible,
+                bookmarkCount = _bookState?.Bookmarks.Count ?? 0,
                 timestamp = DateTime.UtcNow.ToString("O")
             };
             File.WriteAllText(file, System.Text.Json.JsonSerializer.Serialize(state));
