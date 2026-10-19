@@ -37,6 +37,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="EpubLiteReader.Tests" />
+    <InternalsVisibleTo Include="EpubLiteReader.UiTests" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,7 @@
 ## Ignore
 bin/
 obj/
+TestResults/
 dist/
 packaging/out/
 # Built MSIX packages are release artifacts, not source — they ship on the

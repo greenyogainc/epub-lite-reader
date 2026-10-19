@@ -17,9 +17,21 @@ public partial class App : Application
     /// </summary>
     internal static string? AutomationStateFile { get; private set; }
 
-    protected override void OnStartup(StartupEventArgs e)
+    /// <summary>Book path selected by <see cref="ApplyArgs"/>, including when no <see cref="Application"/> exists yet.</summary>
+    internal static string? ParsedStartupFile { get; private set; }
+
+    /// <summary>
+    /// Applies --lang, --statefile, --datadir, and the startup EPUB path.
+    /// --datadir redirects <see cref="BookStateStore"/> away from the real user profile.
+    /// A path that does not exist is ignored, so a typo cannot be treated as a book.
+    /// </summary>
+    internal static void ApplyArgs(string[] args)
     {
-        foreach (var arg in e.Args)
+        ParsedStartupFile = null;
+        AutomationStateFile = null;
+        BookStateStore.RootOverride = null;
+
+        foreach (var arg in args)
         {
             if (arg.StartsWith("--lang=", StringComparison.OrdinalIgnoreCase))
             {
@@ -37,11 +49,25 @@ public partial class App : Application
                 if (!string.IsNullOrWhiteSpace(file))
                     AutomationStateFile = Path.GetFullPath(file);
             }
-            else if (StartupFile is null && File.Exists(arg))
+            else if (arg.StartsWith("--datadir=", StringComparison.OrdinalIgnoreCase))
             {
-                StartupFile = arg;
+                var dir = arg["--datadir=".Length..];
+                if (!string.IsNullOrWhiteSpace(dir))
+                    BookStateStore.RootOverride = Path.GetFullPath(dir);
+            }
+            else if (ParsedStartupFile is null && File.Exists(arg))
+            {
+                ParsedStartupFile = arg;
             }
         }
+
+        if (Current is App app)
+            app.StartupFile = ParsedStartupFile;
+    }
+
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        ApplyArgs(e.Args);
 
         DispatcherUnhandledException += (_, args) =>
         {
