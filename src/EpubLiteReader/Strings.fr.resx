@@ -80,13 +80,7 @@ Détails consignés dans :
   <data name="AboutContactSupport" xml:space="preserve"><value>Contacter le support</value></data>
   <data name="AboutClose" xml:space="preserve"><value>Fermer</value></data>
   <data name="AboutLicenseUnavailable" xml:space="preserve"><value>Le texte de la licence n'a pas pu être chargé. Cette application est distribuée sous licence MIT.</value></data>
-  <data name="SupportDisclosure" xml:space="preserve"><value>Contacter le support charge le site web de Green Yoga (greenyogainc.com) dans cette fenêtre. Une connexion internet est nécessaire, et la politique de confidentialité du site de Green Yoga s'applique à toute information que vous transmettez.</value></data>
-  <data name="SupportLoadButton" xml:space="preserve"><value>Charger la page de support</value></data>
-  <data name="SupportOpenInBrowser" xml:space="preserve"><value>Ouvrir dans le navigateur web</value></data>
-  <data name="SupportEmail" xml:space="preserve"><value>Contacter le support par e-mail</value></data>
-  <data name="SupportRetry" xml:space="preserve"><value>Réessayer</value></data>
-  <data name="SupportLoading" xml:space="preserve"><value>Chargement de la page de support…</value></data>
-  <data name="SupportLoadFailed" xml:space="preserve"><value>La page de support n'a pas pu être chargée. Vérifiez votre connexion internet et réessayez, ou utilisez l'une des options ci-dessous.</value></data>
+  <data name="SupportEmail" xml:space="preserve"><value>Adresse e-mail</value></data>
   <data name="SupportBack" xml:space="preserve"><value>Retour</value></data>
   <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>Section {0}</value></data>
   <data name="PageBoxName" xml:space="preserve"><value>Numéro de chapitre</value></data>
@@ -97,4 +91,25 @@ Détails consignés dans :
   <data name="NoSearchResults" xml:space="preserve"><value>Aucun résultat</value></data>
   <data name="SearchResultsFormat" xml:space="preserve"><value>{0} résultats</value></data>
   <data name="NoReadableContent" xml:space="preserve"><value>Ce livre ne contient aucune page lisible.</value></data>
+  <data name="SupportName" xml:space="preserve"><value>Nom</value></data>
+  <data name="SupportSubject" xml:space="preserve"><value>Objet</value></data>
+  <data name="SupportMessage" xml:space="preserve"><value>Message</value></data>
+  <data name="SupportIntro" xml:space="preserve"><value>Dites-nous comment vous aider. Tous les champs sont obligatoires.</value></data>
+  <data name="SupportPrivacy" xml:space="preserve"><value>Vos coordonnées, votre message, la version de l’application, la version de Windows et la langue sont envoyés à Green Yoga Inc. Aucun document n’est envoyé.</value></data>
+  <data name="SupportDetails" xml:space="preserve"><value>Informations jointes à votre demande</value></data>
+  <data name="SupportSend" xml:space="preserve"><value>Envoyer le message</value></data>
+  <data name="SupportSending" xml:space="preserve"><value>Envoi du message…</value></data>
+  <data name="SupportSent" xml:space="preserve"><value>Votre message a été envoyé. Nous vous répondrons par e-mail.</value></data>
+  <data name="SupportSendAnother" xml:space="preserve"><value>Envoyer un autre message</value></data>
+  <data name="SupportRequired" xml:space="preserve"><value>Remplissez tous les champs avant l’envoi.</value></data>
+  <data name="SupportInvalidEmail" xml:space="preserve"><value>Saisissez une adresse e-mail valide.</value></data>
+  <data name="SupportSendFailed" xml:space="preserve"><value>La livraison n’a pas pu être confirmée. Vérifiez votre connexion et réessayez. Votre brouillon est conservé ici.</value></data>
+  <data name="SupportRateLimited" xml:space="preserve"><value>Trop de demandes. Patientez quelques minutes et réessayez.</value></data>
+  <data name="SupportInProgress" xml:space="preserve"><value>Votre demande est en cours de traitement. Patientez un instant et réessayez.</value></data>
+  <data name="SupportConflict" xml:space="preserve"><value>Cette référence est déjà utilisée. Modifiez votre message avant de le renvoyer.</value></data>
+  <data name="SupportReferenceFormat" xml:space="preserve"><value>Référence : {0}</value></data>
+  <data name="SupportDetailsFormat" xml:space="preserve"><value>Application : {0}
+Version : {1}
+Windows : {2}
+Langue : {3}</value></data>
 </root>

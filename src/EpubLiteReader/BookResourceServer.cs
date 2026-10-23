@@ -169,8 +169,16 @@ internal sealed class BookResourceServer
         if (!Uri.TryCreate(uri, UriKind.Absolute, out var parsed)) return false;
         if (!string.Equals(parsed.Host, EpubDoc.VirtualHost, StringComparison.OrdinalIgnoreCase)) return false;
 
-        // AbsolutePath is percent-encoded and query/fragment are already split off.
-        var rawSegments = parsed.AbsolutePath.Split('/');
+        // Uri.AbsolutePath normalizes literal and encoded dot segments before we can
+        // reject them. Validate the original escaped path instead; a query or fragment
+        // is URL syntax, while percent-encoded filename characters remain intact.
+        var authorityStart = uri.IndexOf("://", StringComparison.Ordinal);
+        if (authorityStart < 0) return false;
+        var pathStart = uri.IndexOfAny(['/', '?', '#'], authorityStart + 3);
+        if (pathStart < 0 || uri[pathStart] != '/') return false;
+        var pathEnd = uri.IndexOfAny(['?', '#'], pathStart);
+        var rawPath = pathEnd < 0 ? uri[pathStart..] : uri[pathStart..pathEnd];
+        var rawSegments = rawPath.Split('/');
         var decoded = new List<string>(rawSegments.Length);
         foreach (var raw in rawSegments)
         {

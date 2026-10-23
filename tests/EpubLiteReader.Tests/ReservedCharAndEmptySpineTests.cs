@@ -1,4 +1,6 @@
 using System.IO;
+using System.IO.Compression;
+using VersOne.Epub;
 using System.Linq;
 using System.Threading.Tasks;
 using EpubLiteReader;
@@ -44,6 +46,9 @@ public sealed class ReservedCharAndEmptySpineTests : IDisposable
 
             var onDisk = Path.Combine(doc.ExtractRoot, "OEBPS", chapterName);
             Assert.True(File.Exists(onDisk), $"chapter not extracted to {onDisk}");
+            Assert.Single(doc.SpinePaths);
+            Assert.Contains("gizmoword", doc.SpinePlainText[spineIdx]);
+            Assert.Contains("gizmoword", File.ReadAllText(onDisk));
 
             // The built URL is percent-encoded and resolves back to that same file.
             var url = doc.GetSpineUrl(spineIdx);
@@ -55,6 +60,22 @@ public sealed class ReservedCharAndEmptySpineTests : IDisposable
         {
             doc.Dispose();
         }
+    }
+
+    [Fact]
+    public async Task Open_MissingNavigationTargetWithoutHashNamedContent_StillThrows()
+    {
+        EpubFixtureBuilder.BuildEpubWithReservedCharChapterName(_epubPath, "chapter.xhtml");
+        using (var archive = ZipFile.Open(_epubPath, ZipArchiveMode.Update))
+        {
+            archive.GetEntry("OEBPS/nav.xhtml")!.Delete();
+            var entry = archive.CreateEntry("OEBPS/nav.xhtml");
+            using var writer = new StreamWriter(entry.Open());
+            writer.Write("<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\"><head><title>Nav</title></head><body><nav epub:type=\"toc\"><ol><li><a href=\"missing.xhtml\">Missing</a></li></ol></nav></body></html>");
+        }
+
+        await Assert.ThrowsAsync<Epub3NavException>(
+            () => EpubDoc.OpenWithChaptersAsync(_epubPath, "Untitled"));
     }
 
     [Fact]

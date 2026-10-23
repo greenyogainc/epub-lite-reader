@@ -20,6 +20,8 @@ public sealed class BookResourceServerTests
     [InlineData("https://epub.local/OEBPS/C%23.xhtml", "OEBPS/C#.xhtml")]     // '#'
     [InlineData("https://epub.local/OEBPS/100%25.xhtml", "OEBPS/100%.xhtml")] // '%'
     [InlineData("https://epub.local/a/b/c.css", "a/b/c.css")]
+    [InlineData("https://epub.local/OEBPS/a%20b.xhtml", "OEBPS/a b.xhtml")]
+    [InlineData("https://epub.local/OEBPS/C%23.xhtml?cache=1#section", "OEBPS/C#.xhtml")]
     public void TryResolvePath_ResolvesAndDecodesBookPaths(string uri, string expectedRel)
     {
         var ok = BookResourceServer.TryResolvePath(Root, uri, out var filePath, out var rel);
@@ -31,10 +33,13 @@ public sealed class BookResourceServerTests
     }
 
     [Theory]
+    [InlineData("https://epub.local/OEBPS/./chapter.xhtml")]
+    [InlineData("https://epub.local/OEBPS/%2e/chapter.xhtml")]
     [InlineData("https://epub.local/../secret.txt")]
     [InlineData("https://epub.local/OEBPS/../../secret.txt")]
     [InlineData("https://epub.local/%2e%2e/secret.txt")]         // encoded ".."
     [InlineData("https://epub.local/OEBPS/%2e%2e/%2e%2e/x")]
+    [InlineData("https://epub.local?query=/chapter.xhtml")]
     [InlineData("https://epub.local/")]                           // no path
     [InlineData("https://evil.example/OEBPS/ch1.xhtml")]          // wrong host
     [InlineData("http://epub.local/OEBPS/ch1.xhtml")]             // wrong scheme host still parses; host ok, but see IsBookUri

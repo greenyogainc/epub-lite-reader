@@ -14,13 +14,20 @@ across all listings):
 - **Support contact info**: `https://greenyogainc.com/contact/`
 - **Privacy policy URL**: `https://greenyogainc.com/privacy/`
 
-Privacy boundary (also reflected in the descriptions below): the reader itself
-never connects to the internet — book rendering is fully local and outbound
-requests from book content are blocked. The only network feature is the
-optional **Contact support** page inside the About window, which loads
-`https://greenyogainc.com/contact/` in an embedded view *only after the user
-explicitly asks for it*, restricted to `greenyogainc.com` and
-`api.greenyogainc.com` (analytics and all other third-party hosts are blocked).
+Privacy boundary: book rendering stays local and outbound requests from book
+content are blocked. Contact support opens a native form offline. Only Send
+posts contact details, message, app version, Windows version and language to
+https://api.greenyogainc.com/app-support. Documents are never sent.
+
+---
+
+## What's new in 1.0.7 (en-US)
+
+```
+• Native Contact support form in the About window. Your message is sent only when you choose Send; documents stay on your device.
+• Clear delivery status and request reference, with drafts preserved for manual retry.
+• Books with # in chapter filenames can open even when a contents link cannot be resolved. Unsafe dot segments in resource paths are rejected before URL normalization.
+```
 
 ---
 
@@ -67,6 +74,14 @@ Keep every claim identical to its source.)
 
 ## English (en-US)
 
+**What's new in 1.0.7**
+
+```
+• Native Contact support form in the About window. Your message is sent only when you choose Send; documents stay on your device.
+• Clear delivery status and request reference, with drafts preserved for manual retry.
+• Books with # in chapter filenames can open even when a contents link cannot be resolved. Unsafe dot segments in resource paths are rejected before URL normalization.
+```
+
 **Description**
 
 ```
@@ -83,7 +98,7 @@ FEATURES
 • Open via file dialog, drag-and-drop, or double-click a .epub file
 • Print the current chapter through the standard Windows print dialog
 • Built-in security: scripts embedded in EPUB files are stripped, and book content can make no network request at all
-• Optional Contact support page in the About window — it loads the Green Yoga website only when you explicitly choose; the reader itself stays fully offline
+• Native Contact support form in the About window. Your message is sent only when you choose Send; documents stay on your device.
 
 EPUB Lite Reader supports EPUB 2 and EPUB 3 files. It's freeware, released under the MIT License, by Green Yoga Inc — the same publisher behind PDF Lite Viewer.
 
@@ -122,6 +137,14 @@ reading app
 
 ## Spanish (es)
 
+**What's new in 1.0.7**
+
+```
+• Formulario nativo de contacto con soporte en Acerca de. El mensaje solo se envía al pulsar Enviar; los documentos permanecen en tu dispositivo.
+• Estado de entrega claro y referencia de solicitud; los borradores se conservan para reintentar.
+• Los libros con # en los nombres de los capítulos se abren aunque no se pueda resolver un enlace del índice. Se rechazan los segmentos de punto inseguros antes de normalizar la URL.
+```
+
 **Description**
 
 ```
@@ -138,7 +161,7 @@ CARACTERÍSTICAS
 • Ábrelo mediante el cuadro de diálogo, arrastrando y soltando, o haciendo doble clic en un archivo .epub
 • Imprime el capítulo actual desde el cuadro de diálogo de impresión estándar de Windows
 • Seguridad integrada: los scripts incluidos en los archivos EPUB se eliminan, y el contenido del libro no puede realizar ninguna solicitud de red
-• Página opcional de contacto de soporte en la ventana Acerca de: solo carga el sitio web de Green Yoga cuando tú lo eliges explícitamente; el lector en sí permanece totalmente sin conexión
+• Formulario nativo de contacto con soporte en Acerca de. El mensaje solo se envía al pulsar Enviar; los documentos permanecen en tu dispositivo.
 
 EPUB Lite Reader es compatible con archivos EPUB 2 y EPUB 3. Es gratuito, publicado bajo la licencia MIT, por Green Yoga Inc — el mismo editor de PDF Lite Viewer.
 
@@ -206,6 +229,14 @@ libro electrónico
 
 ## French (fr)
 
+**What's new in 1.0.7**
+
+```
+• Formulaire natif de contact du support dans À propos. Le message est envoyé uniquement lorsque vous choisissez Envoyer ; vos documents restent sur votre appareil.
+• État d’envoi clair et référence de demande ; les brouillons sont conservés pour réessayer.
+• Les livres dont les chapitres contiennent # dans leur nom s’ouvrent même si un lien du sommaire est introuvable. Les segments de point dangereux sont rejetés avant la normalisation de l’URL.
+```
+
 **Description**
 
 ```
@@ -222,7 +253,7 @@ FONCTIONNALITÉS
 • Ouverture via une boîte de dialogue, par glisser-déposer, ou en double-cliquant sur un fichier .epub
 • Impression du chapitre actuel via la boîte de dialogue d'impression standard de Windows
 • Sécurité intégrée : les scripts intégrés aux fichiers EPUB sont supprimés, et le contenu du livre ne peut effectuer aucune requête réseau
-• Page de contact du support facultative dans la fenêtre À propos — elle ne charge le site de Green Yoga que lorsque vous le choisissez explicitement ; le lecteur lui-même reste entièrement hors ligne
+• Formulaire natif de contact du support dans À propos. Le message est envoyé uniquement lorsque vous choisissez Envoyer ; vos documents restent sur votre appareil.
 
 EPUB Lite Reader prend en charge les fichiers EPUB 2 et EPUB 3. C'est un logiciel gratuit, publié sous licence MIT, par Green Yoga Inc — l'éditeur de PDF Lite Viewer.
 
@@ -290,6 +321,14 @@ liseuse
 
 ## German (de)
 
+**What's new in 1.0.7**
+
+```
+• Natives Kontaktformular im Info-Fenster. Ihre Nachricht wird erst nach Auswahl von Senden übermittelt; Dokumente bleiben auf Ihrem Gerät.
+• Klarer Zustellstatus mit Referenznummer; Entwürfe bleiben für einen erneuten Versuch erhalten.
+• Bücher mit # in Kapiteldateinamen lassen sich auch bei nicht auflösbaren Inhaltsverzeichnis-Links öffnen. Unsichere Punktsegmente werden vor der URL-Normalisierung abgewiesen.
+```
+
 **Description**
 
 ```
@@ -306,7 +345,7 @@ FUNKTIONEN
 • Öffnen über Dialog, per Drag & Drop oder durch Doppelklick auf eine .epub-Datei
 • Drucken des aktuellen Kapitels über den Standard-Windows-Druckdialog
 • Integrierte Sicherheit: In EPUB-Dateien eingebettete Skripte werden entfernt, und Buchinhalte können überhaupt keine Netzwerkanfrage auslösen
-• Optionale Kontakt-Support-Seite im Info-Fenster – sie lädt die Green-Yoga-Website nur, wenn Sie es ausdrücklich wählen; der Reader selbst bleibt vollständig offline
+• Natives Kontaktformular im Info-Fenster. Ihre Nachricht wird erst nach Auswahl von Senden übermittelt; Dokumente bleiben auf Ihrem Gerät.
 
 EPUB Lite Reader unterstützt EPUB-2- und EPUB-3-Dateien. Es ist Freeware unter der MIT-Lizenz von Green Yoga Inc — dem Herausgeber von PDF Lite Viewer.
 
@@ -374,6 +413,14 @@ lese-app
 
 ## Italian (it)
 
+**What's new in 1.0.7**
+
+```
+• Modulo nativo di contatto assistenza nella finestra Informazioni. Il messaggio viene inviato solo scegliendo Invia; i documenti restano sul dispositivo.
+• Stato di consegna chiaro e riferimento della richiesta; le bozze sono conservate per riprovare.
+• I libri con # nei nomi dei capitoli si aprono anche se un collegamento dell’indice non è risolvibile. I segmenti di punto non sicuri vengono rifiutati prima della normalizzazione dell’URL.
+```
+
 **Description**
 
 ```
@@ -390,7 +437,7 @@ CARATTERISTICHE
 • Apertura tramite finestra di dialogo, trascinamento oppure doppio clic su un file .epub
 • Stampa del capitolo corrente tramite la finestra di stampa standard di Windows
 • Sicurezza integrata: gli script incorporati nei file EPUB vengono rimossi, e il contenuto del libro non può effettuare alcuna richiesta di rete
-• Pagina facoltativa di contatto assistenza nella finestra Informazioni: carica il sito Green Yoga solo quando lo scegli esplicitamente; il lettore stesso rimane completamente offline
+• Modulo nativo di contatto assistenza nella finestra Informazioni. Il messaggio viene inviato solo scegliendo Invia; i documenti restano sul dispositivo.
 
 EPUB Lite Reader supporta i file EPUB 2 ed EPUB 3. È gratuito, distribuito con licenza MIT, da Green Yoga Inc — lo stesso editore di PDF Lite Viewer.
 
@@ -458,6 +505,14 @@ app di lettura
 
 ## Portuguese – Portugal (pt)
 
+**What's new in 1.0.7**
+
+```
+• Formulário nativo de contacto com o suporte na janela Acerca de. A mensagem só é enviada ao escolher Enviar; os documentos ficam no dispositivo.
+• Estado de entrega claro e referência do pedido; os rascunhos são mantidos para nova tentativa.
+• Os livros com # nos nomes dos capítulos abrem mesmo quando uma ligação do índice não pode ser resolvida. Os segmentos de ponto inseguros são rejeitados antes da normalização do URL.
+```
+
 **Description**
 
 ```
@@ -474,7 +529,7 @@ FUNCIONALIDADES
 • Abertura através de caixa de diálogo, arrastar e largar, ou duplo clique num ficheiro .epub
 • Impressão do capítulo atual através da caixa de diálogo de impressão padrão do Windows
 • Segurança integrada: os scripts incluídos nos ficheiros EPUB são removidos, e o conteúdo do livro não pode fazer qualquer pedido de rede
-• Página opcional de contacto de suporte na janela Acerca de — só carrega o site da Green Yoga quando o escolhe explicitamente; o leitor em si permanece totalmente offline
+• Formulário nativo de contacto com o suporte na janela Acerca de. A mensagem só é enviada ao escolher Enviar; os documentos ficam no dispositivo.
 
 O EPUB Lite Reader suporta ficheiros EPUB 2 e EPUB 3. É gratuito, distribuído sob a licença MIT, pela Green Yoga Inc — a mesma editora do PDF Lite Viewer.
 
@@ -542,6 +597,14 @@ app de leitura
 
 ## Portuguese – Brazil (pt-BR)
 
+**What's new in 1.0.7**
+
+```
+• Formulário nativo de contato com o suporte na janela Sobre. A mensagem só é enviada ao escolher Enviar; os documentos ficam no dispositivo.
+• Status de entrega claro e referência da solicitação; rascunhos preservados para tentar novamente.
+• Livros com # nos nomes dos capítulos abrem mesmo quando um link do índice não pode ser resolvido. Segmentos de ponto inseguros são rejeitados antes da normalização da URL.
+```
+
 **Description**
 
 ```
@@ -558,7 +621,7 @@ RECURSOS
 • Abertura por caixa de diálogo, arrastar e soltar, ou clique duplo em um arquivo .epub
 • Impressão do capítulo atual pela caixa de diálogo de impressão padrão do Windows
 • Segurança integrada: scripts incluídos nos arquivos EPUB são removidos, e o conteúdo do livro não pode fazer nenhuma solicitação de rede
-• Página opcional de contato de suporte na janela Sobre — ela carrega o site da Green Yoga somente quando você escolhe explicitamente; o leitor em si permanece totalmente offline
+• Formulário nativo de contato com o suporte na janela Sobre. A mensagem só é enviada ao escolher Enviar; os documentos ficam no dispositivo.
 
 O EPUB Lite Reader tem suporte a arquivos EPUB 2 e EPUB 3. É um software gratuito, distribuído sob a licença MIT, pela Green Yoga Inc — a mesma editora do PDF Lite Viewer.
 
@@ -626,6 +689,14 @@ app de leitura
 
 ## Japanese (ja)
 
+**What's new in 1.0.7**
+
+```
+• 「バージョン情報」にネイティブのお問い合わせフォームを搭載。送信を選択したときだけメッセージを送信し、文書は端末に保持されます。
+• 送信状況と受付番号を表示し、再試行できるよう下書きを保持します。
+• 章のファイル名に#を含む本は、目次のリンクを解決できない場合でも開けます。リソースパス内の危険なドット区間はURLの正規化前に拒否されます。
+```
+
 **Description**
 
 ```
@@ -642,7 +713,7 @@ EPUB Lite Readerは、Windows向けの無料で軽量なEPUBリーダーです�
 • ダイアログから開く、ドラッグ＆ドロップ、.epubファイルのダブルクリックに対応
 • 標準のWindows印刷ダイアログから現在の章を印刷
 • 組み込みのセキュリティ：EPUBファイルに埋め込まれたスクリプトを除去し、本の内容が一切のネットワーク通信を行うことはできません
-• 「バージョン情報」ウィンドウの任意のお問い合わせサポートページ — 明示的に選択した場合にのみGreen Yogaのウェブサイトを読み込みます。リーダー自体は完全にオフラインのままです
+• 「バージョン情報」にネイティブのお問い合わせフォームを搭載。送信を選択したときだけメッセージを送信し、文書は端末に保持されます。
 
 EPUB Lite ReaderはEPUB 2およびEPUB 3形式に対応しています。PDF Lite Viewerと同じ発行元、Green Yoga Incによる、MITライセンスのフリーウェアです。
 
@@ -710,6 +781,14 @@ epub
 
 ## Korean (ko)
 
+**What's new in 1.0.7**
+
+```
+• 정보 창의 기본 지원 문의 양식. 보내기를 선택할 때만 메시지가 전송되며 문서는 기기에 유지됩니다.
+• 전송 상태와 참조 번호를 표시하고 다시 시도할 수 있도록 작성한 내용을 유지합니다.
+• 장 파일 이름에 #이 있는 책은 목차 링크를 확인하지 못해도 열립니다. 리소스 경로의 안전하지 않은 점 세그먼트는 URL 정규화 전에 거부됩니다.
+```
+
 **Description**
 
 ```
@@ -726,7 +805,7 @@ EPUB Lite Reader는 Windows용 무료 경량 EPUB 리더입니다. 책을 열면
 • 대화 상자, 드래그 앤 드롭, 또는 .epub 파일 더블클릭으로 열기 가능
 • 표준 Windows 인쇄 대화 상자를 통해 현재 장 인쇄
 • 내장 보안 기능: EPUB 파일에 포함된 스크립트를 제거하며, 책 콘텐츠는 어떠한 네트워크 요청도 할 수 없습니다
-• 정보 창의 선택적 문의 지원 페이지 — 명시적으로 선택한 경우에만 Green Yoga 웹사이트를 불러오며, 리더 자체는 완전히 오프라인 상태를 유지합니다
+• 정보 창의 기본 지원 문의 양식. 보내기를 선택할 때만 메시지가 전송되며 문서는 기기에 유지됩니다.
 
 EPUB Lite Reader는 EPUB 2 및 EPUB 3 파일을 지원합니다. PDF Lite Viewer와 동일한 게시자인 Green Yoga Inc가 MIT 라이선스로 배포하는 프리웨어입니다.
 
@@ -794,6 +873,14 @@ epub
 
 ## Chinese Simplified (zh-Hans)
 
+**What's new in 1.0.7**
+
+```
+• 关于窗口中的原生联系支持表单。仅在您选择发送时才发送消息，文档始终保留在设备上。
+• 清晰显示送达状态和参考编号，并保留草稿以便手动重试。
+• 章节文件名包含#的书籍即使有目录链接无法解析也能打开。不安全的路径点段会在URL规范化前被拒绝。
+```
+
 **Description**
 
 ```
@@ -810,7 +897,7 @@ EPUB Lite Reader 是一款适用于 Windows 的免费轻量级 EPUB 阅读器。
 • 支持通过对话框打开、拖放，或双击 .epub 文件打开
 • 通过标准 Windows 打印对话框打印当前章节
 • 内置安全防护：移除 EPUB 文件中嵌入的脚本，书籍内容完全无法发起任何网络请求
-• 关于窗口中可选的联系支持页面——仅在您明确选择时才会加载 Green Yoga 网站；阅读器本身始终完全离线
+• 关于窗口中的原生联系支持表单。仅在您选择发送时才发送消息，文档始终保留在设备上。
 
 EPUB Lite Reader 支持 EPUB 2 和 EPUB 3 格式。由 Green Yoga Inc（PDF Lite Viewer 的同一发行商）根据 MIT 许可证发布的免费软件。
 
@@ -878,6 +965,14 @@ epub
 
 ## Chinese Traditional (zh-Hant)
 
+**What's new in 1.0.7**
+
+```
+• 「關於」視窗中的原生聯絡支援表單。僅在您選擇傳送時才傳送訊息，文件始終保留在裝置上。
+• 清楚顯示送達狀態和參考編號，並保留草稿以供手動重試。
+• 章節檔名包含#的書籍即使有目錄連結無法解析也能開啟。不安全的路徑點段會在URL正規化前被拒絕。
+```
+
 **Description**
 
 ```
@@ -894,7 +989,7 @@ EPUB Lite Reader 是一款適用於 Windows 的免費輕量級 EPUB 閱讀器。
 • 支援透過對話方塊開啟、拖曳，或按兩下 .epub 檔案開啟
 • 透過標準 Windows 列印對話方塊列印目前章節
 • 內建安全防護：移除 EPUB 檔案中嵌入的指令碼，書籍內容完全無法發出任何網路請求
-• 「關於」視窗中可選的聯絡支援頁面——僅在您明確選擇時才會載入 Green Yoga 網站；閱讀器本身始終完全離線
+• 「關於」視窗中的原生聯絡支援表單。僅在您選擇傳送時才傳送訊息，文件始終保留在裝置上。
 
 EPUB Lite Reader 支援 EPUB 2 與 EPUB 3 格式。由 Green Yoga Inc（PDF Lite Viewer 的同一發行商）依 MIT 授權發布的免費軟體。
 
@@ -962,6 +1057,14 @@ epub
 
 ## Russian (ru)
 
+**What's new in 1.0.7**
+
+```
+• Встроенная форма поддержки в окне «О программе». Сообщение отправляется только по нажатию «Отправить»; документы остаются на устройстве.
+• Понятный статус доставки и номер обращения; черновики сохраняются для повторной отправки.
+• Книги с # в именах файлов глав открываются, даже если ссылка оглавления не распознаётся. Небезопасные точечные сегменты пути отклоняются до нормализации URL.
+```
+
 **Description**
 
 ```
@@ -978,7 +1081,7 @@ EPUB Lite Reader — бесплатная и лёгкая программа д�
 • Открытие через диалоговое окно, перетаскиванием или двойным щелчком по файлу .epub
 • Печать текущей главы через стандартное диалоговое окно печати Windows
 • Встроенная безопасность: скрипты, встроенные в файлы EPUB, удаляются, а содержимое книги вообще не может выполнять сетевые запросы
-• Дополнительная страница обращения в поддержку в окне «О программе» — она загружает сайт Green Yoga только по вашему явному выбору; сама программа остаётся полностью автономной
+• Встроенная форма поддержки в окне «О программе». Сообщение отправляется только по нажатию «Отправить»; документы остаются на устройстве.
 
 EPUB Lite Reader поддерживает файлы EPUB 2 и EPUB 3. Это бесплатная программа по лицензии MIT от Green Yoga Inc — того же издателя, что выпустил PDF Lite Viewer.
 
@@ -1046,6 +1149,14 @@ epub
 
 ## Ukrainian (uk)
 
+**What's new in 1.0.7**
+
+```
+• Вбудована форма підтримки у вікні «Про програму». Повідомлення надсилається лише після вибору «Надіслати»; документи залишаються на пристрої.
+• Зрозумілий стан доставки та номер звернення; чернетки зберігаються для повторного надсилання.
+• Книги з # в назвах файлів розділів відкриваються, навіть якщо посилання змісту не розпізнається. Небезпечні точкові сегменти шляху відхиляються до нормалізації URL.
+```
+
 **Description**
 
 ```
@@ -1062,7 +1173,7 @@ EPUB Lite Reader — безкоштовна та легка програма д�
 • Відкриття через діалогове вікно, перетягуванням або подвійним клацанням файлу .epub
 • Друк поточного розділу через стандартне діалогове вікно друку Windows
 • Вбудований захист: скрипти, вбудовані у файли EPUB, видаляються, а вміст книги взагалі не може виконувати мережеві запити
-• Додаткова сторінка звернення до підтримки у вікні «Про програму» — вона завантажує сайт Green Yoga лише за вашим явним вибором; сама програма залишається повністю автономною
+• Вбудована форма підтримки у вікні «Про програму». Повідомлення надсилається лише після вибору «Надіслати»; документи залишаються на пристрої.
 
 EPUB Lite Reader підтримує файли EPUB 2 та EPUB 3. Це безкоштовна програма за ліцензією MIT від Green Yoga Inc — того самого видавця, що випустив PDF Lite Viewer.
 
@@ -1130,6 +1241,14 @@ epub
 
 ## Arabic (ar)
 
+**What's new in 1.0.7**
+
+```
+• نموذج دعم أصلي في نافذة «حول». تُرسل الرسالة فقط عند اختيار «إرسال»، وتبقى المستندات على جهازك.
+• حالة تسليم واضحة ورقم مرجعي للطلب، مع حفظ المسودات لإعادة المحاولة يدويًا.
+• تُفتح الكتب التي تحتوي أسماء ملفات فصولها على # حتى عند تعذر حل رابط في الفهرس. تُرفض مقاطع النقاط غير الآمنة في مسارات الموارد قبل تسوية عنوان URL.
+```
+
 **Description**
 
 ```
@@ -1146,7 +1265,7 @@ EPUB Lite Reader هو برنامج مجاني وخفيف لقراءة ملفات
 • الفتح عبر مربع حوار، أو السحب والإفلات، أو النقر المزدوج على ملف ‎.epub
 • طباعة الفصل الحالي عبر مربع حوار الطباعة القياسي في ويندوز
 • أمان مدمج: تتم إزالة النصوص البرمجية المضمّنة في ملفات EPUB، ولا يمكن لمحتوى الكتاب إجراء أي طلب شبكة على الإطلاق
-• صفحة اختيارية للتواصل مع الدعم ضمن نافذة "حول" — تُحمَّل موقع Green Yoga فقط عند اختيارك ذلك صراحةً؛ ويظل البرنامج نفسه غير متصل بالإنترنت تمامًا
+• نموذج دعم أصلي في نافذة «حول». تُرسل الرسالة فقط عند اختيار «إرسال»، وتبقى المستندات على جهازك.
 
 يدعم EPUB Lite Reader ملفات EPUB 2 وEPUB 3. وهو برنامج مجاني صادر برخصة MIT من Green Yoga Inc — الجهة الناشرة نفسها لبرنامج PDF Lite Viewer.
 

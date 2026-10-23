@@ -80,13 +80,7 @@
   <data name="AboutContactSupport" xml:space="preserve"><value>Звернутися до підтримки</value></data>
   <data name="AboutClose" xml:space="preserve"><value>Закрити</value></data>
   <data name="AboutLicenseUnavailable" xml:space="preserve"><value>Не вдалося завантажити текст ліцензії. Ця програма розповсюджується за ліцензією MIT.</value></data>
-  <data name="SupportDisclosure" xml:space="preserve"><value>«Звернутися до підтримки» завантажує веб-сайт Green Yoga (greenyogainc.com) у цьому вікні. Потрібне підключення до інтернету, і до будь-якої інформації, яку ви надсилаєте, застосовується політика конфіденційності веб-сайту Green Yoga.</value></data>
-  <data name="SupportLoadButton" xml:space="preserve"><value>Завантажити сторінку підтримки</value></data>
-  <data name="SupportOpenInBrowser" xml:space="preserve"><value>Відкрити у веб-браузері</value></data>
-  <data name="SupportEmail" xml:space="preserve"><value>Написати в підтримку</value></data>
-  <data name="SupportRetry" xml:space="preserve"><value>Повторити</value></data>
-  <data name="SupportLoading" xml:space="preserve"><value>Завантаження сторінки підтримки…</value></data>
-  <data name="SupportLoadFailed" xml:space="preserve"><value>Не вдалося завантажити сторінку підтримки. Перевірте підключення до інтернету й спробуйте ще раз або скористайтеся одним із варіантів нижче.</value></data>
+  <data name="SupportEmail" xml:space="preserve"><value>Електронна пошта</value></data>
   <data name="SupportBack" xml:space="preserve"><value>Назад</value></data>
   <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>Секція {0}</value></data>
   <data name="PageBoxName" xml:space="preserve"><value>Номер розділу</value></data>
@@ -97,4 +91,25 @@
   <data name="NoSearchResults" xml:space="preserve"><value>Немає збігів</value></data>
   <data name="SearchResultsFormat" xml:space="preserve"><value>Збігів: {0}</value></data>
   <data name="NoReadableContent" xml:space="preserve"><value>У цій книзі немає сторінок для читання.</value></data>
+  <data name="SupportName" xml:space="preserve"><value>Ім’я</value></data>
+  <data name="SupportSubject" xml:space="preserve"><value>Тема</value></data>
+  <data name="SupportMessage" xml:space="preserve"><value>Повідомлення</value></data>
+  <data name="SupportIntro" xml:space="preserve"><value>Розкажіть, як ми можемо допомогти. Усі поля обов’язкові.</value></data>
+  <data name="SupportPrivacy" xml:space="preserve"><value>Ваші контактні дані, повідомлення, версія застосунку, версія Windows і мова надсилаються до Green Yoga Inc. Документи ніколи не надсилаються.</value></data>
+  <data name="SupportDetails" xml:space="preserve"><value>Дані, включені до запиту</value></data>
+  <data name="SupportSend" xml:space="preserve"><value>Надіслати повідомлення</value></data>
+  <data name="SupportSending" xml:space="preserve"><value>Надсилання повідомлення…</value></data>
+  <data name="SupportSent" xml:space="preserve"><value>Повідомлення надіслано. Ми відповімо електронною поштою.</value></data>
+  <data name="SupportSendAnother" xml:space="preserve"><value>Надіслати ще повідомлення</value></data>
+  <data name="SupportRequired" xml:space="preserve"><value>Заповніть усі поля перед надсиланням.</value></data>
+  <data name="SupportInvalidEmail" xml:space="preserve"><value>Введіть дійсну адресу електронної пошти.</value></data>
+  <data name="SupportSendFailed" xml:space="preserve"><value>Не вдалося підтвердити доставку. Перевірте з’єднання й повторіть спробу. Чернетка збережена тут.</value></data>
+  <data name="SupportRateLimited" xml:space="preserve"><value>Забагато запитів. Зачекайте кілька хвилин і повторіть спробу.</value></data>
+  <data name="SupportInProgress" xml:space="preserve"><value>Ваш запит ще обробляється. Зачекайте трохи й повторіть спробу.</value></data>
+  <data name="SupportConflict" xml:space="preserve"><value>Цей номер уже використовується. Змініть повідомлення перед повторним надсиланням.</value></data>
+  <data name="SupportReferenceFormat" xml:space="preserve"><value>Номер звернення: {0}</value></data>
+  <data name="SupportDetailsFormat" xml:space="preserve"><value>Застосунок: {0}
+Версія: {1}
+Windows: {2}
+Мова: {3}</value></data>
 </root>

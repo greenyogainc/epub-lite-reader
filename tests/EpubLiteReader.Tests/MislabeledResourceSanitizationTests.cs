@@ -205,18 +205,19 @@ public sealed class MislabeledResourceSanitizationTests : IDisposable
     }
 
     [Fact]
-    public async Task Open_WritesPassiveExtensionHostileContentRaw()
+    public async Task Open_SanitizesMarkupDisguisedWithPassiveExtension()
     {
-        // A .png is served by the virtual host with a non-document MIME type, so even
-        // though this "image" is actually HTML, Chromium never renders or HTML-sniffs
-        // it: it cannot execute. Passive extensions are intentionally written raw.
+        // A passive extension cannot exempt recognizable markup from defense-in-depth
+        // sanitization. Genuine binary images remain byte-identical in the test above.
         EpubFixtureBuilder.BuildEpubWithBinaryResource(_epubPath, "OEBPS/evil.png", Encoding.UTF8.GetBytes(HostileMarkup));
 
         var (doc, _) = await EpubDoc.OpenWithChaptersAsync(_epubPath, "Untitled");
         try
         {
             var extracted = File.ReadAllText(Path.Combine(doc.ExtractRoot, "OEBPS", "evil.png"));
-            Assert.Contains("<script", extracted, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("<script", extracted, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("onclick", extracted, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("hi", extracted);
         }
         finally
         {
