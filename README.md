@@ -27,8 +27,10 @@ immediately — no library, no account, no distractions.
   network request — navigation and resource loads are locked to the book's
   local virtual host
 - About window (⚙ → About) with version, license, and an optional
-  **Contact support** page that loads the Green Yoga website only when you
-  explicitly ask — the reader itself stays fully offline
+  **Contact support** form that sends your request directly to Green Yoga
+  only when you choose Send — the reader itself stays fully offline
+- Support includes your contact details, message, app version, Windows version,
+  and language. Documents are never sent. Failed requests keep your draft for retry.
 
 ## Keyboard reference
 
@@ -46,6 +48,20 @@ immediately — no library, no account, no distractions.
 | `Ctrl` `+` / `−` | Increase / decrease text size |
 | `Ctrl+0` | Reset text settings |
 | `B` | Add or remove bookmark |
+
+## What's new in 1.0.7
+
+- **Native support**: contact Green Yoga from a keyboard-friendly form inside the
+  app, with translated labels, clear delivery status and a request reference.
+- **Private by design**: only Send contacts support. Your book stays on your
+  device; the form sends your message, contact details and visible app details.
+- **Reliable retries**: failed requests retain your draft and reference, and
+  duplicate clicks cannot submit twice.
+- **Book compatibility**: chapters with a hash sign in their filename can open
+  despite an upstream table-of-contents parsing issue. Unresolved table-of-contents
+  entries are skipped for these books while their reading order is preserved.
+- **Resource paths**: literal and encoded dot segments are rejected before URL
+  normalization, with existing extraction boundaries preserved.
 
 ## What's new in 1.0.6
 
@@ -133,3 +149,13 @@ virtual host (`epub.local`). Reading position, bookmarks, and display settings a
 stored under `%LocalAppData%\GreenYogaInc\EpubLiteReader\`.
 
 Companion to [PDF Lite Viewer](https://github.com/greenyogainc/pdf-lite-viewer).
+
+### Native support transport checks
+
+```sh
+dotnet run --project tools/SupportTransportChecks/SupportTransportChecks.csproj
+```
+
+Native form UI checks use an injected HTTP handler and never send a real support request.
+Set `ELR_UI=1` and run the `NativeSupportTests` test filter to exercise validation,
+draft preservation, success, retry, duplicate-send prevention, and close cancellation.

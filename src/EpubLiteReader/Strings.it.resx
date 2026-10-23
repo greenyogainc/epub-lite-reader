@@ -80,13 +80,7 @@ Dettagli registrati in:
   <data name="AboutContactSupport" xml:space="preserve"><value>Contatta il supporto</value></data>
   <data name="AboutClose" xml:space="preserve"><value>Chiudi</value></data>
   <data name="AboutLicenseUnavailable" xml:space="preserve"><value>Impossibile caricare il testo della licenza. Questa applicazione è distribuita con Licenza MIT.</value></data>
-  <data name="SupportDisclosure" xml:space="preserve"><value>Contatta il supporto carica il sito web di Green Yoga (greenyogainc.com) all'interno di questa finestra. È necessaria una connessione internet e l'informativa sulla privacy del sito Green Yoga si applica a qualsiasi informazione inviata.</value></data>
-  <data name="SupportLoadButton" xml:space="preserve"><value>Carica pagina di supporto</value></data>
-  <data name="SupportOpenInBrowser" xml:space="preserve"><value>Apri nel browser web</value></data>
-  <data name="SupportEmail" xml:space="preserve"><value>Contatta il supporto via e-mail</value></data>
-  <data name="SupportRetry" xml:space="preserve"><value>Riprova</value></data>
-  <data name="SupportLoading" xml:space="preserve"><value>Caricamento della pagina di supporto…</value></data>
-  <data name="SupportLoadFailed" xml:space="preserve"><value>Impossibile caricare la pagina di supporto. Controlla la connessione internet e riprova, oppure usa una delle opzioni seguenti.</value></data>
+  <data name="SupportEmail" xml:space="preserve"><value>Indirizzo email</value></data>
   <data name="SupportBack" xml:space="preserve"><value>Indietro</value></data>
   <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>Sezione {0}</value></data>
   <data name="PageBoxName" xml:space="preserve"><value>Numero di capitolo</value></data>
@@ -97,4 +91,25 @@ Dettagli registrati in:
   <data name="NoSearchResults" xml:space="preserve"><value>Nessun risultato</value></data>
   <data name="SearchResultsFormat" xml:space="preserve"><value>{0} risultati</value></data>
   <data name="NoReadableContent" xml:space="preserve"><value>Questo libro non contiene pagine leggibili.</value></data>
+  <data name="SupportName" xml:space="preserve"><value>Nome</value></data>
+  <data name="SupportSubject" xml:space="preserve"><value>Oggetto</value></data>
+  <data name="SupportMessage" xml:space="preserve"><value>Messaggio</value></data>
+  <data name="SupportIntro" xml:space="preserve"><value>Dicci come possiamo aiutarti. Tutti i campi sono obbligatori.</value></data>
+  <data name="SupportPrivacy" xml:space="preserve"><value>I tuoi recapiti, il messaggio, la versione dell’app, la versione di Windows e la lingua vengono inviati a Green Yoga Inc. I documenti non vengono mai inviati.</value></data>
+  <data name="SupportDetails" xml:space="preserve"><value>Dettagli inclusi nella richiesta</value></data>
+  <data name="SupportSend" xml:space="preserve"><value>Invia messaggio</value></data>
+  <data name="SupportSending" xml:space="preserve"><value>Invio del messaggio…</value></data>
+  <data name="SupportSent" xml:space="preserve"><value>Il messaggio è stato inviato. Ti risponderemo via email.</value></data>
+  <data name="SupportSendAnother" xml:space="preserve"><value>Invia un altro messaggio</value></data>
+  <data name="SupportRequired" xml:space="preserve"><value>Compila tutti i campi prima di inviare.</value></data>
+  <data name="SupportInvalidEmail" xml:space="preserve"><value>Inserisci un indirizzo email valido.</value></data>
+  <data name="SupportSendFailed" xml:space="preserve"><value>Impossibile confermare la consegna. Controlla la connessione e riprova. La bozza è conservata qui.</value></data>
+  <data name="SupportRateLimited" xml:space="preserve"><value>Troppe richieste. Attendi qualche minuto e riprova.</value></data>
+  <data name="SupportInProgress" xml:space="preserve"><value>La richiesta è ancora in elaborazione. Attendi un momento e riprova.</value></data>
+  <data name="SupportConflict" xml:space="preserve"><value>Questo riferimento è già in uso. Modifica il messaggio prima di inviarlo di nuovo.</value></data>
+  <data name="SupportReferenceFormat" xml:space="preserve"><value>Riferimento: {0}</value></data>
+  <data name="SupportDetailsFormat" xml:space="preserve"><value>App: {0}
+Versione: {1}
+Windows: {2}
+Lingua: {3}</value></data>
 </root>

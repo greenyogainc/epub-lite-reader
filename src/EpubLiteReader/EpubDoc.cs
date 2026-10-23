@@ -1,8 +1,10 @@
 using System.IO;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using VersOne.Epub;
+using VersOne.Epub.Options;
 
 namespace EpubLiteReader;
 
@@ -76,11 +78,37 @@ public sealed class EpubDoc : IDisposable
         // off the caller's (dispatcher) thread so large books cannot freeze the UI.
         Task.Run(() => OpenWithChaptersCoreAsync(path, untitledLabel, sectionTitleFormat, ct, maxResourceBytes), ct);
 
+    private static bool HasHashNamedHtmlEntry(string path)
+    {
+        using var archive = ZipFile.OpenRead(path);
+        return archive.Entries.Any(entry => entry.FullName.Contains('#') &&
+            (Path.GetExtension(entry.FullName).Equals(".xhtml", StringComparison.OrdinalIgnoreCase) ||
+             Path.GetExtension(entry.FullName).Equals(".html", StringComparison.OrdinalIgnoreCase) ||
+             Path.GetExtension(entry.FullName).Equals(".htm", StringComparison.OrdinalIgnoreCase)));
+    }
+
     private static async Task<(EpubDoc Doc, List<ChapterItem> Chapters)> OpenWithChaptersCoreAsync(
         string path, string untitledLabel, string? sectionTitleFormat, CancellationToken ct, long maxResourceBytes)
     {
         path = Path.GetFullPath(path);
-        var book = await EpubReader.ReadBookAsync(path);
+        EpubBook book;
+        try
+        {
+            book = await EpubReader.ReadBookAsync(path);
+        }
+        catch (Epub3NavException) when (HasHashNamedHtmlEntry(path))
+        {
+            // VersOne 3.3.6 decodes %23 before splitting navigation fragments. A valid
+            // hash-named chapter then looks like a missing TOC target. Keep its reading
+            // order and all normal extraction checks; skip only unresolved TOC entries.
+            book = await EpubReader.ReadBookAsync(path, new EpubReaderOptions
+            {
+                NavigationReaderOptions = new NavigationReaderOptions
+                {
+                    SkipNavigationItemsReferencingMissingContent = true
+                }
+            }) ?? throw new InvalidDataException("The EPUB reader returned no book.");
+        }
         ct.ThrowIfCancellationRequested();
 
         // VersOne.Epub accepts an empty <spine/>; a book with nothing to display must be

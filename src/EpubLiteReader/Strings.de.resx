@@ -80,13 +80,7 @@ Details protokolliert unter:
   <data name="AboutContactSupport" xml:space="preserve"><value>Support kontaktieren</value></data>
   <data name="AboutClose" xml:space="preserve"><value>Schließen</value></data>
   <data name="AboutLicenseUnavailable" xml:space="preserve"><value>Der Lizenztext konnte nicht geladen werden. Diese Anwendung wird unter der MIT-Lizenz veröffentlicht.</value></data>
-  <data name="SupportDisclosure" xml:space="preserve"><value>„Support kontaktieren" lädt die Green-Yoga-Website (greenyogainc.com) in diesem Fenster. Eine Internetverbindung ist erforderlich, und die Datenschutzerklärung der Green-Yoga-Website gilt für alle Angaben, die Sie übermitteln.</value></data>
-  <data name="SupportLoadButton" xml:space="preserve"><value>Support-Seite laden</value></data>
-  <data name="SupportOpenInBrowser" xml:space="preserve"><value>Im Webbrowser öffnen</value></data>
-  <data name="SupportEmail" xml:space="preserve"><value>Support per E-Mail kontaktieren</value></data>
-  <data name="SupportRetry" xml:space="preserve"><value>Erneut versuchen</value></data>
-  <data name="SupportLoading" xml:space="preserve"><value>Support-Seite wird geladen…</value></data>
-  <data name="SupportLoadFailed" xml:space="preserve"><value>Die Support-Seite konnte nicht geladen werden. Überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut, oder nutzen Sie eine der folgenden Optionen.</value></data>
+  <data name="SupportEmail" xml:space="preserve"><value>E-Mail-Adresse</value></data>
   <data name="SupportBack" xml:space="preserve"><value>Zurück</value></data>
   <data name="ContinuousSectionTitleFormat" xml:space="preserve"><value>Abschnitt {0}</value></data>
   <data name="PageBoxName" xml:space="preserve"><value>Kapitelnummer</value></data>
@@ -97,4 +91,25 @@ Details protokolliert unter:
   <data name="NoSearchResults" xml:space="preserve"><value>Keine Treffer</value></data>
   <data name="SearchResultsFormat" xml:space="preserve"><value>{0} Treffer</value></data>
   <data name="NoReadableContent" xml:space="preserve"><value>Dieses Buch enthält keine lesbaren Seiten.</value></data>
+  <data name="SupportName" xml:space="preserve"><value>Name</value></data>
+  <data name="SupportSubject" xml:space="preserve"><value>Betreff</value></data>
+  <data name="SupportMessage" xml:space="preserve"><value>Nachricht</value></data>
+  <data name="SupportIntro" xml:space="preserve"><value>Wie können wir Ihnen helfen? Alle Felder sind erforderlich.</value></data>
+  <data name="SupportPrivacy" xml:space="preserve"><value>Ihre Kontaktdaten, Nachricht, App-Version, Windows-Version und Sprache werden an Green Yoga Inc gesendet. Dokumente werden niemals gesendet.</value></data>
+  <data name="SupportDetails" xml:space="preserve"><value>Mitgesendete Angaben</value></data>
+  <data name="SupportSend" xml:space="preserve"><value>Nachricht senden</value></data>
+  <data name="SupportSending" xml:space="preserve"><value>Nachricht wird gesendet…</value></data>
+  <data name="SupportSent" xml:space="preserve"><value>Ihre Nachricht wurde gesendet. Wir antworten per E-Mail.</value></data>
+  <data name="SupportSendAnother" xml:space="preserve"><value>Weitere Nachricht senden</value></data>
+  <data name="SupportRequired" xml:space="preserve"><value>Füllen Sie vor dem Senden alle Felder aus.</value></data>
+  <data name="SupportInvalidEmail" xml:space="preserve"><value>Geben Sie eine gültige E-Mail-Adresse ein.</value></data>
+  <data name="SupportSendFailed" xml:space="preserve"><value>Die Zustellung konnte nicht bestätigt werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut. Ihr Entwurf bleibt hier erhalten.</value></data>
+  <data name="SupportRateLimited" xml:space="preserve"><value>Zu viele Anfragen. Warten Sie einige Minuten und versuchen Sie es erneut.</value></data>
+  <data name="SupportInProgress" xml:space="preserve"><value>Ihre Anfrage wird noch bearbeitet. Warten Sie kurz und versuchen Sie es erneut.</value></data>
+  <data name="SupportConflict" xml:space="preserve"><value>Diese Referenz wird bereits verwendet. Ändern Sie Ihre Nachricht vor dem erneuten Senden.</value></data>
+  <data name="SupportReferenceFormat" xml:space="preserve"><value>Referenz: {0}</value></data>
+  <data name="SupportDetailsFormat" xml:space="preserve"><value>App: {0}
+Version: {1}
+Windows: {2}
+Sprache: {3}</value></data>
 </root>

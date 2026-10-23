@@ -1,59 +1,68 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Net.Http;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using Microsoft.Web.WebView2.Core;
-using Microsoft.Web.WebView2.Wpf;
+using GreenYoga.Support;
 
 namespace EpubLiteReader;
 
-/// <summary>
-/// About and Contact Support. The reader stays offline: the only network-capable
-/// surface in the app is the dedicated support WebView2 created here, and only
-/// after the user explicitly asks for the support page.
-/// </summary>
+/// <summary>About and native support. Reading stays offline; support sends only on request.</summary>
 public partial class AboutWindow : Window
 {
-    internal const string SupportUrl = "https://greenyogainc.com/contact/";
-    internal const string SupportEmailAddress = "andreab@greenyogainc.com";
-
-    private static readonly string[] AllowedSupportHosts = { "greenyogainc.com", "api.greenyogainc.com" };
-
-    private WebView2? _supportView;
-    private bool _supportViewInitializing;
-    private bool _supportLoaded;
+    private static readonly HttpClient SupportHttp = new(new HttpClientHandler { AllowAutoRedirect = false })
+    {
+        Timeout = TimeSpan.FromSeconds(30)
+    };
+    private readonly AppSupportClient _supportClient;
+    private AppSupportDraft _draft = new();
+    private readonly CancellationTokenSource _lifetime = new();
+    private readonly string _appVersion;
+    private readonly string _osVersion = Environment.OSVersion.VersionString;
+    private readonly string _locale = string.IsNullOrEmpty(CultureInfo.CurrentUICulture.Name) ? "en" : CultureInfo.CurrentUICulture.Name;
+    private bool _sending;
+    private bool _sent;
+    private bool _failed;
     private bool _closed;
 
-    public AboutWindow()
+    public AboutWindow() : this(new AppSupportClient(SupportHttp)) { }
+
+    internal AboutWindow(AppSupportClient supportClient)
     {
+        _supportClient = supportClient;
         InitializeComponent();
         Strings.ApplyFlowDirection(this);
-
         Title = string.Format(Strings.Get("AboutWindowTitleFormat"), Strings.Get("AppTitle"));
 
         var asm = typeof(AboutWindow).Assembly;
         var informational = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
                             ?? asm.GetName().Version?.ToString() ?? "?";
-        var displayVersion = informational.Split('+')[0];
-        VersionText.Text = string.Format(Strings.Get("AboutVersionFormat"), displayVersion);
+        _appVersion = informational.Split('+')[0];
+        VersionText.Text = string.Format(Strings.Get("AboutVersionFormat"), _appVersion);
         VersionText.ToolTip = informational;
+        SupportDetailsText.Text = string.Format(Strings.Get("SupportDetailsFormat"),
+            Strings.Get("AppTitle"), _appVersion, _osVersion, _locale);
 
         CopyrightText.Text = asm.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright
                              ?? "© Green Yoga Inc";
-
         try
         {
             AppMark.Source = new BitmapImage(new Uri("pack://application:,,,/app.ico"));
         }
-        catch (Exception ex)
-        {
-            App.LogError(ex);
-        }
+        catch (Exception ex) { App.LogError(ex); }
 
         LoadLicenseText();
-        Closed += (_, _) => { _closed = true; TearDownSupportView(); };
+        Closed += (_, _) =>
+        {
+            _closed = true;
+            _lifetime.Cancel();
+            _lifetime.Dispose();
+            WriteAboutState(open: false);
+        };
         WriteAboutState();
     }
 
@@ -62,9 +71,7 @@ public partial class AboutWindow : Window
         try
         {
             var path = Path.Combine(AppContext.BaseDirectory, "LICENSE.txt");
-            LicenseText.Text = File.Exists(path)
-                ? File.ReadAllText(path)
-                : Strings.Get("AboutLicenseUnavailable");
+            LicenseText.Text = File.Exists(path) ? File.ReadAllText(path) : Strings.Get("AboutLicenseUnavailable");
         }
         catch (Exception ex)
         {
@@ -73,33 +80,20 @@ public partial class AboutWindow : Window
         }
     }
 
-    // ---------- Links ----------
-
     private void Link_RequestNavigate(object sender, RequestNavigateEventArgs e)
     {
-        OpenExternal(e.Uri.ToString());
+        try { Process.Start(new ProcessStartInfo(e.Uri.ToString()) { UseShellExecute = true }); }
+        catch (Exception ex) { App.LogError(ex); }
         e.Handled = true;
     }
-
-    private static void OpenExternal(string url)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        }
-        catch (Exception ex)
-        {
-            App.LogError(ex);
-        }
-    }
-
-    // ---------- Support view ----------
 
     private void ContactSupport_Click(object sender, RoutedEventArgs e)
     {
         AboutView.Visibility = Visibility.Collapsed;
         SupportView.Visibility = Visibility.Visible;
-        SupportLoadButton.Focus();
+        SupportView.UpdateLayout();
+        if (_sent) SupportSendAnotherButton.Focus();
+        else SupportNameBox.Focus();
         WriteAboutState();
     }
 
@@ -111,231 +105,103 @@ public partial class AboutWindow : Window
         WriteAboutState();
     }
 
-    private async void SupportLoad_Click(object sender, RoutedEventArgs e) => await LoadSupportPageAsync();
-
-    private async void SupportRetry_Click(object sender, RoutedEventArgs e) => await LoadSupportPageAsync();
-
-    private void SupportOpenBrowser_Click(object sender, RoutedEventArgs e) => OpenExternal(SupportUrl);
-
-    private void SupportEmail_Click(object sender, RoutedEventArgs e) =>
-        OpenExternal($"mailto:{SupportEmailAddress}?subject={Uri.EscapeDataString(Strings.Get("AppTitle"))}");
-
-    private async Task LoadSupportPageAsync()
+    private async void SupportSend_Click(object sender, RoutedEventArgs e)
     {
-        if (_supportViewInitializing) return;
+        if (_sending || _sent || _closed) return;
+        var request = _draft.GetRequest("epub-lite-reader", _appVersion, _osVersion, _locale,
+            SupportNameBox.Text, SupportEmailBox.Text, SupportSubjectBox.Text, SupportMessageBox.Text);
+        var invalid = AppSupportClient.Validate(request);
+        if (invalid is not null)
+        {
+            ShowStatus(Strings.Get(invalid == AppSupportStatus.InvalidEmail ? "SupportInvalidEmail" : "SupportRequired"), failed: true);
+            return;
+        }
 
-        SupportDisclosurePanel.Visibility = Visibility.Collapsed;
-        SupportFailurePanel.Visibility = Visibility.Collapsed;
-        SupportLoadingText.Visibility = Visibility.Visible;
-
-        // The WebView2 HwndHost only initializes inside a realized element, so
-        // the host must be Visible during init; opacity keeps the loading text
-        // readable until the page actually arrives.
-        _supportLoaded = false;
-        SupportWebHost.Visibility = Visibility.Visible;
-        SupportWebHost.Opacity = 0;
-        SupportWebHost.IsHitTestVisible = false;
-
+        _sending = true;
+        _failed = false;
+        SetFormEnabled(false);
+        ShowStatus(Strings.Get("SupportSending"));
         try
         {
-            if (_supportView is null)
+            var result = await _supportClient.SendAsync(request, _lifetime.Token);
+            if (_closed) return;
+            if (result.Status == AppSupportStatus.Success)
             {
-                _supportViewInitializing = true;
-                var view = new WebView2 { AllowExternalDrop = false };
-                try
-                {
-                    SupportWebHost.Child = view;
-                    await view.EnsureCoreWebView2Async();
-
-                    if (_closed)
-                    {
-                        // The window closed while the view was still initializing; it
-                        // was never adopted as _supportView, so tear it down here
-                        // instead of configuring, navigating, or touching UI in a
-                        // window that is gone.
-                        view.Dispose();
-                        return;
-                    }
-
-                    ConfigureSupportView(view.CoreWebView2);
-                    _supportView = view;
-                }
-                catch
-                {
-                    // Initialization failed before the view was adopted as
-                    // _supportView: detach it from the host and dispose it here so it
-                    // cannot leak, then let the outer catch report the failure. Retry
-                    // will create a fresh view next time.
-                    if (ReferenceEquals(SupportWebHost.Child, view))
-                        SupportWebHost.Child = null;
-                    view.Dispose();
-                    throw;
-                }
-                finally
-                {
-                    _supportViewInitializing = false;
-                }
+                _sent = true;
+                SupportSendButton.Visibility = Visibility.Collapsed;
+                SupportSendAnotherButton.Visibility = Visibility.Visible;
+                ShowStatus(Strings.Get("SupportSent") + "\n" +
+                    string.Format(Strings.Get("SupportReferenceFormat"), result.RequestId), success: true);
             }
-
-            _supportView.CoreWebView2!.Navigate(SupportUrl);
+            else
+            {
+                var key = result.Status switch
+                {
+                    AppSupportStatus.InvalidEmail => "SupportInvalidEmail",
+                    AppSupportStatus.InvalidRequest => "SupportRequired",
+                    AppSupportStatus.RateLimited => "SupportRateLimited",
+                    AppSupportStatus.InProgress => "SupportInProgress",
+                    AppSupportStatus.Conflict => "SupportConflict",
+                    _ => "SupportSendFailed"
+                };
+                ShowStatus(Strings.Get(key), failed: true);
+            }
         }
-        catch (Exception ex)
+        catch (OperationCanceledException) when (_closed) { }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
         {
-            App.LogError(ex);
-            // The window is gone; writing aboutOpen=true state (which
-            // ShowSupportFailure does via WriteAboutState) after close would be wrong.
+            if (!_closed) ShowStatus(Strings.Get("SupportSendFailed"), failed: true);
+        }
+        finally
+        {
+            _sending = false;
             if (!_closed)
-                ShowSupportFailure();
-        }
-    }
-
-    private void ConfigureSupportView(CoreWebView2 core)
-    {
-        core.Settings.AreDevToolsEnabled = false;
-        core.Settings.AreDefaultContextMenusEnabled = false;
-        core.Settings.AreHostObjectsAllowed = false;
-        core.Settings.IsStatusBarEnabled = false;
-        core.Settings.AreBrowserAcceleratorKeysEnabled = false;
-        core.Settings.IsZoomControlEnabled = false;
-        core.Settings.IsWebMessageEnabled = false;
-        core.Settings.IsGeneralAutofillEnabled = false;
-        core.Settings.IsPasswordAutosaveEnabled = false;
-        core.Settings.AreDefaultScriptDialogsEnabled = false;
-
-        core.NavigationStarting += SupportNavigationStarting;
-        core.FrameNavigationStarting += SupportFrameNavigationStarting;
-        core.NavigationCompleted += SupportNavigationCompleted;
-        core.NewWindowRequested += SupportNewWindowRequested;
-        core.DownloadStarting += SupportDownloadStarting;
-        core.PermissionRequested += SupportPermissionRequested;
-        core.ProcessFailed += SupportProcessFailed;
-
-        // Only the exact hosts needed by the contact form may be reached from
-        // this view. That cuts off Google Tag Manager, Microsoft Clarity, and
-        // every other third party the public page would normally load.
-        core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
-        core.WebResourceRequested += SupportWebResourceRequested;
-    }
-
-    /// <summary>Exact-host HTTPS allowlist for the embedded support experience.</summary>
-    internal static bool IsAllowedSupportUri(string? uri)
-    {
-        if (string.IsNullOrEmpty(uri)) return false;
-        if (!Uri.TryCreate(uri, UriKind.Absolute, out var parsed)) return false;
-        if (!string.Equals(parsed.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)) return false;
-        foreach (var host in AllowedSupportHosts)
-        {
-            if (string.Equals(parsed.Host, host, StringComparison.OrdinalIgnoreCase))
-                return true;
-        }
-        return false;
-    }
-
-    private void SupportNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e)
-    {
-        if (IsAllowedSupportUri(e.Uri)) return;
-        e.Cancel = true;
-        // A link the user actually clicked may continue in the system browser;
-        // automatic redirects and scripted navigation are simply dropped.
-        if (e.IsUserInitiated && Uri.TryCreate(e.Uri, UriKind.Absolute, out var uri) &&
-            (uri.Scheme is "https" or "http" or "mailto"))
-        {
-            OpenExternal(e.Uri!);
-        }
-    }
-
-    private void SupportFrameNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e)
-    {
-        if (!IsAllowedSupportUri(e.Uri))
-            e.Cancel = true;
-    }
-
-    private void SupportNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
-    {
-        if (e.IsSuccess && e.HttpStatusCode < 400)
-        {
-            SupportLoadingText.Visibility = Visibility.Collapsed;
-            SupportFailurePanel.Visibility = Visibility.Collapsed;
-            SupportWebHost.Visibility = Visibility.Visible;
-            SupportWebHost.Opacity = 1;
-            SupportWebHost.IsHitTestVisible = true;
-            _supportLoaded = true;
-        }
-        else
-        {
-            ShowSupportFailure();
-        }
-        WriteAboutState();
-    }
-
-    private void SupportNewWindowRequested(object? sender, CoreWebView2NewWindowRequestedEventArgs e)
-    {
-        e.Handled = true;
-        if (!e.IsUserInitiated) return;
-        if (IsAllowedSupportUri(e.Uri))
-            _supportView?.CoreWebView2?.Navigate(e.Uri);
-        else if (Uri.TryCreate(e.Uri, UriKind.Absolute, out var uri) && uri.Scheme is "https" or "http")
-            OpenExternal(e.Uri);
-    }
-
-    private void SupportDownloadStarting(object? sender, CoreWebView2DownloadStartingEventArgs e)
-    {
-        e.Cancel = true;
-        e.Handled = true;
-    }
-
-    private void SupportPermissionRequested(object? sender, CoreWebView2PermissionRequestedEventArgs e) =>
-        e.State = CoreWebView2PermissionState.Deny;
-
-    private void SupportProcessFailed(object? sender, CoreWebView2ProcessFailedEventArgs e)
-    {
-        App.LogError(new InvalidOperationException($"Support WebView process failed: {e.ProcessFailedKind}"));
-        ShowSupportFailure();
-    }
-
-    private void SupportWebResourceRequested(object? sender, CoreWebView2WebResourceRequestedEventArgs e)
-    {
-        if (IsAllowedSupportUri(e.Request.Uri)) return;
-        var core = _supportView?.CoreWebView2;
-        if (core is not null)
-            e.Response = core.Environment.CreateWebResourceResponse(null, 403, "Forbidden", "Content-Type: text/plain");
-    }
-
-    private void ShowSupportFailure()
-    {
-        _supportLoaded = false;
-        SupportLoadingText.Visibility = Visibility.Collapsed;
-        SupportWebHost.Visibility = Visibility.Collapsed;
-        SupportFailurePanel.Visibility = Visibility.Visible;
-        WriteAboutState();
-    }
-
-    private void TearDownSupportView()
-    {
-        try
-        {
-            if (_supportView?.CoreWebView2 is CoreWebView2 core)
             {
-                core.NavigationStarting -= SupportNavigationStarting;
-                core.FrameNavigationStarting -= SupportFrameNavigationStarting;
-                core.NavigationCompleted -= SupportNavigationCompleted;
-                core.NewWindowRequested -= SupportNewWindowRequested;
-                core.DownloadStarting -= SupportDownloadStarting;
-                core.PermissionRequested -= SupportPermissionRequested;
-                core.ProcessFailed -= SupportProcessFailed;
-                core.WebResourceRequested -= SupportWebResourceRequested;
+                SetFormEnabled(!_sent);
+                WriteAboutState();
             }
-            _supportView?.Dispose();
-            _supportView = null;
         }
-        catch (Exception ex)
-        {
-            App.LogError(ex);
-        }
-        WriteAboutState(open: false);
     }
 
-    /// <summary>Mirrors About/Support state next to the main automation state file.</summary>
+    private void SupportSendAnother_Click(object sender, RoutedEventArgs e)
+    {
+        if (_sending) return;
+        _sent = false;
+        _failed = false;
+        _draft = new();
+        SupportSubjectBox.Clear();
+        SupportMessageBox.Clear();
+        SupportStatusText.Text = "";
+        SupportStatusText.Visibility = Visibility.Collapsed;
+        SupportSendAnotherButton.Visibility = Visibility.Collapsed;
+        SupportSendButton.Visibility = Visibility.Visible;
+        SetFormEnabled(true);
+        SupportSubjectBox.Focus();
+        WriteAboutState();
+    }
+
+    private void SetFormEnabled(bool enabled)
+    {
+        SupportFields.IsEnabled = enabled;
+        SupportSendButton.IsEnabled = enabled;
+    }
+
+    private void ShowStatus(string message, bool failed = false, bool success = false)
+    {
+        _failed = failed;
+        SupportStatusText.Text = message;
+        SupportStatusText.Foreground = new SolidColorBrush(
+            success ? Color.FromRgb(139, 218, 171) : failed ? Color.FromRgb(255, 180, 171) : Color.FromRgb(221, 221, 221));
+        SupportStatusText.Visibility = Visibility.Visible;
+        if (!_sending || success || failed)
+        {
+            SupportStatusText.Focus();
+            SupportStatusText.BringIntoView();
+        }
+        WriteAboutState();
+    }
+
+    /// <summary>Mirrors native form state without contact details or message content.</summary>
     private void WriteAboutState(bool open = true)
     {
         var file = App.AutomationStateFile;
@@ -346,8 +212,10 @@ public partial class AboutWindow : Window
             {
                 aboutOpen = open,
                 supportView = open && SupportView.Visibility == Visibility.Visible,
-                supportLoaded = open && _supportLoaded,
-                supportFailed = open && SupportFailurePanel.Visibility == Visibility.Visible,
+                supportLoaded = open && SupportView.Visibility == Visibility.Visible,
+                supportFailed = open && _failed,
+                supportSending = open && _sending,
+                supportSent = open && _sent,
                 timestamp = DateTime.UtcNow.ToString("O")
             };
             File.WriteAllText(file + ".about", System.Text.Json.JsonSerializer.Serialize(state));

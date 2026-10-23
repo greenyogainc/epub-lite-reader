@@ -41,9 +41,8 @@ release screenshots, capture from the published layout:
 .\tools\Capture-StoreScreenshots.ps1 -ExePath packaging\out\layout-win-x64\EpubLiteReader.exe
 ```
 
-The Contact Support shot loads the live `https://greenyogainc.com/contact/`
-page and requires internet; nothing is typed into or submitted through the
-form.
+The Contact Support shot shows the native form offline. Nothing is typed
+into the form or submitted during screenshot capture.
 
 ## File association
 

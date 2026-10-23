@@ -352,14 +352,10 @@ try {
     Wait-AppState { param($s) $s.aboutOpen } "about window" 15 ".about"
     Save-WindowImage $hwnd $proc.Id (Join-Path $outDir "6-about.png")
 
-    # 7) Contact support with the live form loaded (requires internet). No form
-    #    fields are filled and nothing is submitted. The process-wide search
-    #    reaches the About dialog's buttons the same way it reaches menu items.
+    # 7) Native contact support opens offline. Nothing is filled or submitted.
     Invoke-InProcessByName $proc.Id "Contact support"
     Wait-AppState { param($s) $s.supportView } "support view" 15 ".about"
-    Invoke-InProcessByName $proc.Id "Load support page"
-    Wait-AppState { param($s) $s.supportLoaded } "support page loaded" 45 ".about"
-    Start-Sleep -Milliseconds 1500   # remote page layout/fonts settle
+    Wait-AppState { param($s) $s.supportLoaded -and -not $s.supportSending } "native support form ready" 15 ".about"
     Save-WindowImage $hwnd $proc.Id (Join-Path $outDir "7-contact-support.png")
 }
 finally {
