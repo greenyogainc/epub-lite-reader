@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build with warnings as errors
+        run: dotnet build EpubLiteReader.slnx -c Release -warnaserror
+      - name: EPUB pipeline smoke check
+        run: dotnet run --no-build --project tools/EpubSmoke/EpubSmoke.csproj -c Release -- tools/fixtures/sample.epub
+      - name: Support transport checks
+        run: dotnet run --no-build --project tools/SupportTransportChecks/SupportTransportChecks.csproj -c Release
+      - name: Tests and merged coverage
+        shell: pwsh
+        run: ./tools/Measure-Coverage.ps1 -MinLine 100
+      - name: Keep coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: TestResults/coverage
+          if-no-files-found: ignore
+
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff==0.16.8 pytest==9.0.3 coverage==7.13.5 pillow==12.3.0
+      - run: ruff check
+      - run: coverage run -m pytest
+      - run: coverage report

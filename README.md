@@ -23,9 +23,9 @@ immediately — no library, no account, no distractions.
   only, written crash-safely)
 - Open via dialog (`Ctrl+O`), drag & drop, or double-click a `.epub` (file association)
 - Print current chapter (`Ctrl+P`) via the system print UI
-- Scripts from EPUB content are stripped, and book content cannot make any
-  network request — navigation and resource loads are locked to the book's
-  local virtual host
+- Scripts from EPUB content are stripped and blocked by a Content-Security-Policy
+  on every book document, and book content cannot make any network request —
+  navigation and resource loads are locked to the book's local `epub.local` handler
 - About window (⚙ → About) with version, license, and an optional
   **Contact support** form that sends your request directly to Green Yoga
   only when you choose Send — the reader itself stays fully offline
@@ -117,17 +117,27 @@ dotnet run --project src\EpubLiteReader
 dotnet test EpubLiteReader.slnx -c Release
 ```
 
-The window suite opens the real reader and WebView2. It is skipped unless
-`ELR_UI` is set, and it needs an interactive desktop plus the WebView2 runtime.
-It writes reading state to a temporary `--datadir`, not the user profile.
+The window suite opens the real reader and WebView2, including file dialogs and
+message boxes. It is skipped unless `ELR_UI` is set, and it needs an interactive
+desktop, the WebView2 runtime, and nobody using the keyboard while it runs. It
+writes reading state to a temporary `--datadir`, not the user profile.
+
+To run both suites and report coverage of the shipped app:
 
 ```powershell
-$env:ELR_UI = "1"
-dotnet test EpubLiteReader.slnx -c Release --collect:"Code Coverage;Format=Cobertura" --results-directory TestResults
+pwsh tools/Measure-Coverage.ps1 -MinLine 100
 ```
 
 Each test project records its own coverage file. App coverage is the union of
-those reports: for each line, keep the higher hit count.
+those reports: for each line, keep the higher hit count. Add `-Headless` to skip
+the window suite. The script counts C# only, so the JavaScript injected into the
+reader is exercised by the window suite but not measured.
+
+The generator scripts in `tools/` have their own tests, run from WSL or Linux:
+
+```sh
+coverage run -m pytest && coverage report
+```
 
 There is also a headless EPUB pipeline smoke check:
 
