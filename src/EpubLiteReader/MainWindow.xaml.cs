@@ -47,6 +47,19 @@ public partial class MainWindow : Window
 
     private CancellationTokenSource? _openCts;
 
+    // Read-only views for the window test suite, which awaits real work instead of polling.
+    internal EpubDoc? CurrentDoc => _doc;
+    internal ReadingHost? LeftHost => _left;
+    internal ReadingHost? RightHost => _right;
+    internal bool HostsReady => _hostsReady;
+    internal BookState? CurrentBookState => _bookState;
+    internal DisplaySettings CurrentDisplay => _display;
+    internal ViewMode CurrentMode => _mode;
+    internal int CurrentSpine => _spineIndex;
+    internal double CurrentFraction => _scrollFraction;
+    internal bool IsFullscreen => _fullscreen;
+    internal bool IsChapterPaneVisible => _chapterPaneVisible;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -103,6 +116,7 @@ public partial class MainWindow : Window
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         _openCts?.Cancel();
+        _saveTimer.Stop();
         PersistBookState();
         _appSettings.Defaults = _display.Clone();
         _appSettings.WindowWidth = Width;
@@ -129,7 +143,7 @@ public partial class MainWindow : Window
             await OpenFileAsync(dlg.FileName);
     }
 
-    private async Task OpenFileAsync(string path)
+    internal async Task OpenFileAsync(string path)
     {
         if (!_hostsReady) return;
 
@@ -218,10 +232,10 @@ public partial class MainWindow : Window
 
             await RequestViewAsync(new ViewRequest(_mode, _spineIndex, null, _scrollFraction, RestoreScroll: true));
 
-            // Dispose the previous document only after the hosts have re-mapped the
-            // virtual host to the new extract root; deleting it at the commit point
-            // races in-flight resource loads that still resolve against the old
-            // mapping (transient 404 flicker).
+            // Dispose the previous document only after the hosts have switched to the
+            // new extract root; deleting it at the commit point races in-flight
+            // resource loads that still resolve against the old root (transient 404
+            // flicker).
             old?.Dispose();
             old = null;
         }
@@ -312,7 +326,7 @@ public partial class MainWindow : Window
         return _viewPump;
     }
 
-    private Task WhenNavIdleAsync() => _viewPump ?? Task.CompletedTask;
+    internal Task WhenNavIdleAsync() => _viewPump ?? Task.CompletedTask;
 
     private async Task RunViewPumpAsync()
     {
@@ -439,7 +453,7 @@ public partial class MainWindow : Window
     private async void Prev_Click(object sender, RoutedEventArgs e) => await StepAsync(-1);
     private async void Next_Click(object sender, RoutedEventArgs e) => await StepAsync(+1);
 
-    private async Task StepAsync(int direction)
+    internal async Task StepAsync(int direction)
     {
         if (_doc is null || _left is null) return;
 
@@ -480,7 +494,7 @@ public partial class MainWindow : Window
         await GoToSpineAsync(_spineIndex + direction);
     }
 
-    private async Task GoToSpineAsync(int spine, string? anchor = null, double scroll = 0, bool syncChapters = true)
+    internal async Task GoToSpineAsync(int spine, string? anchor = null, double scroll = 0, bool syncChapters = true)
     {
         if (_doc is null || _doc.SpineCount == 0) return;
         spine = Math.Clamp(spine, 0, _doc.SpineCount - 1);
@@ -790,7 +804,7 @@ public partial class MainWindow : Window
 
     private bool _searching;
 
-    private async Task RunSearchAsync(bool forward)
+    internal async Task RunSearchAsync(bool forward)
     {
         if (_doc is null || _left is null || _right is null) return;
         var q = SearchBox.Text?.Trim() ?? "";
@@ -914,7 +928,7 @@ public partial class MainWindow : Window
 
     // ---------- Bookmarks ----------
 
-    private async Task ToggleBookmarkAsync()
+    internal async Task ToggleBookmarkAsync()
     {
         if (_doc is null || _bookState is null || _left is null) return;
 

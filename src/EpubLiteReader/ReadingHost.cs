@@ -16,7 +16,6 @@ public sealed class ReadingHost
     private readonly WebView2 _webView;
     private readonly string _role;
     private BookResourceServer? _server;
-    private string? _mappedFolder;
     private bool _initialized;
     private DisplaySettings _settings = new();
 
@@ -71,28 +70,14 @@ public sealed class ReadingHost
     public async Task MapBookAsync(EpubDoc doc)
     {
         await EnsureReadyAsync();
-        var core = _webView.CoreWebView2!;
 
-        // Primary path: every epub.local request is answered by this server in
-        // OnWebResourceRequested, which serves the book's files with a script-blocking
-        // CSP, an explicit Content-Type, and nosniff — the fix for javascript: URLs and
-        // mislabeled resources running.
+        // Every epub.local request is answered by this server in OnWebResourceRequested,
+        // which serves the book's files with a script-blocking CSP, an explicit
+        // Content-Type, and nosniff — the fix for javascript: URLs and mislabeled
+        // resources running. Do not add SetVirtualHostNameToFolderMapping here: WebView2
+        // serves a mapped host without raising WebResourceRequested, which silently
+        // removes all three (ContentSecurityTests guards this).
         _server = new BookResourceServer(doc.ExtractRoot);
-
-        // Kept only as a functional fallback for any request the handler does not
-        // override: the folder mapping still resolves the file (without CSP). Under
-        // normal operation the handler answers every epub.local request, so the mapping
-        // is never actually used to serve content. DenyCors keeps other origins from
-        // reading book resources cross-origin.
-        if (string.Equals(_mappedFolder, doc.ExtractRoot, StringComparison.OrdinalIgnoreCase))
-            return;
-        if (_mappedFolder is not null)
-            core.ClearVirtualHostNameToFolderMapping(EpubDoc.VirtualHost);
-        core.SetVirtualHostNameToFolderMapping(
-            EpubDoc.VirtualHost,
-            doc.ExtractRoot,
-            CoreWebView2HostResourceAccessKind.DenyCors);
-        _mappedFolder = doc.ExtractRoot;
     }
 
     public void SetDisplaySettings(DisplaySettings settings)

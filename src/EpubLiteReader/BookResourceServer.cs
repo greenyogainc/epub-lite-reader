@@ -100,7 +100,9 @@ internal sealed class BookResourceServer
         FileStream stream;
         try
         {
-            stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            // FileShare.Delete: WebView2 can hold a response stream past a book switch, and
+            // that must not stop EpubDoc.Dispose from removing the extract root.
+            stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
         }
         catch (IOException)
         {
