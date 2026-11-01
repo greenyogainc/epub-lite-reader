@@ -79,13 +79,22 @@ public partial class App : Application
         base.OnStartup(e);
     }
 
+    /// <summary>Test hook: redirects the error log to a throwaway file.</summary>
+    internal static string? LogPathOverride;
+
+    /// <summary>The log restarts once it reaches this size, so a failure that repeats
+    /// (a render loop, a bad state file) cannot grow it without bound.</summary>
+    internal const long MaxLogBytes = 1024 * 1024;
+
     private static string LogPath =>
-        Path.Combine(Path.GetTempPath(), "EpubLiteReader.log");
+        LogPathOverride ?? Path.Combine(Path.GetTempPath(), "EpubLiteReader.log");
 
     internal static void LogError(Exception ex)
     {
         try
         {
+            var log = new FileInfo(LogPath);
+            if (log.Exists && log.Length >= MaxLogBytes) log.Delete();
             File.AppendAllText(LogPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex}\n\n");
         }
         catch

@@ -21,9 +21,9 @@ public sealed class ReadingHost
 
     public event Action<ReadingHost, HostMessage>? MessageReceived;
 
-    public WebView2 Control => _webView;
-    public bool IsReady => _initialized;
-    public string Role => _role;
+    /// <summary>How long a navigation may take to complete before it is logged and abandoned.
+    /// A setting only so a test can shorten it.</summary>
+    internal TimeSpan NavigationTimeout { get; set; } = TimeSpan.FromSeconds(NavigationTimeoutSeconds);
 
     public ReadingHost(WebView2 webView, string role)
     {
@@ -230,7 +230,7 @@ public sealed class ReadingHost
         try
         {
             core.Navigate(url);
-            var done = await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(NavigationTimeoutSeconds)));
+            var done = await Task.WhenAny(tcs.Task, Task.Delay(NavigationTimeout));
             if (done != tcs.Task)
                 App.LogError(new TimeoutException($"Navigation to reader content timed out ({_role})."));
         }
@@ -274,9 +274,7 @@ public sealed class ReadingHost
         if (server is not null && BookResourceServer.IsBookUri(e.Request.Uri))
         {
             // The book's own resources: served with CSP + nosniff + explicit type.
-            e.Response = server.CreateResponse(environment, e.Request) ??
-                environment.CreateWebResourceResponse(null, 404, "Not Found",
-                    "Content-Type: text/plain\r\nX-Content-Type-Options: nosniff");
+            e.Response = server.CreateResponse(environment, e.Request);
             return;
         }
 

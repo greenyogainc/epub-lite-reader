@@ -155,7 +155,7 @@ sideloading notes.
 WPF (.NET 10) + [VersOne.Epub](https://github.com/vers-one/EpubReader) for EPUB 2/3
 parsing + [WebView2](https://learn.microsoft.com/en-us/microsoft-edge/webview2/) for
 XHTML/CSS rendering. Extracted book content is served through a locked-down local
-virtual host (`epub.local`). Reading position, bookmarks, and display settings are
+handler (`epub.local`). Reading position, bookmarks, and display settings are
 stored under `%LocalAppData%\GreenYogaInc\EpubLiteReader\`.
 
 Companion to [PDF Lite Viewer](https://github.com/greenyogainc/pdf-lite-viewer).

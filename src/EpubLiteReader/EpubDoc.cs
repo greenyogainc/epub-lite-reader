@@ -61,10 +61,6 @@ public sealed class EpubDoc : IDisposable
         SpinePlainText = spinePlainText;
     }
 
-    private List<ChapterItem>? _chapters;
-
-    public List<ChapterItem> GetChapters() => _chapters ?? new List<ChapterItem>();
-
     /// <summary>Entries skipped during extraction because their paths were unsafe, collided, or exceeded the resource size cap.</summary>
     public IReadOnlyList<string> SkippedEntries { get; private set; } = Array.Empty<string>();
 
@@ -101,13 +97,15 @@ public sealed class EpubDoc : IDisposable
             // VersOne 3.3.6 decodes %23 before splitting navigation fragments. A valid
             // hash-named chapter then looks like a missing TOC target. Keep its reading
             // order and all normal extraction checks; skip only unresolved TOC entries.
-            book = await EpubReader.ReadBookAsync(path, new EpubReaderOptions
+            // VersOne annotates this overload's result nullable, but it runs the same reader
+            // as the plain overload above, which is non-null.
+            book = (await EpubReader.ReadBookAsync(path, new EpubReaderOptions
             {
                 NavigationReaderOptions = new NavigationReaderOptions
                 {
                     SkipNavigationItemsReferencingMissingContent = true
                 }
-            }) ?? throw new InvalidDataException("The EPUB reader returned no book.");
+            }))!;
         }
         ct.ThrowIfCancellationRequested();
 
@@ -215,11 +213,7 @@ public sealed class EpubDoc : IDisposable
                         }
                     }
                 }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception)
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     // A single hostile or malformed entry (file/directory collision,
                     // reserved name the OS rejects) must not take the whole book down.
@@ -261,7 +255,6 @@ public sealed class EpubDoc : IDisposable
                 spinePaths,
                 spineText)
             {
-                _chapters = chapters,
                 SkippedEntries = skipped,
                 _extractLock = extractLock
             };
@@ -270,8 +263,7 @@ public sealed class EpubDoc : IDisposable
         }
         catch
         {
-            ReleaseExtractLock(extractRoot, extractLock);
-            TryDeleteDirectory(extractRoot);
+            ReleaseExtractLock(extractRoot, extractLock, deleteLockFile: TryDeleteDirectory(extractRoot));
             throw;
         }
     }
@@ -315,25 +307,6 @@ public sealed class EpubDoc : IDisposable
         return url;
     }
 
-    public int? FindSpineIndex(string contentFilePath)
-    {
-        var norm = NormalizePath(contentFilePath);
-        for (int i = 0; i < SpinePaths.Count; i++)
-        {
-            if (string.Equals(SpinePaths[i], norm, StringComparison.OrdinalIgnoreCase))
-                return i;
-        }
-
-        var name = Path.GetFileName(norm);
-        for (int i = 0; i < SpinePaths.Count; i++)
-        {
-            if (string.Equals(Path.GetFileName(SpinePaths[i]), name, StringComparison.OrdinalIgnoreCase))
-                return i;
-        }
-
-        return null;
-    }
-
     public IEnumerable<(int SpineIndex, int Offset, string Snippet)> Search(string query, int maxResults = 200)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -363,8 +336,7 @@ public sealed class EpubDoc : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        TryDeleteDirectory(_extractRoot);
-        ReleaseExtractLock(_extractRoot, _extractLock);
+        ReleaseExtractLock(_extractRoot, _extractLock, deleteLockFile: TryDeleteDirectory(_extractRoot));
         _extractLock = null;
     }
 
@@ -380,13 +352,17 @@ public sealed class EpubDoc : IDisposable
     private static FileStream AcquireExtractLock(string extractRoot) =>
         new(extractRoot + ExtractLockSuffix, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
 
-    private static void ReleaseExtractLock(string extractRoot, FileStream? extractLock)
+    /// <summary>Always releases the lock; removes the lock file only when the extract root is
+    /// gone. A root that survived (a WebView still holds a file in it) keeps its now-unheld
+    /// lock file: the sweep reclaims such a root at once, whereas a lock-less root looks like
+    /// a legacy extract and would wait a full <see cref="LegacyExtractMaxAge"/>.</summary>
+    private static void ReleaseExtractLock(string extractRoot, FileStream? extractLock, bool deleteLockFile)
     {
         if (extractLock is null) return;
         try
         {
             extractLock.Dispose();
-            File.Delete(extractRoot + ExtractLockSuffix);
+            if (deleteLockFile) File.Delete(extractRoot + ExtractLockSuffix);
         }
         catch
         {
@@ -1016,16 +992,19 @@ public sealed class EpubDoc : IDisposable
         return WsRegex.Replace(text, " ").Trim();
     }
 
-    private static void TryDeleteDirectory(string path)
+    /// <summary>Best-effort recursive delete; true when the directory is gone.</summary>
+    private static bool TryDeleteDirectory(string path)
     {
         try
         {
             if (Directory.Exists(path))
                 Directory.Delete(path, recursive: true);
+            return true;
         }
         catch
         {
             // Best-effort cleanup of temp extract.
+            return false;
         }
     }
 }

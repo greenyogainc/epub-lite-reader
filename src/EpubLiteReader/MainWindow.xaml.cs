@@ -172,11 +172,7 @@ public partial class MainWindow : Window
             var sectionFormat = Strings.Get("ContinuousSectionTitleFormat");
             List<ChapterItem> chapters;
             (doc, chapters) = await EpubDoc.OpenWithChaptersAsync(path, untitled, sectionFormat, cts.Token);
-            if (cts.Token.IsCancellationRequested)
-            {
-                doc.Dispose();
-                return;
-            }
+            cts.Token.ThrowIfCancellationRequested();
 
             // Commit point: the replacement opened successfully, so the previous
             // document can now be released and every piece of UI switched over.
@@ -239,20 +235,17 @@ public partial class MainWindow : Window
             old?.Dispose();
             old = null;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (!committed)
         {
-            // Superseded by a newer open; that open owns the UI now. Only dispose doc
-            // if the replacement was never committed - if it was, the finally block's
-            // old?.Dispose() already released the book _doc replaced, and _doc itself
-            // must be left alone.
-            if (!committed)
-                doc?.Dispose();
+            // Superseded by a newer open (cancelled while parsing, or right after, with
+            // no await before the commit point); that open owns the UI now. The
+            // replacement was never committed, so only it needs disposing.
+            doc?.Dispose();
         }
         catch (EpubNoReadableContentException ex)
         {
             // Thrown before the commit point, so nothing was swapped in.
             App.LogError(ex);
-            doc?.Dispose();
             _chapterState = prevChapterState;
             ShowChapterState(_chapterState);
             Strings.ShowError(this, Strings.Get("NoReadableContent"));
@@ -487,11 +480,16 @@ public partial class MainWindow : Window
             int target = direction > 0
                 ? (start == 0 ? 1 : start + 2)
                 : (start <= 1 ? 0 : start - 2);
-            await GoToSpineAsync(target);
+            // GoToSpineAsync clamps, so a target past either end would reload the current
+            // chapter at its top instead of doing nothing.
+            if (target < _doc.SpineCount && target != start)
+                await GoToSpineAsync(target);
             return;
         }
 
-        await GoToSpineAsync(_spineIndex + direction);
+        var next = _spineIndex + direction;
+        if (next >= 0 && next < _doc.SpineCount)
+            await GoToSpineAsync(next);
     }
 
     internal async Task GoToSpineAsync(int spine, string? anchor = null, double scroll = 0, bool syncChapters = true)
@@ -635,7 +633,6 @@ public partial class MainWindow : Window
         }
 
         var active = _navigableChapters[best];
-        if (ReferenceEquals(active, _selectedChapter)) return;
 
         _suppressChapterNav = true;
         try
@@ -1160,11 +1157,11 @@ public partial class MainWindow : Window
             return;
 
         if (ReferenceEquals(e.OriginalSource, PageBox) && e.Key is Key.D1 or Key.D2 or Key.D3
-            or Key.Left or Key.Right or Key.Home or Key.End)
+            or Key.Left or Key.Right or Key.Home or Key.End or Key.B or Key.Space)
             return;
 
         if (ChapterTree.IsKeyboardFocusWithin && e.Key is Key.Left or Key.Right
-            or Key.Home or Key.End or Key.PageUp or Key.PageDown)
+            or Key.Home or Key.End or Key.PageUp or Key.PageDown or Key.B or Key.Space)
             return;
 
         switch (e.Key)

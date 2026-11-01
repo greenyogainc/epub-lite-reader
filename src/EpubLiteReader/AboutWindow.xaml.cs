@@ -49,11 +49,8 @@ public partial class AboutWindow : Window
 
         CopyrightText.Text = asm.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright
                              ?? "© Green Yoga Inc";
-        try
-        {
-            AppMark.Source = new BitmapImage(new Uri("pack://application:,,,/app.ico"));
-        }
-        catch (Exception ex) { App.LogError(ex); }
+        // Assembly-qualified: the unqualified form only resolves in the entry assembly.
+        LoadAppMark("pack://application:,,,/EpubLiteReader;component/app.ico");
 
         LoadLicenseText();
         Closed += (_, _) =>
@@ -64,6 +61,17 @@ public partial class AboutWindow : Window
             WriteAboutState(open: false);
         };
         WriteAboutState();
+    }
+
+    /// <summary>The Uri is built inside the try on purpose: it throws when no Application
+    /// has registered the pack scheme (a test host), and a missing mark must not stop About opening.</summary>
+    internal void LoadAppMark(string packUri)
+    {
+        try
+        {
+            AppMark.Source = new BitmapImage(new Uri(packUri));
+        }
+        catch (Exception ex) { App.LogError(ex); }
     }
 
     private void LoadLicenseText()
@@ -148,10 +156,6 @@ public partial class AboutWindow : Window
             }
         }
         catch (OperationCanceledException) when (_closed) { }
-        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
-        {
-            if (!_closed) ShowStatus(Strings.Get("SupportSendFailed"), failed: true);
-        }
         finally
         {
             _sending = false;

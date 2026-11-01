@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using EpubLiteReader;
 using Xunit;
@@ -89,5 +90,65 @@ public sealed class AppArgsTests : IDisposable
         {
             File.Delete(existing);
         }
+    }
+
+    [Fact]
+    public void StartupFile_IsPublishedOnTheRunningApplication()
+    {
+        var existing = Path.Combine(Path.GetTempPath(), "elr-existing-" + Guid.NewGuid().ToString("N") + ".epub");
+        File.WriteAllBytes(existing, Array.Empty<byte>());
+        try
+        {
+            // WPF allows one Application per process, and it must be made on an STA thread.
+            // Application.Current is only cleared when Run() unwinds, so run the message
+            // loop just long enough to check and shut down. No window is created: App.xaml's
+            // StartupUri is applied by InitializeComponent, which is not called here. Anything
+            // thrown on the dispatcher would reach App's unhandled-exception dialog, so it
+            // is captured instead.
+            Exception? failure = null;
+            RunOnStaThread(() =>
+            {
+                var app = new App();
+                app.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        App.ApplyArgs(new[] { "--datadir=" + Path.GetTempPath(), existing });
+                        Assert.Equal(existing, app.StartupFile);
+                    }
+                    catch (Exception ex)
+                    {
+                        failure = ex;
+                    }
+                    finally
+                    {
+                        app.Shutdown();
+                    }
+                }));
+                app.Run();
+            });
+            if (failure is not null) ExceptionDispatchInfo.Capture(failure).Throw();
+            Assert.Null(System.Windows.Application.Current);
+        }
+        finally
+        {
+            File.Delete(existing);
+        }
+    }
+
+    private static void RunOnStaThread(Action body)
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try { body(); }
+            catch (Exception ex) { failure = ex; }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.IsBackground = true; // a hung message loop must not keep the test host alive
+        thread.Start();
+        if (!thread.Join(TimeSpan.FromSeconds(30)))
+            throw new TimeoutException("The STA thread did not finish.");
+        if (failure is not null) ExceptionDispatchInfo.Capture(failure).Throw();
     }
 }

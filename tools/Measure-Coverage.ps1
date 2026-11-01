@@ -36,7 +36,8 @@ $results = Join-Path $root 'TestResults\coverage'
 
 function Invoke-Suite([string]$Project, [bool]$Windows) {
     if ($Windows) { $env:ELR_UI = '1' } else { Remove-Item Env:ELR_UI -ErrorAction SilentlyContinue }
-    & dotnet test (Join-Path $root $Project) -c Release --collect:'Code Coverage;Format=Cobertura' --results-directory $results
+    # Out-Host: a function's uncaptured output would become part of its return value.
+    & dotnet test (Join-Path $root $Project) -c Release --collect:'Code Coverage;Format=Cobertura' --results-directory $results | Out-Host
     return $LASTEXITCODE
 }
 

@@ -78,19 +78,28 @@ internal sealed class BookResourceServer
     internal static bool IsBookUri(string? uri) =>
         uri is not null && uri.StartsWith(OriginPrefix, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Produces the response for a book request, or null when the URI is not a
-    /// book URI (the caller then blocks it). A missing or unsafe path yields 404/403.</summary>
-    internal CoreWebView2WebResourceResponse? CreateResponse(
+    /// <summary>A response in WebView2-free terms, so the serving rules can be exercised
+    /// without a browser. <see cref="Headers"/> is the CRLF-joined block WebView2 expects.</summary>
+    internal sealed record BookResponse(Stream? Content, int Status, string Reason, string Headers);
+
+    /// <summary>Adapts <see cref="Respond"/> to WebView2. The caller has already checked
+    /// <see cref="IsBookUri"/>, so every book request gets a response (404/403 included).</summary>
+    internal CoreWebView2WebResourceResponse CreateResponse(
         CoreWebView2Environment environment, CoreWebView2WebResourceRequest request)
     {
-        var uri = request.Uri;
-        if (!IsBookUri(uri)) return null;
+        var range = request.Headers.Contains("Range") ? request.Headers.GetHeader("Range") : null;
+        var r = Respond(request.Uri, range);
+        return environment.CreateWebResourceResponse(r.Content, r.Status, r.Reason, r.Headers);
+    }
 
-        if (!TryResolve(uri!, out var filePath, out var relForCsp))
-            return Text(environment, 403, "Forbidden");
+    /// <summary>Produces the response for a book URI. A missing or unsafe path yields 404/403.</summary>
+    internal BookResponse Respond(string uri, string? rangeHeader)
+    {
+        if (!TryResolvePath(_extractRoot, uri, out var filePath, out var relForCsp))
+            return Text(403, "Forbidden");
 
         if (!File.Exists(filePath))
-            return Text(environment, 404, "Not Found");
+            return Text(404, "Not Found");
 
         var ext = Path.GetExtension(filePath);
         var contentType = ContentTypes.TryGetValue(ext, out var ct) ? ct : "application/octet-stream";
@@ -106,19 +115,18 @@ internal sealed class BookResourceServer
         }
         catch (IOException)
         {
-            return Text(environment, 404, "Not Found");
+            return Text(404, "Not Found");
         }
         catch (UnauthorizedAccessException)
         {
-            return Text(environment, 403, "Forbidden");
+            return Text(403, "Forbidden");
         }
 
         var length = stream.Length;
 
         // Honor a single-range request so audio/video seeking works; anything fancier
         // (multipart, suffix-only beyond what ParseSingleRange handles) falls back to 200.
-        if (TryGetHeader(request, "Range", out var rangeHeader) &&
-            ParseSingleRange(rangeHeader, length, out var from, out var to))
+        if (rangeHeader is not null && ParseSingleRange(rangeHeader, length, out var from, out var to))
         {
             stream.Seek(from, SeekOrigin.Begin);
             var headers = BuildHeaders(contentType, csp,
@@ -126,14 +134,13 @@ internal sealed class BookResourceServer
                 $"Content-Range: bytes {from}-{to}/{length}",
                 "Accept-Ranges: bytes");
             // A LimitedStream keeps WebView2 from reading past the requested range.
-            return environment.CreateWebResourceResponse(
-                new LimitedStream(stream, to - from + 1), 206, "Partial Content", headers);
+            return new BookResponse(new LimitedStream(stream, to - from + 1), 206, "Partial Content", headers);
         }
 
         var okHeaders = BuildHeaders(contentType, csp,
             $"Content-Length: {length}",
             "Accept-Ranges: bytes");
-        return environment.CreateWebResourceResponse(stream, 200, "OK", okHeaders);
+        return new BookResponse(stream, 200, "OK", okHeaders);
     }
 
     private static string BuildHeaders(string contentType, string csp, params string[] extra)
@@ -149,8 +156,8 @@ internal sealed class BookResourceServer
         return string.Join("\r\n", lines);
     }
 
-    private static CoreWebView2WebResourceResponse Text(CoreWebView2Environment environment, int code, string reason) =>
-        environment.CreateWebResourceResponse(null, code, reason,
+    private static BookResponse Text(int code, string reason) =>
+        new(null, code, reason,
             "Content-Type: text/plain\r\nX-Content-Type-Options: nosniff\r\nContent-Security-Policy: default-src 'none'");
 
     /// <summary>
@@ -160,9 +167,6 @@ internal sealed class BookResourceServer
     /// them), then rejected for empties, dot segments, separators, or a normalized result
     /// that escapes the root.
     /// </summary>
-    private bool TryResolve(string uri, out string filePath, out string relForCsp) =>
-        TryResolvePath(_extractRoot, uri, out filePath, out relForCsp);
-
     internal static bool TryResolvePath(string extractRoot, string uri, out string filePath, out string relForCsp)
     {
         filePath = "";
@@ -185,9 +189,7 @@ internal sealed class BookResourceServer
         foreach (var raw in rawSegments)
         {
             if (raw.Length == 0) continue;
-            string seg;
-            try { seg = Uri.UnescapeDataString(raw); }
-            catch { return false; }
+            var seg = Uri.UnescapeDataString(raw);
             if (seg.Length == 0 || seg is "." or "..") return false;
             if (seg.Contains('/') || seg.Contains('\\') || seg.Contains(':')) return false;
             decoded.Add(seg);
@@ -208,24 +210,6 @@ internal sealed class BookResourceServer
         {
             return false;
         }
-    }
-
-    private static bool TryGetHeader(CoreWebView2WebResourceRequest request, string name, out string value)
-    {
-        value = "";
-        try
-        {
-            if (request.Headers.Contains(name))
-            {
-                value = request.Headers.GetHeader(name) ?? "";
-                return value.Length > 0;
-            }
-        }
-        catch
-        {
-            // Header collection can throw on odd requests; treat as absent.
-        }
-        return false;
     }
 
     /// <summary>Parses a single "bytes=from-to" / "bytes=from-" / "bytes=-suffix" range
