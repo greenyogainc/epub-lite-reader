@@ -244,7 +244,7 @@ public sealed class KeyboardShortcutTests
     }
 
     [UiFact]
-    public void FocusInTheChapterTree_LeavesNavigationKeysToIt_ButNotTheShortcuts()
+    public void FocusInTheChapterTree_LeavesNavigationKeysToIt_AndTheShortcutsStillWork()
     {
         using var session = TestBook.Rich(Title()).Open();
         session.WaitUntilReady();
@@ -257,11 +257,17 @@ public sealed class KeyboardShortcutTests
         });
         session.Run(async w =>
         {
-            foreach (var key in new[] { Key.Left, Key.Right, Key.Home, Key.End, Key.PageUp, Key.PageDown, Key.B, Key.Space })
+            foreach (var key in new[] { Key.Left, Key.Right, Key.Home, Key.End, Key.PageUp, Key.PageDown })
                 Assert.False(UiKit.RaiseKey(w, key, target: w.ChapterTree).Handled, key + " belongs to the tree.");
             await Task.Delay(300);
             Assert.Equal(0, w.CurrentSpine);
-            Assert.Empty(w.CurrentBookState!.Bookmarks);
+
+            // A click on a chapter leaves focus in the tree, and nothing can be typed there.
+            await Handled(UiKit.RaiseKey(w, Key.B, target: w.ChapterTree));
+            Assert.Single(w.CurrentBookState!.Bookmarks);
+            await Handled(UiKit.RaiseKey(w, Key.Space, target: w.ChapterTree));
+            await w.WhenNavIdleAsync();
+            Assert.Equal(1, w.CurrentSpine);
 
             Assert.True(UiKit.RaiseKey(w, Key.F4, target: w.ChapterTree).Handled);
             Assert.False(w.IsChapterPaneVisible);

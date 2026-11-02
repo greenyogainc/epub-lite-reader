@@ -385,6 +385,25 @@ public sealed class DialogsAndErrorsTests
     }
 
     [UiFact]
+    public void AfterClosing_ABookmarkStillFinishing_CannotOverwriteTheSavedPosition()
+    {
+        using var session = TestBook.Rich(Title()).Open();
+        session.WaitUntilReady();
+        var bookId = session.Run(async w =>
+        {
+            await w.GoToSpineAsync(1);
+            return w.CurrentDoc!.BookId;
+        });
+        var saved = Path.Combine(session.DataDir, "books", bookId + ".json");
+
+        session.Close();
+        var atClose = File.ReadAllText(saved);
+        session.Run(w => w.ToggleBookmarkAsync());
+
+        Assert.Equal(atClose, File.ReadAllText(saved));
+    }
+
+    [UiFact]
     public void AStateFileThatCannotBeWritten_NeverStopsTheReader()
     {
         var dir = Path.Combine(Path.GetTempPath(), "elr-ui-" + Guid.NewGuid().ToString("N"));

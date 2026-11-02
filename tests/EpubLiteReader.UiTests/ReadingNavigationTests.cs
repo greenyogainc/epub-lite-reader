@@ -258,6 +258,32 @@ public sealed class ReadingNavigationTests
     }
 
     [UiFact]
+    public void JumpingToWhereTheReaderAlreadyIs_DoesNotWaitOutTheNavigationTimeout()
+    {
+        using var session = TestBook.Rich(Title()).Open();
+        session.WaitUntilReady();
+
+        var elapsed = session.Run(async w =>
+        {
+            await w.GoToSpineAsync(1, "again");
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            await w.GoToSpineAsync(1, "again");
+            Assert.True(await UiKit.ScrollTopAsync(w.WebLeft) > 500, "The page stayed at the anchor.");
+
+            w.ModeContinuous.IsChecked = true;
+            await w.WhenNavIdleAsync();
+            await w.GoToSpineAsync(3);
+            await w.GoToSpineAsync(3);
+            Assert.Equal(3, w.CurrentSpine);
+            return sw.Elapsed;
+        });
+
+        // The identical URL and fragment: the page box's Enter on the current page, or a repeated chapter click.
+        Assert.True(elapsed < TimeSpan.FromSeconds(10), $"Repeating a jump took {elapsed}.");
+        Assert.DoesNotContain("timed out", session.ReadLog());
+    }
+
+    [UiFact]
     public void SwitchingBooksInContinuousMode_ShowsTheNewBooksChapters()
     {
         using var session = TestBook.Rich(Title()).Open(beforeOpen: dir =>

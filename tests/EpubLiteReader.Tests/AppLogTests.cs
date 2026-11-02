@@ -92,10 +92,25 @@ public sealed class AppLogTests : IDisposable
         File.WriteAllText(_log, full);
         using (new FileStream(_log, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
         {
-            App.LogError(Failure("cannot restart")); // the delete fails too
+            App.LogError(Failure("cannot restart")); // the restart fails too
         }
 
         Assert.Equal(full, File.ReadAllText(_log));
+    }
+
+    [Fact]
+    public void LogError_AtTheCapWithSomeoneTailingTheLog_StillRecordsTheEntry()
+    {
+        File.WriteAllText(_log, new string('x', (int)App.MaxLogBytes));
+        // No FileShare.Delete, as a tail holds it: deleting the file here would fail.
+        using (new FileStream(_log, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        {
+            App.LogError(Failure("still recorded"));
+        }
+
+        var text = File.ReadAllText(_log);
+        Assert.Contains("still recorded", text);
+        Assert.DoesNotContain("xxxxxxxxxx", text);
     }
 
     [Fact]

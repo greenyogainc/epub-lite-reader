@@ -41,6 +41,18 @@ public sealed class BookResourceServerResponseTests : IDisposable
 
     private BookResourceServer.BookResponse Get(string rel, string? range = null) => GetUri(Origin + rel, range);
 
+    [Fact]
+    public void ContinuousDocument_OnItsPerBookUrl_StillGetsItsHashedPolicy()
+    {
+        Write(EpubDoc.ContinuousFileName);
+
+        var response = GetUri($"{Origin}{EpubDoc.ContinuousFileName}?book=abc#spine-2");
+
+        Assert.Equal(200, response.Status);
+        Assert.Contains(EpubDoc.ContinuousScriptCspSource, response.Headers);
+        Assert.DoesNotContain("script-src 'none'", response.Headers);
+    }
+
     private BookResourceServer.BookResponse GetUri(string uri, string? range = null)
     {
         var response = _server.Respond(uri, range);

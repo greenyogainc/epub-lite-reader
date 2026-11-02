@@ -78,17 +78,24 @@ public sealed class ContentSecurityTests
                   d.dispatchEvent(new MouseEvent('click', { bubbles: false }));
                 })();
                 """);
-            await Task.Delay(500);
+            // Waits for the policy's refusals, not for a delay a late script could outlast. A blocked
+            // script alone could mean the sanitizer did it; a violation means the CSP did. Chromium
+            // reports three here (two script-src-elem, one script-src-attr): one javascript: vector
+            // is refused with no event, so the empty markers are what prove that one.
             return await StaReadingSession.EvalLaterAsync(w.WebLeft, "__out", """
-                window.__out = JSON.stringify({ ran: window.__ran, violations: window.__violations, page: location.href });
+                (function report(tries) {
+                  if (window.__violations >= 3 || tries <= 0)
+                    window.__out = JSON.stringify({ ran: window.__ran, violations: window.__violations, page: location.href });
+                  else
+                    setTimeout(() => report(tries - 1), 50);
+                })(100);
                 """);
         });
 
         using var json = JsonDocument.Parse(result);
         Assert.True(json.RootElement.TryGetProperty("ran", out _), result);
         Assert.Equal("{}", json.RootElement.GetProperty("ran").GetRawText());
-        // A blocked script alone could mean the sanitizer did it; a violation means the CSP did.
-        Assert.True(json.RootElement.GetProperty("violations").GetInt32() > 0);
+        Assert.True(json.RootElement.GetProperty("violations").GetInt32() >= 3, result);
     }
 
     [UiFact]

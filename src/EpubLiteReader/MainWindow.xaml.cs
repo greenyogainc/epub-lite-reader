@@ -46,6 +46,7 @@ public partial class MainWindow : Window
     private string? _searchHitsQuery;
 
     private CancellationTokenSource? _openCts;
+    private bool _closed;
 
     // Read-only views for the window test suite, which awaits real work instead of polling.
     internal EpubDoc? CurrentDoc => _doc;
@@ -123,6 +124,7 @@ public partial class MainWindow : Window
         _appSettings.WindowHeight = Height;
         BookStateStore.SaveAppSettings(_appSettings);
         _doc?.Dispose();
+        _closed = true;
     }
 
     // ---------- File ----------
@@ -989,7 +991,9 @@ public partial class MainWindow : Window
 
     private void PersistBookState()
     {
-        if (_doc is null) return;
+        // After closing, a search or bookmark still finishing reads a position from a pane that
+        // is gone; it must not overwrite the one just saved.
+        if (_doc is null || _closed) return;
         _bookState ??= new BookState { BookId = _doc.BookId };
         _bookState.BookId = _doc.BookId;
         _bookState.FilePath = _doc.FilePath;
@@ -1160,7 +1164,7 @@ public partial class MainWindow : Window
             return;
 
         if (ChapterTree.IsKeyboardFocusWithin && e.Key is Key.Left or Key.Right
-            or Key.Home or Key.End or Key.PageUp or Key.PageDown or Key.B or Key.Space)
+            or Key.Home or Key.End or Key.PageUp or Key.PageDown)
             return;
 
         switch (e.Key)

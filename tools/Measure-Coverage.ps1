@@ -56,8 +56,10 @@ if (-not $ReportOnly) {
 $reports = @(Get-ChildItem $results -Recurse -Filter '*.cobertura.xml')
 if ($reports.Count -eq 0) { Write-Error "No coverage reports under $results." }
 
-# file -> line -> hits, and file -> line -> covered/total branches, across every class and report.
-$lines = @{}
+# file -> "line|class" -> hits across reports, and file -> line -> covered/total branches. One line
+# can hold code from several classes (a lambda and the statement registering it), so a line only
+# counts as covered once every class on it ran; taking the highest hit per line would hide the lambda.
+$entries = @{}
 $branches = @{}
 foreach ($report in $reports) {
     [xml]$xml = Get-Content -LiteralPath $report.FullName -Raw
@@ -66,15 +68,16 @@ foreach ($report in $reports) {
         foreach ($class in $package.classes.class) {
             $file = $class.filename
             if ($file -match '[\\/]obj[\\/]') { continue }
-            if (-not $lines.ContainsKey($file)) {
-                $lines[$file] = @{}
+            if (-not $entries.ContainsKey($file)) {
+                $entries[$file] = @{}
                 $branches[$file] = @{}
             }
             foreach ($line in $class.lines.line) {
                 $number = [int]$line.number
                 $hits = [long]$line.hits
-                if (-not $lines[$file].ContainsKey($number) -or $lines[$file][$number] -lt $hits) {
-                    $lines[$file][$number] = $hits
+                $key = "$number|$($class.name)"
+                if (-not $entries[$file].ContainsKey($key) -or $entries[$file][$key] -lt $hits) {
+                    $entries[$file][$key] = $hits
                 }
                 $condition = $line.'condition-coverage'
                 if ($condition -and $condition -match '\((\d+)/(\d+)\)') {
@@ -90,9 +93,15 @@ foreach ($report in $reports) {
 }
 
 $lineCovered = 0; $lineTotal = 0; $branchCovered = 0; $branchTotal = 0
-$rows = foreach ($file in ($lines.Keys | Sort-Object)) {
-    $fileLines = $lines[$file]
-    $covered = @($fileLines.Keys | Where-Object { $fileLines[$_] -gt 0 }).Count
+$rows = foreach ($file in ($entries.Keys | Sort-Object)) {
+    $fileLines = @{}
+    foreach ($key in $entries[$file].Keys) {
+        $number = [int]($key -split '\|')[0]
+        if (-not $fileLines.ContainsKey($number) -or $fileLines[$number] -gt $entries[$file][$key]) {
+            $fileLines[$number] = $entries[$file][$key]
+        }
+    }
+    $covered =@($fileLines.Keys | Where-Object { $fileLines[$_] -gt 0 }).Count
     $fileBranchCovered = 0; $fileBranchTotal = 0
     foreach ($pair in $branches[$file].Values) {
         $fileBranchCovered += $pair[0]

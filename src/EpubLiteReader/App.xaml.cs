@@ -93,9 +93,11 @@ public partial class App : Application
     {
         try
         {
-            var log = new FileInfo(LogPath);
-            if (log.Exists && log.Length >= MaxLogBytes) log.Delete();
-            File.AppendAllText(LogPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex}\n\n");
+            // Truncating rather than deleting: a reader tailing the log blocks a delete, and
+            // that must not lose the entry being recorded.
+            var restart = new FileInfo(LogPath) is { Exists: true, Length: >= MaxLogBytes };
+            using var log = new StreamWriter(LogPath, append: !restart);
+            log.Write($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex}\n\n");
         }
         catch
         {

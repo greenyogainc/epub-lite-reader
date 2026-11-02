@@ -17,8 +17,9 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      # A new package advisory should warn, not turn every open PR red with no code change.
       - name: Build with warnings as errors
-        run: dotnet build EpubLiteReader.slnx -c Release -warnaserror
+        run: dotnet build EpubLiteReader.slnx -c Release -warnaserror -warnnotaserror:NU1901,NU1902,NU1903,NU1904
       - name: EPUB pipeline smoke check
         run: dotnet run --no-build --project tools/EpubSmoke/EpubSmoke.csproj -c Release -- tools/fixtures/sample.epub
       - name: Support transport checks

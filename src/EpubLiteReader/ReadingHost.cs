@@ -219,6 +219,7 @@ public sealed class ReadingHost
         {
             var loaded = await RunScriptAsync(
                 $"window.__elrIsSpineLoaded ? window.__elrIsSpineLoaded({spineIndex}) : false");
+            if (loaded == "null") return false; // the control is gone; no frame will ever load
             if (loaded.Contains("true", StringComparison.OrdinalIgnoreCase)) break;
             await Task.Delay(100);
         }
@@ -253,10 +254,16 @@ public sealed class ReadingHost
         core.SourceChanged += SameDocument;
         try
         {
+            // The identical URL and fragment only re-scrolls and raises neither event, so there is
+            // nothing to wait for. Without a fragment the same URL is a reload, which does complete.
+            var alreadyThere = url.Contains('#') && new Uri(core.Source).AbsoluteUri == new Uri(url).AbsoluteUri;
             core.Navigate(url);
-            var done = await Task.WhenAny(tcs.Task, Task.Delay(NavigationTimeout));
-            if (done != tcs.Task)
-                App.LogError(new TimeoutException($"Navigation to reader content timed out ({_role})."));
+            if (!alreadyThere)
+            {
+                var done = await Task.WhenAny(tcs.Task, Task.Delay(NavigationTimeout));
+                if (done != tcs.Task)
+                    App.LogError(new TimeoutException($"Navigation to reader content timed out ({_role})."));
+            }
         }
         finally
         {
@@ -296,17 +303,16 @@ public sealed class ReadingHost
     {
         var environment = _webView.CoreWebView2!.Environment;
         var server = _server;
-        if (server is not null && BookResourceServer.IsBookUri(e.Request.Uri))
-        {
-            // The book's own resources: served with CSP + nosniff + explicit type.
-            e.Response = server.CreateResponse(environment, e.Request);
-            return;
-        }
 
         // Anything not on epub.local (or before a book is mapped) is blocked: book
-        // content must never reach the network.
+        // content must never reach the network. Set first, so a request stays refused
+        // even if serving it below throws: a null response would let it go out.
         e.Response = environment.CreateWebResourceResponse(
             null, 403, "Forbidden", "Content-Type: text/plain\r\nX-Content-Type-Options: nosniff");
+
+        // The book's own resources: served with CSP + nosniff + explicit type.
+        if (server is not null && BookResourceServer.IsBookUri(e.Request.Uri))
+            e.Response = server.CreateResponse(environment, e.Request);
     }
 
     private void OnWebMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs e)

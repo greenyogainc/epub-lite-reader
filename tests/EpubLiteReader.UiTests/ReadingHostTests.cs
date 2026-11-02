@@ -229,12 +229,17 @@ public sealed class ReadingHostTests
             Assert.False(await bench.Host.FindAsync("anything"));
             await bench.Host.SetScrollFractionAsync(0.5);
             await bench.Host.ContinuousGoToAsync(0, 0);
+
+            // Stops at the first failure rather than polling for a frame that can never load.
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            Assert.False(await bench.Host.FindInSpineAsync(0, "anything"));
+            Assert.True(sw.Elapsed < TimeSpan.FromSeconds(2), $"FindInSpineAsync took {sw.Elapsed}.");
         });
         Assert.Contains(nameof(ObjectDisposedException), bench.Log);
     }
 
     [UiFact]
-    public void ANavigationThatIsNotWaitedFor_IsLoggedAsATimeout_ThenTheScrollIsStillRestored()
+    public void ANavigationThatIsNotWaitedFor_IsLoggedAsATimeout()
     {
         using var bench = Bench.Create();
         var path = TestBook.Rich("Timeout " + Guid.NewGuid().ToString("N")).SaveTemp();
