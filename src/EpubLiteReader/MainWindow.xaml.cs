@@ -28,7 +28,7 @@ public partial class MainWindow : Window
     private WindowState _preFsState;
     private WindowStyle _preFsStyle;
 
-    private enum ChapterLoadState { NotLoaded, Loading, Loaded, Empty, Failed }
+    private enum ChapterLoadState { NotLoaded, Loading, Loaded, Empty }
 
     private bool _chapterPaneVisible;
     private bool _preFsChapterVisible;
@@ -46,6 +46,20 @@ public partial class MainWindow : Window
     private string? _searchHitsQuery;
 
     private CancellationTokenSource? _openCts;
+    private bool _closed;
+
+    // Read-only views for the window test suite, which awaits real work instead of polling.
+    internal EpubDoc? CurrentDoc => _doc;
+    internal ReadingHost? LeftHost => _left;
+    internal ReadingHost? RightHost => _right;
+    internal bool HostsReady => _hostsReady;
+    internal BookState? CurrentBookState => _bookState;
+    internal DisplaySettings CurrentDisplay => _display;
+    internal ViewMode CurrentMode => _mode;
+    internal int CurrentSpine => _spineIndex;
+    internal double CurrentFraction => _scrollFraction;
+    internal bool IsFullscreen => _fullscreen;
+    internal bool IsChapterPaneVisible => _chapterPaneVisible;
 
     public MainWindow()
     {
@@ -103,12 +117,14 @@ public partial class MainWindow : Window
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         _openCts?.Cancel();
+        _saveTimer.Stop();
         PersistBookState();
         _appSettings.Defaults = _display.Clone();
         _appSettings.WindowWidth = Width;
         _appSettings.WindowHeight = Height;
         BookStateStore.SaveAppSettings(_appSettings);
         _doc?.Dispose();
+        _closed = true;
     }
 
     // ---------- File ----------
@@ -129,7 +145,7 @@ public partial class MainWindow : Window
             await OpenFileAsync(dlg.FileName);
     }
 
-    private async Task OpenFileAsync(string path)
+    internal async Task OpenFileAsync(string path)
     {
         if (!_hostsReady) return;
 
@@ -158,11 +174,7 @@ public partial class MainWindow : Window
             var sectionFormat = Strings.Get("ContinuousSectionTitleFormat");
             List<ChapterItem> chapters;
             (doc, chapters) = await EpubDoc.OpenWithChaptersAsync(path, untitled, sectionFormat, cts.Token);
-            if (cts.Token.IsCancellationRequested)
-            {
-                doc.Dispose();
-                return;
-            }
+            cts.Token.ThrowIfCancellationRequested();
 
             // Commit point: the replacement opened successfully, so the previous
             // document can now be released and every piece of UI switched over.
@@ -218,27 +230,24 @@ public partial class MainWindow : Window
 
             await RequestViewAsync(new ViewRequest(_mode, _spineIndex, null, _scrollFraction, RestoreScroll: true));
 
-            // Dispose the previous document only after the hosts have re-mapped the
-            // virtual host to the new extract root; deleting it at the commit point
-            // races in-flight resource loads that still resolve against the old
-            // mapping (transient 404 flicker).
+            // Dispose the previous document only after the hosts have switched to the
+            // new extract root; deleting it at the commit point races in-flight
+            // resource loads that still resolve against the old root (transient 404
+            // flicker).
             old?.Dispose();
             old = null;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (!committed)
         {
-            // Superseded by a newer open; that open owns the UI now. Only dispose doc
-            // if the replacement was never committed - if it was, the finally block's
-            // old?.Dispose() already released the book _doc replaced, and _doc itself
-            // must be left alone.
-            if (!committed)
-                doc?.Dispose();
+            // Superseded by a newer open (cancelled while parsing, or right after, with
+            // no await before the commit point); that open owns the UI now. The
+            // replacement was never committed, so only it needs disposing.
+            doc?.Dispose();
         }
         catch (EpubNoReadableContentException ex)
         {
             // Thrown before the commit point, so nothing was swapped in.
             App.LogError(ex);
-            doc?.Dispose();
             _chapterState = prevChapterState;
             ShowChapterState(_chapterState);
             Strings.ShowError(this, Strings.Get("NoReadableContent"));
@@ -312,7 +321,7 @@ public partial class MainWindow : Window
         return _viewPump;
     }
 
-    private Task WhenNavIdleAsync() => _viewPump ?? Task.CompletedTask;
+    internal Task WhenNavIdleAsync() => _viewPump ?? Task.CompletedTask;
 
     private async Task RunViewPumpAsync()
     {
@@ -439,7 +448,7 @@ public partial class MainWindow : Window
     private async void Prev_Click(object sender, RoutedEventArgs e) => await StepAsync(-1);
     private async void Next_Click(object sender, RoutedEventArgs e) => await StepAsync(+1);
 
-    private async Task StepAsync(int direction)
+    internal async Task StepAsync(int direction)
     {
         if (_doc is null || _left is null) return;
 
@@ -473,14 +482,19 @@ public partial class MainWindow : Window
             int target = direction > 0
                 ? (start == 0 ? 1 : start + 2)
                 : (start <= 1 ? 0 : start - 2);
-            await GoToSpineAsync(target);
+            // GoToSpineAsync clamps, so a target past either end would reload the current
+            // chapter at its top instead of doing nothing.
+            if (target < _doc.SpineCount && target != start)
+                await GoToSpineAsync(target);
             return;
         }
 
-        await GoToSpineAsync(_spineIndex + direction);
+        var next = _spineIndex + direction;
+        if (next >= 0 && next < _doc.SpineCount)
+            await GoToSpineAsync(next);
     }
 
-    private async Task GoToSpineAsync(int spine, string? anchor = null, double scroll = 0, bool syncChapters = true)
+    internal async Task GoToSpineAsync(int spine, string? anchor = null, double scroll = 0, bool syncChapters = true)
     {
         if (_doc is null || _doc.SpineCount == 0) return;
         spine = Math.Clamp(spine, 0, _doc.SpineCount - 1);
@@ -581,7 +595,6 @@ public partial class MainWindow : Window
         ChapterTree.Visibility = state == ChapterLoadState.Loaded ? Visibility.Visible : Visibility.Collapsed;
         ChapterLoadingText.Visibility = state == ChapterLoadState.Loading ? Visibility.Visible : Visibility.Collapsed;
         ChapterEmptyText.Visibility = state == ChapterLoadState.Empty ? Visibility.Visible : Visibility.Collapsed;
-        ChapterFailedText.Visibility = state == ChapterLoadState.Failed ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private int GetChapterSyncSpine()
@@ -621,7 +634,6 @@ public partial class MainWindow : Window
         }
 
         var active = _navigableChapters[best];
-        if (ReferenceEquals(active, _selectedChapter)) return;
 
         _suppressChapterNav = true;
         try
@@ -790,7 +802,7 @@ public partial class MainWindow : Window
 
     private bool _searching;
 
-    private async Task RunSearchAsync(bool forward)
+    internal async Task RunSearchAsync(bool forward)
     {
         if (_doc is null || _left is null || _right is null) return;
         var q = SearchBox.Text?.Trim() ?? "";
@@ -914,7 +926,7 @@ public partial class MainWindow : Window
 
     // ---------- Bookmarks ----------
 
-    private async Task ToggleBookmarkAsync()
+    internal async Task ToggleBookmarkAsync()
     {
         if (_doc is null || _bookState is null || _left is null) return;
 
@@ -979,7 +991,9 @@ public partial class MainWindow : Window
 
     private void PersistBookState()
     {
-        if (_doc is null) return;
+        // After closing, a search or bookmark still finishing reads a position from a pane that
+        // is gone; it must not overwrite the one just saved.
+        if (_doc is null || _closed) return;
         _bookState ??= new BookState { BookId = _doc.BookId };
         _bookState.BookId = _doc.BookId;
         _bookState.FilePath = _doc.FilePath;
@@ -1146,7 +1160,7 @@ public partial class MainWindow : Window
             return;
 
         if (ReferenceEquals(e.OriginalSource, PageBox) && e.Key is Key.D1 or Key.D2 or Key.D3
-            or Key.Left or Key.Right or Key.Home or Key.End)
+            or Key.Left or Key.Right or Key.Home or Key.End or Key.B or Key.Space)
             return;
 
         if (ChapterTree.IsKeyboardFocusWithin && e.Key is Key.Left or Key.Right

@@ -1,0 +1,18 @@
+# Tooling for the generator scripts in tools/. The app itself is .NET; see EpubLiteReader.slnx.
+
+[tool.ruff.lint]
+extend-select = ["B006", "SIM115", "SIM401", "BLE001"]
+
+[tool.pytest.ini_options]
+pythonpath = ["tools"]
+testpaths = ["tests/python"]
+
+[tool.coverage.run]
+source = ["tools"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+# Running a generator as a script rewrites committed files, so tests call build() instead.
+exclude_also = ['if __name__ == .__main__.:']

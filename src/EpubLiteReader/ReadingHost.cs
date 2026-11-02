@@ -16,15 +16,14 @@ public sealed class ReadingHost
     private readonly WebView2 _webView;
     private readonly string _role;
     private BookResourceServer? _server;
-    private string? _mappedFolder;
     private bool _initialized;
     private DisplaySettings _settings = new();
 
     public event Action<ReadingHost, HostMessage>? MessageReceived;
 
-    public WebView2 Control => _webView;
-    public bool IsReady => _initialized;
-    public string Role => _role;
+    /// <summary>How long a navigation may take to complete before it is logged and abandoned.
+    /// A setting only so a test can shorten it.</summary>
+    internal TimeSpan NavigationTimeout { get; set; } = TimeSpan.FromSeconds(NavigationTimeoutSeconds);
 
     public ReadingHost(WebView2 webView, string role)
     {
@@ -71,28 +70,14 @@ public sealed class ReadingHost
     public async Task MapBookAsync(EpubDoc doc)
     {
         await EnsureReadyAsync();
-        var core = _webView.CoreWebView2!;
 
-        // Primary path: every epub.local request is answered by this server in
-        // OnWebResourceRequested, which serves the book's files with a script-blocking
-        // CSP, an explicit Content-Type, and nosniff — the fix for javascript: URLs and
-        // mislabeled resources running.
+        // Every epub.local request is answered by this server in OnWebResourceRequested,
+        // which serves the book's files with a script-blocking CSP, an explicit
+        // Content-Type, and nosniff — the fix for javascript: URLs and mislabeled
+        // resources running. Do not add SetVirtualHostNameToFolderMapping here: WebView2
+        // serves a mapped host without raising WebResourceRequested, which silently
+        // removes all three (ContentSecurityTests guards this).
         _server = new BookResourceServer(doc.ExtractRoot);
-
-        // Kept only as a functional fallback for any request the handler does not
-        // override: the folder mapping still resolves the file (without CSP). Under
-        // normal operation the handler answers every epub.local request, so the mapping
-        // is never actually used to serve content. DenyCors keeps other origins from
-        // reading book resources cross-origin.
-        if (string.Equals(_mappedFolder, doc.ExtractRoot, StringComparison.OrdinalIgnoreCase))
-            return;
-        if (_mappedFolder is not null)
-            core.ClearVirtualHostNameToFolderMapping(EpubDoc.VirtualHost);
-        core.SetVirtualHostNameToFolderMapping(
-            EpubDoc.VirtualHost,
-            doc.ExtractRoot,
-            CoreWebView2HostResourceAccessKind.DenyCors);
-        _mappedFolder = doc.ExtractRoot;
     }
 
     public void SetDisplaySettings(DisplaySettings settings)
@@ -112,6 +97,22 @@ public sealed class ReadingHost
         {
             // View may be mid-navigation; still surface anything unexpected for diagnosis.
             App.LogError(ex);
+        }
+    }
+
+    /// <summary>Runs reader script, reading as JavaScript null once the control is gone: the window can
+    /// close while a search or page turn is still awaiting a step, and that must not surface as an
+    /// unhandled error on the way out.</summary>
+    private async Task<string> RunScriptAsync(string script)
+    {
+        try
+        {
+            return await _webView.ExecuteScriptAsync(script);
+        }
+        catch (InvalidOperationException ex)
+        {
+            App.LogError(ex);
+            return "null";
         }
     }
 
@@ -138,7 +139,7 @@ public sealed class ReadingHost
     {
         if (!_initialized) return;
         var frac = spineFraction.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        await _webView.ExecuteScriptAsync(
+        await RunScriptAsync(
             $"if (window.__elrContinuousGoTo) window.__elrContinuousGoTo({spineIndex}, {frac});");
     }
 
@@ -152,21 +153,21 @@ public sealed class ReadingHost
     public async Task<string> PageTurnAsync(int direction)
     {
         if (!_initialized) return "end";
-        var result = await _webView.ExecuteScriptAsync($"window.__elrPage ? window.__elrPage({direction}) : 'end'");
+        var result = await RunScriptAsync($"window.__elrPage ? window.__elrPage({direction}) : 'end'");
         return Unquote(result);
     }
 
     public async Task SetScrollFractionAsync(double fraction)
     {
         if (!_initialized) return;
-        await _webView.ExecuteScriptAsync(
+        await RunScriptAsync(
             $"if (window.__elrSetScrollFraction) window.__elrSetScrollFraction({fraction.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
     }
 
     public async Task<double> GetScrollFractionAsync()
     {
         if (!_initialized) return 0;
-        var result = await _webView.ExecuteScriptAsync(
+        var result = await RunScriptAsync(
             "window.__elrScrollFraction ? window.__elrScrollFraction() : 0");
         return double.TryParse(Unquote(result), System.Globalization.NumberStyles.Float,
             System.Globalization.CultureInfo.InvariantCulture, out var f)
@@ -202,7 +203,7 @@ public sealed class ReadingHost
     {
         if (!_initialized || string.IsNullOrEmpty(query)) return false;
         var q = JsonSerializer.Serialize(query);
-        var result = await _webView.ExecuteScriptAsync(
+        var result = await RunScriptAsync(
             $"window.__elrFind ? window.__elrFind({q}, {(forward ? "true" : "false")}) : false");
         return result.Contains("true", StringComparison.OrdinalIgnoreCase);
     }
@@ -212,18 +213,19 @@ public sealed class ReadingHost
     {
         if (!_initialized || string.IsNullOrEmpty(query)) return false;
 
-        await _webView.ExecuteScriptAsync(
+        await RunScriptAsync(
             $"if (window.__elrEnsureSpineLoaded) window.__elrEnsureSpineLoaded({spineIndex});");
         for (int i = 0; i < 40; i++)
         {
-            var loaded = await _webView.ExecuteScriptAsync(
+            var loaded = await RunScriptAsync(
                 $"window.__elrIsSpineLoaded ? window.__elrIsSpineLoaded({spineIndex}) : false");
+            if (loaded == "null") return false; // the control is gone; no frame will ever load
             if (loaded.Contains("true", StringComparison.OrdinalIgnoreCase)) break;
             await Task.Delay(100);
         }
 
         var q = JsonSerializer.Serialize(query);
-        var result = await _webView.ExecuteScriptAsync(
+        var result = await RunScriptAsync(
             $"window.__elrFindInSpine ? window.__elrFindInSpine({spineIndex}, {q}, {(forward ? "true" : "false")}) : false");
         return result.Contains("true", StringComparison.OrdinalIgnoreCase);
     }
@@ -240,18 +242,33 @@ public sealed class ReadingHost
         var core = _webView.CoreWebView2!;
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         void Handler(object? s, CoreWebView2NavigationCompletedEventArgs e) => tcs.TrySetResult();
+        // A fragment-only navigation (continuous mode jumping within its one document) raises
+        // SourceChanged but never NavigationStarting or NavigationCompleted, so waiting for
+        // completion alone would stall the view pump for the whole navigation timeout.
+        void SameDocument(object? s, CoreWebView2SourceChangedEventArgs e)
+        {
+            if (!e.IsNewDocument) tcs.TrySetResult();
+        }
 
         core.NavigationCompleted += Handler;
+        core.SourceChanged += SameDocument;
         try
         {
+            // The identical URL and fragment only re-scrolls and raises neither event, so there is
+            // nothing to wait for. Without a fragment the same URL is a reload, which does complete.
+            var alreadyThere = url.Contains('#') && new Uri(core.Source).AbsoluteUri == new Uri(url).AbsoluteUri;
             core.Navigate(url);
-            var done = await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(NavigationTimeoutSeconds)));
-            if (done != tcs.Task)
-                App.LogError(new TimeoutException($"Navigation to reader content timed out ({_role})."));
+            if (!alreadyThere)
+            {
+                var done = await Task.WhenAny(tcs.Task, Task.Delay(NavigationTimeout));
+                if (done != tcs.Task)
+                    App.LogError(new TimeoutException($"Navigation to reader content timed out ({_role})."));
+            }
         }
         finally
         {
             core.NavigationCompleted -= Handler;
+            core.SourceChanged -= SameDocument;
         }
 
         await ApplySettingsAsync();
@@ -286,19 +303,16 @@ public sealed class ReadingHost
     {
         var environment = _webView.CoreWebView2!.Environment;
         var server = _server;
-        if (server is not null && BookResourceServer.IsBookUri(e.Request.Uri))
-        {
-            // The book's own resources: served with CSP + nosniff + explicit type.
-            e.Response = server.CreateResponse(environment, e.Request) ??
-                environment.CreateWebResourceResponse(null, 404, "Not Found",
-                    "Content-Type: text/plain\r\nX-Content-Type-Options: nosniff");
-            return;
-        }
 
         // Anything not on epub.local (or before a book is mapped) is blocked: book
-        // content must never reach the network.
+        // content must never reach the network. Set first, so a request stays refused
+        // even if serving it below throws: a null response would let it go out.
         e.Response = environment.CreateWebResourceResponse(
             null, 403, "Forbidden", "Content-Type: text/plain\r\nX-Content-Type-Options: nosniff");
+
+        // The book's own resources: served with CSP + nosniff + explicit type.
+        if (server is not null && BookResourceServer.IsBookUri(e.Request.Uri))
+            e.Response = server.CreateResponse(environment, e.Request);
     }
 
     private void OnWebMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs e)

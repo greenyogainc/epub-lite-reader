@@ -57,7 +57,6 @@ Details protokolliert unter:
   <data name="LoadingChapters" xml:space="preserve"><value>Kapitel werden geladen…</value></data>
   <data name="NoChapters" xml:space="preserve"><value>Dieses Buch hat kein Inhaltsverzeichnis.</value></data>
   <data name="UntitledChapter" xml:space="preserve"><value>Unbenanntes Kapitel</value></data>
-  <data name="ChapterLoadFailed" xml:space="preserve"><value>Kapitel konnten nicht geladen werden.</value></data>
   <data name="Bookmarks" xml:space="preserve"><value>Lesezeichen</value></data>
   <data name="NoBookmarks" xml:space="preserve"><value>Noch keine Lesezeichen. Drücken Sie B, um eines hinzuzufügen.</value></data>
   <data name="FontPublisher" xml:space="preserve"><value>Verlagsschrift</value></data>

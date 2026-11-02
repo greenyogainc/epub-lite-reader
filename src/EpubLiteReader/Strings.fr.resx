@@ -57,7 +57,6 @@ Détails consignés dans :
   <data name="LoadingChapters" xml:space="preserve"><value>Chargement des chapitres…</value></data>
   <data name="NoChapters" xml:space="preserve"><value>Ce livre n'a pas de table des matières.</value></data>
   <data name="UntitledChapter" xml:space="preserve"><value>Chapitre sans titre</value></data>
-  <data name="ChapterLoadFailed" xml:space="preserve"><value>Impossible de charger les chapitres.</value></data>
   <data name="Bookmarks" xml:space="preserve"><value>Signets</value></data>
   <data name="NoBookmarks" xml:space="preserve"><value>Aucun signet pour l'instant. Appuyez sur B pour en ajouter un.</value></data>
   <data name="FontPublisher" xml:space="preserve"><value>Police de l'éditeur</value></data>

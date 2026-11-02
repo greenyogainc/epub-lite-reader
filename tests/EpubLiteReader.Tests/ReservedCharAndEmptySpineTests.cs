@@ -13,7 +13,10 @@ namespace EpubLiteReader.Tests;
 /// build a valid epub.local URL, and resolve back to the file on disk.
 /// F6: an EPUB with an empty spine must be rejected rather than opening into a
 /// state where every navigation throws.
+/// Serial (the BookStateStore collection): the no-leftover-root test compares the shared
+/// extract base directory before and after, so no other test may open a book meanwhile.
 /// </summary>
+[Collection(BookStateStoreCollection.Name)]
 public sealed class ReservedCharAndEmptySpineTests : IDisposable
 {
     private readonly string _epubPath;

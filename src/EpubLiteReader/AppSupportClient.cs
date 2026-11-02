@@ -54,6 +54,7 @@ public sealed class AppSupportClient(HttpClient http)
             return new(invalid, request.RequestId);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(20));
+        AppSupportStatus status;
         try
         {
             using var body = new StringContent(JsonSerializer.Serialize(request, JsonOptions), Encoding.UTF8, "application/json");
@@ -78,7 +79,7 @@ public sealed class AppSupportClient(HttpClient http)
                 id.GetString() == request.RequestId;
             if (acknowledged) return new(AppSupportStatus.Success, request.RequestId);
             string? error = root.TryGetProperty("error", out var code) && code.ValueKind == JsonValueKind.String ? code.GetString() : null;
-            var status = ((int)response.StatusCode, error) switch
+            status = ((int)response.StatusCode, error) switch
             {
                 (400, "invalid-email") => AppSupportStatus.InvalidEmail,
                 (400, "invalid-request") => AppSupportStatus.InvalidRequest,
@@ -87,11 +88,11 @@ public sealed class AppSupportClient(HttpClient http)
                 (429, "rate-limited") => AppSupportStatus.RateLimited,
                 _ => AppSupportStatus.Failed
             };
-            return new(status, request.RequestId);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { return new(AppSupportStatus.Failed, request.RequestId); }
         catch (HttpRequestException) { return new(AppSupportStatus.Failed, request.RequestId); }
         catch (JsonException) { return new(AppSupportStatus.Failed, request.RequestId); }
         catch (IOException) { return new(AppSupportStatus.Failed, request.RequestId); }
+        return new(status, request.RequestId);
     }
 }

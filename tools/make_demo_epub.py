@@ -22,65 +22,65 @@ AUTHOR = "Green Yoga Inc"
 # (id, title, part, paragraphs)
 CHAPTERS = [
     ("c1", "Setting Out", "Part One: The Trailhead", [
-        "The trail begins where the gravel road gives up and the grass takes over, "
+        ("The trail begins where the gravel road gives up and the grass takes over, "
         "a thin seam of packed earth running north between two stands of aspen. "
         "There is no sign, no marker, only the shape of the ground telling you "
-        "that other feet have gone this way before.",
-        "I like to leave early, before the light has fully decided what kind of "
+        "that other feet have gone this way before."),
+        ("I like to leave early, before the light has fully decided what kind of "
         "day it will be. The air still holds the cold of the night in its lower "
         "layers, pooled in the hollows like water, and it is possible, for the "
-        "first mile, to walk through several different seasons at once.",
-        "A trip like this does not need a destination so much as a direction. "
-        "North, and slightly up. That is enough of a plan for the first hour.",
+        "first mile, to walk through several different seasons at once."),
+        ("A trip like this does not need a destination so much as a direction. "
+        "North, and slightly up. That is enough of a plan for the first hour."),
     ]),
     ("c2", "The First Ridge", "Part One: The Trailhead", [
-        "By the second mile the trail stops pretending to be flat. It climbs in "
+        ("By the second mile the trail stops pretending to be flat. It climbs in "
         "long diagonal switchbacks through a forest that thins as it rises, the "
-        "pines growing more spaced out and more stubborn the higher they go.",
-        "From the first ridge you can look back and see exactly how far the "
+        "pines growing more spaced out and more stubborn the higher they go."),
+        ("From the first ridge you can look back and see exactly how far the "
         "morning has taken you, which is always less than it felt like and more "
         "than it looks like it should be. The road is a pale thread far below, "
-        "and the town beyond it is just a scatter of roofs catching the sun.",
-        "There is a kind of quiet up here that has weight to it. Not silence -- "
+        "and the town beyond it is just a scatter of roofs catching the sun."),
+        ("There is a kind of quiet up here that has weight to it. Not silence -- "
         "wind moves through the pines constantly, and somewhere a creek is "
         "working its way downhill -- but a quiet that makes you lower your own "
-        "voice without deciding to.",
+        "voice without deciding to."),
     ]),
     ("c3", "Above the Treeline", "Part Two: Higher Ground", [
-        "The trees end abruptly, as if someone had drawn a line across the "
+        ("The trees end abruptly, as if someone had drawn a line across the "
         "mountainside and told them to stop. Above it, the ground turns to "
         "grass, then rock, then something that is mostly rock with opinions "
-        "about where grass is allowed.",
-        "The wind is different here too -- constant, unbothered by the small "
+        "about where grass is allowed."),
+        ("The wind is different here too -- constant, unbothered by the small "
         "obstacles that used to slow it down in the forest. It has room to build "
         "up speed for miles before it reaches you, and it does not let you "
-        "forget that.",
-        "Walking above the treeline changes how far you can see, which changes "
+        "forget that."),
+        ("Walking above the treeline changes how far you can see, which changes "
         "how far you feel like you have gone. Distances stop being measured in "
-        "steps and start being measured in ridgelines.",
+        "steps and start being measured in ridgelines."),
     ]),
     ("c4", "The Old Cabin", "Part Two: Higher Ground", [
-        "It sits in a shallow bowl just below the pass, roof half caved in on "
+        ("It sits in a shallow bowl just below the pass, roof half caved in on "
         "the north side, the kind of structure that has clearly stopped being "
-        "useful to anyone but has not yet gotten around to disappearing.",
-        "Someone built a fireplace here once, stone by stone, hauled up from "
+        "useful to anyone but has not yet gotten around to disappearing."),
+        ("Someone built a fireplace here once, stone by stone, hauled up from "
         "somewhere lower down where stones like that are easier to find. It is "
         "still mostly standing, which is more than can be said for the walls "
-        "around it.",
-        "I sit on what used to be a doorstep and eat lunch looking out at the "
+        "around it."),
+        ("I sit on what used to be a doorstep and eat lunch looking out at the "
         "pass, and it is easy, for a few minutes, to imagine this place as it "
-        "was when the roof still kept the weather out.",
+        "was when the roof still kept the weather out."),
     ]),
     ("c5", "Coming Down", "Part Two: Higher Ground", [
-        "The way down is always faster and always harder on the knees, a trade "
-        "that seems fair in the morning and less fair by the last mile.",
-        "You notice different things going down than you did going up -- a rock "
+        ("The way down is always faster and always harder on the knees, a trade "
+        "that seems fair in the morning and less fair by the last mile."),
+        ("You notice different things going down than you did going up -- a rock "
         "formation you walked right past, a side trail you did not have the "
         "curiosity for earlier, the particular way the light falls through the "
-        "aspens in the late afternoon instead of the early morning.",
-        "By the time the trail flattens back into gravel road, the day has "
+        "aspens in the late afternoon instead of the early morning."),
+        ("By the time the trail flattens back into gravel road, the day has "
         "turned into exactly the kind of day it was always going to be, and the "
-        "only thing left to do is remember it correctly.",
+        "only thing left to do is remember it correctly."),
     ]),
 ]
 

@@ -23,9 +23,9 @@ immediately — no library, no account, no distractions.
   only, written crash-safely)
 - Open via dialog (`Ctrl+O`), drag & drop, or double-click a `.epub` (file association)
 - Print current chapter (`Ctrl+P`) via the system print UI
-- Scripts from EPUB content are stripped, and book content cannot make any
-  network request — navigation and resource loads are locked to the book's
-  local virtual host
+- Scripts from EPUB content are stripped and blocked by a Content-Security-Policy
+  on every book document, and book content cannot make any network request —
+  navigation and resource loads are locked to the book's local `epub.local` handler
 - About window (⚙ → About) with version, license, and an optional
   **Contact support** form that sends your request directly to Green Yoga
   only when you choose Send — the reader itself stays fully offline
@@ -48,6 +48,25 @@ immediately — no library, no account, no distractions.
 | `Ctrl` `+` / `−` | Increase / decrease text size |
 | `Ctrl+0` | Reset text settings |
 | `B` | Add or remove bookmark |
+
+## What's new in 1.0.8
+
+- **Book security**: the Content-Security-Policy that stops book content running
+  script was not being applied, because books were served by a path that skipped
+  it. Every book document now carries it, so script that gets past the sanitizer
+  is blocked.
+- **Embedded objects**: as a result of that policy, a figure a book embeds with
+  `<object>` no longer displays. Images, fonts, SVG and audio are unaffected.
+- **Chapter jumps**: jumping between chapters in continuous view no longer leaves
+  the reader busy for 30 seconds.
+- **Switching books**: continuous view no longer keeps showing the previous book.
+- **First and last pages**: Next on the last page and Previous on the first stay
+  where you are instead of reloading the chapter at its top.
+- **Closing the window**: closing during a search no longer shows an error, and a
+  late bookmark cannot overwrite your saved position.
+- **Page box**: typing `B` or `Space` there no longer triggers a shortcut.
+- **Tidier temp files**: a previous book's extracted files are removed promptly,
+  and the error log restarts at 1 MiB instead of growing without limit.
 
 ## What's new in 1.0.7
 
@@ -117,17 +136,27 @@ dotnet run --project src\EpubLiteReader
 dotnet test EpubLiteReader.slnx -c Release
 ```
 
-The window suite opens the real reader and WebView2. It is skipped unless
-`ELR_UI` is set, and it needs an interactive desktop plus the WebView2 runtime.
-It writes reading state to a temporary `--datadir`, not the user profile.
+The window suite opens the real reader and WebView2, including file dialogs and
+message boxes. It is skipped unless `ELR_UI` is set, and it needs an interactive
+desktop, the WebView2 runtime, and nobody using the keyboard while it runs. It
+writes reading state to a temporary `--datadir`, not the user profile.
+
+To run both suites and report coverage of the shipped app:
 
 ```powershell
-$env:ELR_UI = "1"
-dotnet test EpubLiteReader.slnx -c Release --collect:"Code Coverage;Format=Cobertura" --results-directory TestResults
+pwsh tools/Measure-Coverage.ps1 -MinLine 100
 ```
 
 Each test project records its own coverage file. App coverage is the union of
-those reports: for each line, keep the higher hit count.
+those reports: for each line, keep the higher hit count. Add `-Headless` to skip
+the window suite. The script counts C# only, so the JavaScript injected into the
+reader is exercised by the window suite but not measured.
+
+The generator scripts in `tools/` have their own tests, run from WSL or Linux:
+
+```sh
+coverage run -m pytest && coverage report
+```
 
 There is also a headless EPUB pipeline smoke check:
 
@@ -145,7 +174,7 @@ sideloading notes.
 WPF (.NET 10) + [VersOne.Epub](https://github.com/vers-one/EpubReader) for EPUB 2/3
 parsing + [WebView2](https://learn.microsoft.com/en-us/microsoft-edge/webview2/) for
 XHTML/CSS rendering. Extracted book content is served through a locked-down local
-virtual host (`epub.local`). Reading position, bookmarks, and display settings are
+handler (`epub.local`). Reading position, bookmarks, and display settings are
 stored under `%LocalAppData%\GreenYogaInc\EpubLiteReader\`.
 
 Companion to [PDF Lite Viewer](https://github.com/greenyogainc/pdf-lite-viewer).

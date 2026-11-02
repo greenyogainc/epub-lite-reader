@@ -13,6 +13,9 @@ packaging/submission-*/packages/
 .vs/
 .idea/
 __pycache__/
+.coverage
+.pytest_cache/
+.ruff_cache/
 *.log
 *.epub
 !tools/fixtures/*.epub

@@ -57,7 +57,6 @@
   <data name="LoadingChapters" xml:space="preserve"><value>正在載入章節…</value></data>
   <data name="NoChapters" xml:space="preserve"><value>此書沒有目錄。</value></data>
   <data name="UntitledChapter" xml:space="preserve"><value>無標題章節</value></data>
-  <data name="ChapterLoadFailed" xml:space="preserve"><value>無法載入章節。</value></data>
   <data name="Bookmarks" xml:space="preserve"><value>書籤</value></data>
   <data name="NoBookmarks" xml:space="preserve"><value>尚無書籤。按 B 新增一個。</value></data>
   <data name="FontPublisher" xml:space="preserve"><value>出版商字型</value></data>
