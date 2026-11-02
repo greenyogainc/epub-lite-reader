@@ -381,7 +381,7 @@ public sealed class DialogsAndErrorsTests
             await w.ToggleBookmarkAsync();
             await w.WhenNavIdleAsync();
         });
-        Assert.Contains(nameof(InvalidOperationException), session.ReadLog());
+        Assert.Contains(nameof(ObjectDisposedException), session.ReadLog());
     }
 
     [UiFact]

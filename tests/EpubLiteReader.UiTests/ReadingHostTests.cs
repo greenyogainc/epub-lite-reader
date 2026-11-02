@@ -230,7 +230,7 @@ public sealed class ReadingHostTests
             await bench.Host.SetScrollFractionAsync(0.5);
             await bench.Host.ContinuousGoToAsync(0, 0);
         });
-        Assert.Contains(nameof(InvalidOperationException), bench.Log);
+        Assert.Contains(nameof(ObjectDisposedException), bench.Log);
     }
 
     [UiFact]

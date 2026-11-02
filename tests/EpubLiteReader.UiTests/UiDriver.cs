@@ -35,10 +35,12 @@ internal sealed class UiDriver
         }
 
         var dump = last is null ? "<no state file>" : JsonSerializer.Serialize(last, JsonOptions);
+        var foreground = GetForegroundWindow();
         throw new TimeoutException(
             $"Timed out waiting for {what}. Last state: {dump}. " +
             $"State file '{_session.StateFile}' exists={File.Exists(_session.StateFile)}. " +
-            $"AutomationStateFile='{App.AutomationStateFile}'.");
+            $"AutomationStateFile='{App.AutomationStateFile}'. " +
+            $"Foreground window: '{NativeDialogs.Caption(foreground)}' (the reader: {foreground == _session.Handle}).");
     }
 
     public void WaitAbout(bool open, string what, int timeoutSec = 15)
@@ -66,8 +68,6 @@ internal sealed class UiDriver
         {
             try
             {
-                // The foreground unlock holds Alt. A leftover Alt turns {F4} into Alt+F4 and closes the window.
-                keybd_event(0x12, 0, 2, 0);
                 System.Windows.Forms.SendKeys.SendWait(keys);
             }
             catch (Exception ex)
@@ -95,7 +95,8 @@ internal sealed class UiDriver
             try
             {
                 document.SetFocus();
-                return;
+                if (WaitForFocus(PaneHasFocus))
+                    return;
             }
             catch (Exception ex) when (ex is ElementNotAvailableException or InvalidOperationException)
             {
@@ -109,7 +110,30 @@ internal sealed class UiDriver
     public void FocusChrome()
     {
         Find(MainWindow(), "Theme", 10).SetFocus();
+        var focused = WaitForFocus(() =>
+            !PaneHasFocus() && _session.Invoke(_ => System.Windows.Input.Keyboard.FocusedElement is ButtonBase));
+        if (!focused)
+            throw new TimeoutException("The toolbar did not take keyboard focus.");
     }
+
+    /// <summary>Focus reaches the browser process asynchronously, and a key sent before it lands is
+    /// lost with the reader still in the foreground, so typing waits for the focus it relies on.</summary>
+    private static bool WaitForFocus(Func<bool> focused, int timeoutSec = 5)
+    {
+        var sw = Stopwatch.StartNew();
+        while (sw.Elapsed.TotalSeconds < timeoutSec)
+        {
+            if (focused())
+                return true;
+            Thread.Sleep(25);
+        }
+
+        return false;
+    }
+
+    private bool PaneHasFocus() => _session.Run(async w =>
+        await StaReadingSession.EvalAsync(w.WebLeft, "document.hasFocus()") == "true" ||
+        await StaReadingSession.EvalAsync(w.WebRight, "document.hasFocus()") == "true");
 
     public void Invoke(string name, int timeoutSec = 10)
     {
@@ -265,6 +289,8 @@ internal sealed class UiDriver
         }
     }
 
+    private const byte VkF24 = 0x87;
+
     internal static void RequireForeground(IntPtr hwnd)
     {
         if (GetForegroundWindow() == hwnd)
@@ -275,9 +301,11 @@ internal sealed class UiDriver
         if (GetForegroundWindow() == hwnd)
             return;
 
-        keybd_event(0x12, 0, 0, 0);
+        // Any input from this process earns it the foreground. F24 because it is unassigned: the usual
+        // Alt tap also puts the window in menu mode, which swallows the next keystroke.
+        keybd_event(VkF24, 0, 0, 0);
         SetForegroundWindow(hwnd);
-        keybd_event(0x12, 0, 2, 0);
+        keybd_event(VkF24, 0, 2, 0);
         Thread.Sleep(250);
         if (GetForegroundWindow() == hwnd)
             return;
