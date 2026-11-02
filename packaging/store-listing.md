@@ -21,6 +21,17 @@ https://api.greenyogainc.com/app-support. Documents are never sent.
 
 ---
 
+## What's new in 1.0.8 (en-US)
+
+```
+• Security: the Content-Security-Policy that blocks script in book content now applies to every book page. In earlier versions it was not being applied.
+• Jumping between chapters in Scroll mode no longer leaves the reader busy for 30 seconds, and switching books in Scroll mode always shows the new book.
+• Next page on the last page and Previous page on the first now stay where you are instead of reloading the chapter.
+• Closing the window during a search no longer shows an error, and a late bookmark cannot overwrite your saved reading position.
+```
+
+---
+
 ## What's new in 1.0.7 (en-US)
 
 ```
@@ -65,21 +76,21 @@ https://api.greenyogainc.com/app-support. Documents are never sent.
 ```
 
 (Localized "What's new" text for the other 13 languages lives in each
-language section below, under its own "What's new in 1.0.6" heading;
-the "What's new in 1.0.5" and "What's new in 1.0.4" blocks in each
-section are kept as history.
+language section below, under its own "What's new in 1.0.8" heading;
+the older blocks in each section are kept as history.
 Keep every claim identical to its source.)
 
 ---
 
 ## English (en-US)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• Native Contact support form in the About window. Your message is sent only when you choose Send; documents stay on your device.
-• Clear delivery status and request reference, with drafts preserved for manual retry.
-• Books with # in chapter filenames can open even when a contents link cannot be resolved. Unsafe dot segments in resource paths are rejected before URL normalization.
+• Security: the Content-Security-Policy that blocks script in book content now applies to every book page. In earlier versions it was not being applied.
+• Jumping between chapters in Scroll mode no longer leaves the reader busy for 30 seconds, and switching books in Scroll mode always shows the new book.
+• Next page on the last page and Previous page on the first now stay where you are instead of reloading the chapter.
+• Closing the window during a search no longer shows an error, and a late bookmark cannot overwrite your saved reading position.
 ```
 
 **Description**
@@ -137,12 +148,13 @@ reading app
 
 ## Spanish (es)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• Formulario nativo de contacto con soporte en Acerca de. El mensaje solo se envía al pulsar Enviar; los documentos permanecen en tu dispositivo.
-• Estado de entrega claro y referencia de solicitud; los borradores se conservan para reintentar.
-• Los libros con # en los nombres de los capítulos se abren aunque no se pueda resolver un enlace del índice. Se rechazan los segmentos de punto inseguros antes de normalizar la URL.
+• Seguridad: la política de seguridad de contenido (CSP) que bloquea los scripts del contenido de los libros ahora se aplica a todas las páginas del libro. En versiones anteriores no se estaba aplicando.
+• Saltar entre capítulos en el modo Continuo ya no deja el lector ocupado durante 30 segundos, y al cambiar de libro en ese modo siempre se muestra el libro nuevo.
+• Página siguiente en la última página y Página anterior en la primera ya no recargan el capítulo: permaneces donde estás.
+• Cerrar la ventana durante una búsqueda ya no muestra un error, y un marcador tardío no puede sobrescribir tu posición de lectura guardada.
 ```
 
 **Description**
@@ -196,6 +208,14 @@ epub
 libro electrónico
 ```
 
+**What's new in 1.0.7**
+
+```
+• Formulario nativo de contacto con soporte en Acerca de. El mensaje solo se envía al pulsar Enviar; los documentos permanecen en tu dispositivo.
+• Estado de entrega claro y referencia de solicitud; los borradores se conservan para reintentar.
+• Los libros con # en los nombres de los capítulos se abren aunque no se pueda resolver un enlace del índice. Se rechazan los segmentos de punto inseguros antes de normalizar la URL.
+```
+
 **What's new in 1.0.6**
 
 ```
@@ -229,12 +249,13 @@ libro electrónico
 
 ## French (fr)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• Formulaire natif de contact du support dans À propos. Le message est envoyé uniquement lorsque vous choisissez Envoyer ; vos documents restent sur votre appareil.
-• État d’envoi clair et référence de demande ; les brouillons sont conservés pour réessayer.
-• Les livres dont les chapitres contiennent # dans leur nom s’ouvrent même si un lien du sommaire est introuvable. Les segments de point dangereux sont rejetés avant la normalisation de l’URL.
+• Sécurité : la politique de sécurité du contenu (CSP) qui bloque les scripts du contenu des livres s’applique désormais à toutes les pages du livre. Dans les versions précédentes, elle n’était pas appliquée.
+• Passer d’un chapitre à l’autre en mode Continu ne laisse plus le lecteur occupé pendant 30 secondes, et changer de livre dans ce mode affiche toujours le nouveau livre.
+• Page suivante sur la dernière page et Page précédente sur la première ne rechargent plus le chapitre : vous restez où vous êtes.
+• Fermer la fenêtre pendant une recherche n’affiche plus d’erreur, et un signet tardif ne peut plus écraser votre position de lecture enregistrée.
 ```
 
 **Description**
@@ -288,6 +309,14 @@ epub
 liseuse
 ```
 
+**What's new in 1.0.7**
+
+```
+• Formulaire natif de contact du support dans À propos. Le message est envoyé uniquement lorsque vous choisissez Envoyer ; vos documents restent sur votre appareil.
+• État d’envoi clair et référence de demande ; les brouillons sont conservés pour réessayer.
+• Les livres dont les chapitres contiennent # dans leur nom s’ouvrent même si un lien du sommaire est introuvable. Les segments de point dangereux sont rejetés avant la normalisation de l’URL.
+```
+
 **What's new in 1.0.6**
 
 ```
@@ -321,12 +350,13 @@ liseuse
 
 ## German (de)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• Natives Kontaktformular im Info-Fenster. Ihre Nachricht wird erst nach Auswahl von Senden übermittelt; Dokumente bleiben auf Ihrem Gerät.
-• Klarer Zustellstatus mit Referenznummer; Entwürfe bleiben für einen erneuten Versuch erhalten.
-• Bücher mit # in Kapiteldateinamen lassen sich auch bei nicht auflösbaren Inhaltsverzeichnis-Links öffnen. Unsichere Punktsegmente werden vor der URL-Normalisierung abgewiesen.
+• Sicherheit: Die Content-Security-Policy, die Skripte in Buchinhalten blockiert, gilt jetzt für jede Buchseite. In früheren Versionen wurde sie nicht angewendet.
+• Das Springen zwischen Kapiteln im Modus Scrollen hält den Reader nicht mehr 30 Sekunden lang beschäftigt, und beim Buchwechsel in diesem Modus wird immer das neue Buch angezeigt.
+• „Nächste Seite“ auf der letzten Seite und „Vorherige Seite“ auf der ersten laden das Kapitel nicht mehr neu: Sie bleiben, wo Sie sind.
+• Das Schließen des Fensters während einer Suche zeigt keinen Fehler mehr an, und ein verspätetes Lesezeichen kann Ihre gespeicherte Leseposition nicht mehr überschreiben.
 ```
 
 **Description**
@@ -380,6 +410,14 @@ epub
 lese-app
 ```
 
+**What's new in 1.0.7**
+
+```
+• Natives Kontaktformular im Info-Fenster. Ihre Nachricht wird erst nach Auswahl von Senden übermittelt; Dokumente bleiben auf Ihrem Gerät.
+• Klarer Zustellstatus mit Referenznummer; Entwürfe bleiben für einen erneuten Versuch erhalten.
+• Bücher mit # in Kapiteldateinamen lassen sich auch bei nicht auflösbaren Inhaltsverzeichnis-Links öffnen. Unsichere Punktsegmente werden vor der URL-Normalisierung abgewiesen.
+```
+
 **What's new in 1.0.6**
 
 ```
@@ -413,12 +451,13 @@ lese-app
 
 ## Italian (it)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• Modulo nativo di contatto assistenza nella finestra Informazioni. Il messaggio viene inviato solo scegliendo Invia; i documenti restano sul dispositivo.
-• Stato di consegna chiaro e riferimento della richiesta; le bozze sono conservate per riprovare.
-• I libri con # nei nomi dei capitoli si aprono anche se un collegamento dell’indice non è risolvibile. I segmenti di punto non sicuri vengono rifiutati prima della normalizzazione dell’URL.
+• Sicurezza: la Content Security Policy che blocca gli script nei contenuti dei libri ora si applica a ogni pagina del libro. Nelle versioni precedenti non veniva applicata.
+• Passare da un capitolo all’altro in modalità Scorri non lascia più il lettore occupato per 30 secondi e, cambiando libro in questa modalità, viene sempre mostrato il nuovo libro.
+• Pagina successiva sull’ultima pagina e Pagina precedente sulla prima non ricaricano più il capitolo: si resta dove si è.
+• Chiudere la finestra durante una ricerca non mostra più un errore e un segnalibro tardivo non può sovrascrivere la posizione di lettura salvata.
 ```
 
 **Description**
@@ -472,6 +511,14 @@ epub
 app di lettura
 ```
 
+**What's new in 1.0.7**
+
+```
+• Modulo nativo di contatto assistenza nella finestra Informazioni. Il messaggio viene inviato solo scegliendo Invia; i documenti restano sul dispositivo.
+• Stato di consegna chiaro e riferimento della richiesta; le bozze sono conservate per riprovare.
+• I libri con # nei nomi dei capitoli si aprono anche se un collegamento dell’indice non è risolvibile. I segmenti di punto non sicuri vengono rifiutati prima della normalizzazione dell’URL.
+```
+
 **What's new in 1.0.6**
 
 ```
@@ -505,12 +552,13 @@ app di lettura
 
 ## Portuguese – Portugal (pt)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• Formulário nativo de contacto com o suporte na janela Acerca de. A mensagem só é enviada ao escolher Enviar; os documentos ficam no dispositivo.
-• Estado de entrega claro e referência do pedido; os rascunhos são mantidos para nova tentativa.
-• Os livros com # nos nomes dos capítulos abrem mesmo quando uma ligação do índice não pode ser resolvida. Os segmentos de ponto inseguros são rejeitados antes da normalização do URL.
+• Segurança: a política de segurança de conteúdo (CSP) que bloqueia os scripts no conteúdo dos livros aplica-se agora a todas as páginas do livro. Nas versões anteriores não estava a ser aplicada.
+• Saltar entre capítulos no modo Contínuo já não deixa o leitor ocupado durante 30 segundos e, ao mudar de livro neste modo, é sempre apresentado o novo livro.
+• Próxima página na última página e Página anterior na primeira já não recarregam o capítulo: permanece onde está.
+• Fechar a janela durante uma pesquisa já não apresenta um erro, e um marcador tardio não pode substituir a posição de leitura guardada.
 ```
 
 **Description**
@@ -564,6 +612,14 @@ epub
 app de leitura
 ```
 
+**What's new in 1.0.7**
+
+```
+• Formulário nativo de contacto com o suporte na janela Acerca de. A mensagem só é enviada ao escolher Enviar; os documentos ficam no dispositivo.
+• Estado de entrega claro e referência do pedido; os rascunhos são mantidos para nova tentativa.
+• Os livros com # nos nomes dos capítulos abrem mesmo quando uma ligação do índice não pode ser resolvida. Os segmentos de ponto inseguros são rejeitados antes da normalização do URL.
+```
+
 **What's new in 1.0.6**
 
 ```
@@ -597,12 +653,13 @@ app de leitura
 
 ## Portuguese – Brazil (pt-BR)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• Formulário nativo de contato com o suporte na janela Sobre. A mensagem só é enviada ao escolher Enviar; os documentos ficam no dispositivo.
-• Status de entrega claro e referência da solicitação; rascunhos preservados para tentar novamente.
-• Livros com # nos nomes dos capítulos abrem mesmo quando um link do índice não pode ser resolvido. Segmentos de ponto inseguros são rejeitados antes da normalização da URL.
+• Segurança: a política de segurança de conteúdo (CSP) que bloqueia scripts no conteúdo dos livros agora se aplica a todas as páginas do livro. Nas versões anteriores ela não estava sendo aplicada.
+• Pular entre capítulos no modo Contínuo não deixa mais o leitor ocupado por 30 segundos e, ao trocar de livro nesse modo, o novo livro sempre é exibido.
+• Próxima página na última página e Página anterior na primeira não recarregam mais o capítulo: você permanece onde está.
+• Fechar a janela durante uma pesquisa não mostra mais um erro, e um marcador tardio não pode sobrescrever a posição de leitura salva.
 ```
 
 **Description**
@@ -656,6 +713,14 @@ epub
 app de leitura
 ```
 
+**What's new in 1.0.7**
+
+```
+• Formulário nativo de contato com o suporte na janela Sobre. A mensagem só é enviada ao escolher Enviar; os documentos ficam no dispositivo.
+• Status de entrega claro e referência da solicitação; rascunhos preservados para tentar novamente.
+• Livros com # nos nomes dos capítulos abrem mesmo quando um link do índice não pode ser resolvido. Segmentos de ponto inseguros são rejeitados antes da normalização da URL.
+```
+
 **What's new in 1.0.6**
 
 ```
@@ -689,12 +754,13 @@ app de leitura
 
 ## Japanese (ja)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• 「バージョン情報」にネイティブのお問い合わせフォームを搭載。送信を選択したときだけメッセージを送信し、文書は端末に保持されます。
-• 送信状況と受付番号を表示し、再試行できるよう下書きを保持します。
-• 章のファイル名に#を含む本は、目次のリンクを解決できない場合でも開けます。リソースパス内の危険なドット区間はURLの正規化前に拒否されます。
+• セキュリティ：本のコンテンツ内のスクリプトをブロックするコンテンツ セキュリティ ポリシー（CSP）が、本のすべてのページに適用されるようになりました。以前のバージョンでは適用されていませんでした。
+• スクロール モードで章を移動しても、リーダーが 30 秒間ビジー状態になることはなくなりました。また、このモードで本を切り替えると、必ず新しい本が表示されます。
+• 最後のページで「次のページ」、最初のページで「前のページ」を実行しても、章を再読み込みせず、現在の位置にとどまります。
+• 検索中にウィンドウを閉じてもエラーが表示されなくなりました。また、遅れて処理されたしおりが保存済みの読書位置を上書きすることもなくなりました。
 ```
 
 **Description**
@@ -748,6 +814,14 @@ epub
 読書アプリ
 ```
 
+**What's new in 1.0.7**
+
+```
+• 「バージョン情報」にネイティブのお問い合わせフォームを搭載。送信を選択したときだけメッセージを送信し、文書は端末に保持されます。
+• 送信状況と受付番号を表示し、再試行できるよう下書きを保持します。
+• 章のファイル名に#を含む本は、目次のリンクを解決できない場合でも開けます。リソースパス内の危険なドット区間はURLの正規化前に拒否されます。
+```
+
 **What's new in 1.0.6**
 
 ```
@@ -781,12 +855,13 @@ epub
 
 ## Korean (ko)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• 정보 창의 기본 지원 문의 양식. 보내기를 선택할 때만 메시지가 전송되며 문서는 기기에 유지됩니다.
-• 전송 상태와 참조 번호를 표시하고 다시 시도할 수 있도록 작성한 내용을 유지합니다.
-• 장 파일 이름에 #이 있는 책은 목차 링크를 확인하지 못해도 열립니다. 리소스 경로의 안전하지 않은 점 세그먼트는 URL 정규화 전에 거부됩니다.
+• 보안: 책 콘텐츠의 스크립트를 차단하는 콘텐츠 보안 정책(CSP)이 이제 책의 모든 페이지에 적용됩니다. 이전 버전에서는 적용되지 않았습니다.
+• 스크롤 모드에서 장 사이를 이동해도 더 이상 리더가 30초 동안 사용 중 상태로 남지 않으며, 이 모드에서 책을 전환하면 항상 새 책이 표시됩니다.
+• 마지막 페이지에서 다음 페이지를, 첫 페이지에서 이전 페이지를 선택해도 장을 다시 불러오지 않고 현재 위치에 머무릅니다.
+• 검색 중에 창을 닫아도 더 이상 오류가 표시되지 않으며, 늦게 처리된 책갈피가 저장된 읽기 위치를 덮어쓸 수 없습니다.
 ```
 
 **Description**
@@ -840,6 +915,14 @@ epub
 독서 앱
 ```
 
+**What's new in 1.0.7**
+
+```
+• 정보 창의 기본 지원 문의 양식. 보내기를 선택할 때만 메시지가 전송되며 문서는 기기에 유지됩니다.
+• 전송 상태와 참조 번호를 표시하고 다시 시도할 수 있도록 작성한 내용을 유지합니다.
+• 장 파일 이름에 #이 있는 책은 목차 링크를 확인하지 못해도 열립니다. 리소스 경로의 안전하지 않은 점 세그먼트는 URL 정규화 전에 거부됩니다.
+```
+
 **What's new in 1.0.6**
 
 ```
@@ -873,12 +956,13 @@ epub
 
 ## Chinese Simplified (zh-Hans)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• 关于窗口中的原生联系支持表单。仅在您选择发送时才发送消息，文档始终保留在设备上。
-• 清晰显示送达状态和参考编号，并保留草稿以便手动重试。
-• 章节文件名包含#的书籍即使有目录链接无法解析也能打开。不安全的路径点段会在URL规范化前被拒绝。
+• 安全性：用于阻止书籍内容中脚本的内容安全策略 (CSP) 现在会应用于书籍的每个页面。此前的版本未能应用该策略。
+• 在滚动模式下跳转章节不再使阅读器忙碌 30 秒，在此模式下切换书籍时也始终显示新书。
+• 在最后一页点击下一页或在第一页点击上一页时，将停留在当前位置，不再重新加载章节。
+• 在搜索期间关闭窗口不再显示错误，延迟完成的书签也不会覆盖已保存的阅读位置。
 ```
 
 **Description**
@@ -932,6 +1016,14 @@ epub
 阅读应用
 ```
 
+**What's new in 1.0.7**
+
+```
+• 关于窗口中的原生联系支持表单。仅在您选择发送时才发送消息，文档始终保留在设备上。
+• 清晰显示送达状态和参考编号，并保留草稿以便手动重试。
+• 章节文件名包含#的书籍即使有目录链接无法解析也能打开。不安全的路径点段会在URL规范化前被拒绝。
+```
+
 **What's new in 1.0.6**
 
 ```
@@ -965,12 +1057,13 @@ epub
 
 ## Chinese Traditional (zh-Hant)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• 「關於」視窗中的原生聯絡支援表單。僅在您選擇傳送時才傳送訊息，文件始終保留在裝置上。
-• 清楚顯示送達狀態和參考編號，並保留草稿以供手動重試。
-• 章節檔名包含#的書籍即使有目錄連結無法解析也能開啟。不安全的路徑點段會在URL正規化前被拒絕。
+• 安全性：用於封鎖書籍內容中指令碼的內容安全性原則 (CSP) 現在會套用到書籍的每個頁面。先前的版本未能套用此原則。
+• 在捲動模式下跳轉章節不再使閱讀器忙碌 30 秒，在此模式下切換書籍時也一律顯示新書。
+• 在最後一頁點選下一頁或在第一頁點選上一頁時，會停留在目前位置，不再重新載入章節。
+• 在搜尋期間關閉視窗不再顯示錯誤，延遲完成的書籤也不會覆寫已儲存的閱讀位置。
 ```
 
 **Description**
@@ -1024,6 +1117,14 @@ epub
 閱讀應用程式
 ```
 
+**What's new in 1.0.7**
+
+```
+• 「關於」視窗中的原生聯絡支援表單。僅在您選擇傳送時才傳送訊息，文件始終保留在裝置上。
+• 清楚顯示送達狀態和參考編號，並保留草稿以供手動重試。
+• 章節檔名包含#的書籍即使有目錄連結無法解析也能開啟。不安全的路徑點段會在URL正規化前被拒絕。
+```
+
 **What's new in 1.0.6**
 
 ```
@@ -1057,12 +1158,13 @@ epub
 
 ## Russian (ru)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• Встроенная форма поддержки в окне «О программе». Сообщение отправляется только по нажатию «Отправить»; документы остаются на устройстве.
-• Понятный статус доставки и номер обращения; черновики сохраняются для повторной отправки.
-• Книги с # в именах файлов глав открываются, даже если ссылка оглавления не распознаётся. Небезопасные точечные сегменты пути отклоняются до нормализации URL.
+• Безопасность: политика безопасности контента (CSP), блокирующая скрипты в содержимом книг, теперь применяется ко всем страницам книги. В предыдущих версиях она не применялась.
+• Переход между главами в режиме «Прокрутка» больше не оставляет приложение занятым на 30 секунд, а при смене книги в этом режиме всегда показывается новая книга.
+• «Следующая страница» на последней странице и «Предыдущая страница» на первой больше не перезагружают главу: вы остаётесь на месте.
+• Закрытие окна во время поиска больше не вызывает ошибку, а запоздавшая закладка не может перезаписать сохранённую позицию чтения.
 ```
 
 **Description**
@@ -1116,6 +1218,14 @@ epub
 читалка
 ```
 
+**What's new in 1.0.7**
+
+```
+• Встроенная форма поддержки в окне «О программе». Сообщение отправляется только по нажатию «Отправить»; документы остаются на устройстве.
+• Понятный статус доставки и номер обращения; черновики сохраняются для повторной отправки.
+• Книги с # в именах файлов глав открываются, даже если ссылка оглавления не распознаётся. Небезопасные точечные сегменты пути отклоняются до нормализации URL.
+```
+
 **What's new in 1.0.6**
 
 ```
@@ -1149,12 +1259,13 @@ epub
 
 ## Ukrainian (uk)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• Вбудована форма підтримки у вікні «Про програму». Повідомлення надсилається лише після вибору «Надіслати»; документи залишаються на пристрої.
-• Зрозумілий стан доставки та номер звернення; чернетки зберігаються для повторного надсилання.
-• Книги з # в назвах файлів розділів відкриваються, навіть якщо посилання змісту не розпізнається. Небезпечні точкові сегменти шляху відхиляються до нормалізації URL.
+• Безпека: політика безпеки вмісту (CSP), яка блокує скрипти у вмісті книг, тепер застосовується до всіх сторінок книги. У попередніх версіях вона не застосовувалася.
+• Перехід між розділами в режимі «Прокрутка» більше не залишає програму зайнятою на 30 секунд, а під час зміни книги в цьому режимі завжди показується нова книга.
+• «Наступна сторінка» на останній сторінці та «Попередня сторінка» на першій більше не перезавантажують розділ: ви залишаєтеся на місці.
+• Закриття вікна під час пошуку більше не спричиняє помилку, а запізніла закладка не може перезаписати збережену позицію читання.
 ```
 
 **Description**
@@ -1208,6 +1319,14 @@ epub
 читалка
 ```
 
+**What's new in 1.0.7**
+
+```
+• Вбудована форма підтримки у вікні «Про програму». Повідомлення надсилається лише після вибору «Надіслати»; документи залишаються на пристрої.
+• Зрозумілий стан доставки та номер звернення; чернетки зберігаються для повторного надсилання.
+• Книги з # в назвах файлів розділів відкриваються, навіть якщо посилання змісту не розпізнається. Небезпечні точкові сегменти шляху відхиляються до нормалізації URL.
+```
+
 **What's new in 1.0.6**
 
 ```
@@ -1241,12 +1360,13 @@ epub
 
 ## Arabic (ar)
 
-**What's new in 1.0.7**
+**What's new in 1.0.8**
 
 ```
-• نموذج دعم أصلي في نافذة «حول». تُرسل الرسالة فقط عند اختيار «إرسال»، وتبقى المستندات على جهازك.
-• حالة تسليم واضحة ورقم مرجعي للطلب، مع حفظ المسودات لإعادة المحاولة يدويًا.
-• تُفتح الكتب التي تحتوي أسماء ملفات فصولها على # حتى عند تعذر حل رابط في الفهرس. تُرفض مقاطع النقاط غير الآمنة في مسارات الموارد قبل تسوية عنوان URL.
+• الأمان: تُطبَّق الآن سياسة أمان المحتوى (CSP) التي تحظر البرامج النصية في محتوى الكتب على كل صفحات الكتاب. لم تكن هذه السياسة مطبَّقة في الإصدارات السابقة.
+• لم يعد الانتقال بين الفصول في وضع «تمرير» يُبقي القارئ مشغولًا لمدة 30 ثانية، ويعرض تبديل الكتب في هذا الوضع الكتاب الجديد دائمًا.
+• لم يعد اختيار «الصفحة التالية» في الصفحة الأخيرة أو «الصفحة السابقة» في الصفحة الأولى يعيد تحميل الفصل، فتبقى حيث أنت.
+• لم يعد إغلاق النافذة أثناء البحث يعرض خطأ، ولا يمكن لإشارة مرجعية متأخرة الكتابة فوق موضع القراءة المحفوظ.
 ```
 
 **Description**
@@ -1298,6 +1418,14 @@ EPUB Lite Reader هو برنامج مجاني وخفيف لقراءة ملفات
 كتاب إلكتروني
 epub
 تطبيق قراءة
+```
+
+**What's new in 1.0.7**
+
+```
+• نموذج دعم أصلي في نافذة «حول». تُرسل الرسالة فقط عند اختيار «إرسال»، وتبقى المستندات على جهازك.
+• حالة تسليم واضحة ورقم مرجعي للطلب، مع حفظ المسودات لإعادة المحاولة يدويًا.
+• تُفتح الكتب التي تحتوي أسماء ملفات فصولها على # حتى عند تعذر حل رابط في الفهرس. تُرفض مقاطع النقاط غير الآمنة في مسارات الموارد قبل تسوية عنوان URL.
 ```
 
 **What's new in 1.0.6**
