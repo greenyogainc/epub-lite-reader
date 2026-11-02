@@ -365,9 +365,6 @@
                         <TextBlock x:Name="ChapterEmptyText" Text="{local:Loc NoChapters}"
                                    Foreground="#FF9A9A9A" FontSize="13" Margin="8,4"
                                    TextWrapping="Wrap" Visibility="Collapsed"/>
-                        <TextBlock x:Name="ChapterFailedText" Text="{local:Loc ChapterLoadFailed}"
-                                   Foreground="#FF9A9A9A" FontSize="13" Margin="8,4"
-                                   TextWrapping="Wrap" Visibility="Collapsed"/>
                     </Grid>
                 </DockPanel>
             </Border>

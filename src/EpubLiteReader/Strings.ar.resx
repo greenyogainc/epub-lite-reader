@@ -57,7 +57,6 @@
   <data name="LoadingChapters" xml:space="preserve"><value>جارٍ تحميل الفصول…</value></data>
   <data name="NoChapters" xml:space="preserve"><value>لا يحتوي هذا الكتاب على فهرس محتويات.</value></data>
   <data name="UntitledChapter" xml:space="preserve"><value>فصل بلا عنوان</value></data>
-  <data name="ChapterLoadFailed" xml:space="preserve"><value>تعذر تحميل الفصول.</value></data>
   <data name="Bookmarks" xml:space="preserve"><value>الإشارات المرجعية</value></data>
   <data name="NoBookmarks" xml:space="preserve"><value>لا توجد إشارات مرجعية بعد. اضغط B لإضافة واحدة.</value></data>
   <data name="FontPublisher" xml:space="preserve"><value>خط الناشر</value></data>

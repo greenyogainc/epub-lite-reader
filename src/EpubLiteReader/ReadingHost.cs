@@ -100,6 +100,22 @@ public sealed class ReadingHost
         }
     }
 
+    /// <summary>Runs reader script, reading as JavaScript null once the control is gone: the window can
+    /// close while a search or page turn is still awaiting a step, and that must not surface as an
+    /// unhandled error on the way out.</summary>
+    private async Task<string> RunScriptAsync(string script)
+    {
+        try
+        {
+            return await _webView.ExecuteScriptAsync(script);
+        }
+        catch (InvalidOperationException ex)
+        {
+            App.LogError(ex);
+            return "null";
+        }
+    }
+
     public async Task NavigateSpineAsync(EpubDoc doc, int spineIndex, string? anchor = null, double scrollFraction = 0)
     {
         await MapBookAsync(doc);
@@ -123,7 +139,7 @@ public sealed class ReadingHost
     {
         if (!_initialized) return;
         var frac = spineFraction.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        await _webView.ExecuteScriptAsync(
+        await RunScriptAsync(
             $"if (window.__elrContinuousGoTo) window.__elrContinuousGoTo({spineIndex}, {frac});");
     }
 
@@ -137,21 +153,21 @@ public sealed class ReadingHost
     public async Task<string> PageTurnAsync(int direction)
     {
         if (!_initialized) return "end";
-        var result = await _webView.ExecuteScriptAsync($"window.__elrPage ? window.__elrPage({direction}) : 'end'");
+        var result = await RunScriptAsync($"window.__elrPage ? window.__elrPage({direction}) : 'end'");
         return Unquote(result);
     }
 
     public async Task SetScrollFractionAsync(double fraction)
     {
         if (!_initialized) return;
-        await _webView.ExecuteScriptAsync(
+        await RunScriptAsync(
             $"if (window.__elrSetScrollFraction) window.__elrSetScrollFraction({fraction.ToString(System.Globalization.CultureInfo.InvariantCulture)});");
     }
 
     public async Task<double> GetScrollFractionAsync()
     {
         if (!_initialized) return 0;
-        var result = await _webView.ExecuteScriptAsync(
+        var result = await RunScriptAsync(
             "window.__elrScrollFraction ? window.__elrScrollFraction() : 0");
         return double.TryParse(Unquote(result), System.Globalization.NumberStyles.Float,
             System.Globalization.CultureInfo.InvariantCulture, out var f)
@@ -187,7 +203,7 @@ public sealed class ReadingHost
     {
         if (!_initialized || string.IsNullOrEmpty(query)) return false;
         var q = JsonSerializer.Serialize(query);
-        var result = await _webView.ExecuteScriptAsync(
+        var result = await RunScriptAsync(
             $"window.__elrFind ? window.__elrFind({q}, {(forward ? "true" : "false")}) : false");
         return result.Contains("true", StringComparison.OrdinalIgnoreCase);
     }
@@ -197,18 +213,18 @@ public sealed class ReadingHost
     {
         if (!_initialized || string.IsNullOrEmpty(query)) return false;
 
-        await _webView.ExecuteScriptAsync(
+        await RunScriptAsync(
             $"if (window.__elrEnsureSpineLoaded) window.__elrEnsureSpineLoaded({spineIndex});");
         for (int i = 0; i < 40; i++)
         {
-            var loaded = await _webView.ExecuteScriptAsync(
+            var loaded = await RunScriptAsync(
                 $"window.__elrIsSpineLoaded ? window.__elrIsSpineLoaded({spineIndex}) : false");
             if (loaded.Contains("true", StringComparison.OrdinalIgnoreCase)) break;
             await Task.Delay(100);
         }
 
         var q = JsonSerializer.Serialize(query);
-        var result = await _webView.ExecuteScriptAsync(
+        var result = await RunScriptAsync(
             $"window.__elrFindInSpine ? window.__elrFindInSpine({spineIndex}, {q}, {(forward ? "true" : "false")}) : false");
         return result.Contains("true", StringComparison.OrdinalIgnoreCase);
     }
@@ -225,8 +241,16 @@ public sealed class ReadingHost
         var core = _webView.CoreWebView2!;
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         void Handler(object? s, CoreWebView2NavigationCompletedEventArgs e) => tcs.TrySetResult();
+        // A fragment-only navigation (continuous mode jumping within its one document) raises
+        // SourceChanged but never NavigationStarting or NavigationCompleted, so waiting for
+        // completion alone would stall the view pump for the whole navigation timeout.
+        void SameDocument(object? s, CoreWebView2SourceChangedEventArgs e)
+        {
+            if (!e.IsNewDocument) tcs.TrySetResult();
+        }
 
         core.NavigationCompleted += Handler;
+        core.SourceChanged += SameDocument;
         try
         {
             core.Navigate(url);
@@ -237,6 +261,7 @@ public sealed class ReadingHost
         finally
         {
             core.NavigationCompleted -= Handler;
+            core.SourceChanged -= SameDocument;
         }
 
         await ApplySettingsAsync();

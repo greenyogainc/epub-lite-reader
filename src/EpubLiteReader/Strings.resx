@@ -57,7 +57,6 @@ Details logged to:
   <data name="LoadingChapters" xml:space="preserve"><value>Loading chapters…</value></data>
   <data name="NoChapters" xml:space="preserve"><value>This book has no table of contents.</value></data>
   <data name="UntitledChapter" xml:space="preserve"><value>Untitled chapter</value></data>
-  <data name="ChapterLoadFailed" xml:space="preserve"><value>Chapters could not be loaded.</value></data>
   <data name="Bookmarks" xml:space="preserve"><value>Bookmarks</value></data>
   <data name="NoBookmarks" xml:space="preserve"><value>No bookmarks yet. Press B to add one.</value></data>
   <data name="FontPublisher" xml:space="preserve"><value>Publisher font</value></data>

@@ -230,11 +230,21 @@ internal sealed class UiDriver
         throw new InvalidOperationException($"Could not find a {controlType.ProgrammaticName} named '{name}'.");
     }
 
+    /// <summary>Reads a file the app rewrites, without holding it against the writer. A plain ReadAllText
+    /// denies writes while it reads, and the app drops a write that fails (mirroring must never affect
+    /// it), so a poll that landed on a write left the file showing the old state for good.</summary>
+    private static string ReadShared(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
     private static ReaderState? TryReadState(string path)
     {
         try
         {
-            return JsonSerializer.Deserialize<ReaderState>(File.ReadAllText(path), JsonOptions);
+            return JsonSerializer.Deserialize<ReaderState>(ReadShared(path), JsonOptions);
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
@@ -246,7 +256,7 @@ internal sealed class UiDriver
     {
         try
         {
-            var state = JsonSerializer.Deserialize<AboutState>(File.ReadAllText(path), JsonOptions);
+            var state = JsonSerializer.Deserialize<AboutState>(ReadShared(path), JsonOptions);
             return state?.AboutOpen;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
@@ -255,7 +265,7 @@ internal sealed class UiDriver
         }
     }
 
-    private static void RequireForeground(IntPtr hwnd)
+    internal static void RequireForeground(IntPtr hwnd)
     {
         if (GetForegroundWindow() == hwnd)
             return;

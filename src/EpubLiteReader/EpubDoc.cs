@@ -301,7 +301,9 @@ public sealed class EpubDoc : IDisposable
 
     public string GetContinuousUrl(int spineIndex = 0)
     {
-        var url = $"https://{VirtualHost}/{ContinuousFileName}";
+        // The query gives each opened book its own URL. Otherwise a book switch that differs
+        // only by #spine-N is a same-document navigation and keeps showing the previous book.
+        var url = $"https://{VirtualHost}/{ContinuousFileName}?book={Path.GetFileName(_extractRoot)}";
         if (spineIndex >= 0 && spineIndex < SpinePaths.Count)
             url += $"#spine-{spineIndex}";
         return url;

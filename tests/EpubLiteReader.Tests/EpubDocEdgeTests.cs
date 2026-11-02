@@ -125,15 +125,17 @@ public sealed class EpubDocEdgeTests : IDisposable
     }
 
     [Theory]
-    [InlineData(0, "https://epub.local/elr-continuous.html#spine-0")]
-    [InlineData(1, "https://epub.local/elr-continuous.html#spine-1")]
-    [InlineData(-1, "https://epub.local/elr-continuous.html")]
-    [InlineData(2, "https://epub.local/elr-continuous.html")]
-    public async Task GetContinuousUrl_AddsASpineHashOnlyForARealSpineItem(int index, string expected)
+    [InlineData(0, "#spine-0")]
+    [InlineData(1, "#spine-1")]
+    [InlineData(-1, "")]
+    [InlineData(2, "")]
+    public async Task GetContinuousUrl_IsUniqueToTheOpenedBook_AndAddsASpineHashOnlyForARealSpineItem(int index, string hash)
     {
         var (doc, _) = await OpenAsync(new MiniEpub());
 
-        Assert.Equal(expected, doc.GetContinuousUrl(index));
+        Assert.Equal(
+            $"https://epub.local/elr-continuous.html?book={Path.GetFileName(doc.ExtractRoot)}{hash}",
+            doc.GetContinuousUrl(index));
     }
 
     // ---------- search ----------

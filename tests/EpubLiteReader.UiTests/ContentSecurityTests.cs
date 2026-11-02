@@ -235,6 +235,123 @@ public sealed class ContentSecurityTests
         Assert.False(File.Exists(first + ".lock"));
     }
 
+    // ---------- What the policy does to the features real books use ----------
+    //
+    // The policy had never been in force for users before it was added, so these record its effect on a
+    // normal book: what still works, and what is blocked on purpose.
+
+    private static (Dictionary<string, List<int>> Requests, string Page) OpenMediaBook(StaReadingSession session, string path, string script)
+    {
+        var requests = new Dictionary<string, List<int>>();
+        session.Invoke(w => w.WebLeft.CoreWebView2.WebResourceRequested += (_, e) =>
+        {
+            lock (requests)
+            {
+                var key = new Uri(e.Request.Uri).AbsolutePath;
+                if (!requests.TryGetValue(key, out var statuses))
+                    requests[key] = statuses = new List<int>();
+                statuses.Add(e.Response?.StatusCode ?? 0);
+            }
+        });
+
+        var page = session.Run(async w =>
+        {
+            await w.OpenFileAsync(path);
+            await w.WhenNavIdleAsync();
+            return await StaReadingSession.EvalLaterAsync(w.WebLeft, "__out", script, 30);
+        });
+        return (requests, page);
+    }
+
+    [UiFact]
+    public void ARealBooksFeatures_StillWorkUnderThePolicy_AndTheBlockedOnesAreBlocked()
+    {
+        using var session = StaReadingSession.Open();
+        session.WaitUntilReady();
+        var path = TestBook.Media("Media " + Guid.NewGuid().ToString("N")).SaveTemp("media.epub");
+
+        try
+        {
+            var (requests, page) = OpenMediaBook(session, path, """
+                (async () => {
+                  const q = (id) => document.getElementById(id);
+                  const img = q('img'), remote = q('remote');
+                  await new Promise((resolve) => {
+                    const done = () => (img.complete && remote.complete) ? resolve() : setTimeout(done, 25);
+                    done();
+                  });
+                  const fonts = await document.fonts.load("16px ElrTest");
+                  const audio = q('aud');
+                  const audioResult = await new Promise((resolve) => {
+                    const seek = () => {
+                      audio.addEventListener('seeked', () => resolve({ time: audio.currentTime, duration: audio.duration, error: null }), { once: true });
+                      audio.currentTime = 0.5;
+                    };
+                    audio.addEventListener('error', () => resolve({ error: audio.error ? audio.error.code : -1 }), { once: true });
+                    if (audio.readyState >= 1) seek();
+                    else { audio.addEventListener('loadedmetadata', seek, { once: true }); audio.load(); }
+                  });
+                  // A dynamically inserted object is refused by the policy, which says so with a violation event.
+                  const violations = [];
+                  document.addEventListener('securitypolicyviolation', (e) => violations.push(e.violatedDirective));
+                  const probe = document.createElement('object');
+                  probe.setAttribute('data', 'objpic.png');
+                  probe.setAttribute('type', 'image/png');
+                  document.body.appendChild(probe);
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  window.__out = JSON.stringify({
+                    imgLoaded: img.naturalWidth,
+                    remoteLoaded: remote.naturalWidth,
+                    stylesheet: getComputedStyle(q('styled')).borderLeftWidth,
+                    inlineStyle: getComputedStyle(q('inline')).textIndent,
+                    fontMatches: fonts.length,
+                    fontStatus: Array.from(document.fonts).map((f) => f.family.replace(/"/g, '') + ':' + f.status),
+                    useWidth: q('use').getBoundingClientRect().width,
+                    audio: audioResult,
+                    violations
+                  });
+                })();
+                """);
+
+            using var json = JsonDocument.Parse(page);
+            var result = json.RootElement;
+
+            // Works: a bundled image, the stylesheet, inline style, a bundled font, SVG use.
+            Assert.True(result.GetProperty("imgLoaded").GetInt32() > 0, page);
+            Assert.Equal("7px", result.GetProperty("stylesheet").GetString());
+            Assert.Equal("13px", result.GetProperty("inlineStyle").GetString());
+            Assert.True(result.GetProperty("fontMatches").GetInt32() >= 1, page);
+            Assert.Contains("ElrTest:loaded", result.GetProperty("fontStatus").EnumerateArray().Select(f => f.GetString()), StringComparer.Ordinal);
+            Assert.Equal(10, result.GetProperty("useWidth").GetDouble());
+
+            // Works: an SVG image from the book, and audio that loads and seeks (a Range request, answered 206).
+            lock (requests)
+            {
+                Assert.Contains(200, requests["/OEBPS/svgpic.png"]);
+                Assert.Contains(206, requests["/OEBPS/tone.wav"]);
+            }
+
+            var audio = result.GetProperty("audio");
+            Assert.Equal(JsonValueKind.Null, audio.GetProperty("error").ValueKind);
+            Assert.InRange(audio.GetProperty("time").GetDouble(), 0.4, 0.6);
+            Assert.InRange(audio.GetProperty("duration").GetDouble(), 1.9, 2.1);
+
+            // Blocked: the remote image never loads or even reaches the host; the object is refused (object-src 'none').
+            Assert.Equal(0, result.GetProperty("remoteLoaded").GetInt32());
+            lock (requests)
+            {
+                Assert.DoesNotContain(requests.Keys, k => k.Contains("probe.invalid", StringComparison.Ordinal) || k == "/x.png");
+                Assert.False(requests.ContainsKey("/OEBPS/objpic.png"), "The object's resource was requested.");
+            }
+
+            Assert.Contains("object-src", result.GetProperty("violations").EnumerateArray().Select(v => v.GetString()));
+        }
+        finally
+        {
+            Directory.Delete(Path.GetDirectoryName(path)!, recursive: true);
+        }
+    }
+
     private static string? Header(CoreWebView2HttpResponseHeaders? headers, string name) =>
         headers is not null && headers.Contains(name) ? headers.GetHeader(name) : null;
 }

@@ -57,7 +57,6 @@ Detalhes registrados em:
   <data name="LoadingChapters" xml:space="preserve"><value>A carregar capítulos…</value></data>
   <data name="NoChapters" xml:space="preserve"><value>Este livro não tem sumário.</value></data>
   <data name="UntitledChapter" xml:space="preserve"><value>Capítulo sem título</value></data>
-  <data name="ChapterLoadFailed" xml:space="preserve"><value>Não foi possível carregar os capítulos.</value></data>
   <data name="Bookmarks" xml:space="preserve"><value>Marcadores</value></data>
   <data name="NoBookmarks" xml:space="preserve"><value>Ainda não há marcadores. Prima B para adicionar um.</value></data>
   <data name="FontPublisher" xml:space="preserve"><value>Fonte da editora</value></data>

@@ -28,7 +28,7 @@ public partial class MainWindow : Window
     private WindowState _preFsState;
     private WindowStyle _preFsStyle;
 
-    private enum ChapterLoadState { NotLoaded, Loading, Loaded, Empty, Failed }
+    private enum ChapterLoadState { NotLoaded, Loading, Loaded, Empty }
 
     private bool _chapterPaneVisible;
     private bool _preFsChapterVisible;
@@ -593,7 +593,6 @@ public partial class MainWindow : Window
         ChapterTree.Visibility = state == ChapterLoadState.Loaded ? Visibility.Visible : Visibility.Collapsed;
         ChapterLoadingText.Visibility = state == ChapterLoadState.Loading ? Visibility.Visible : Visibility.Collapsed;
         ChapterEmptyText.Visibility = state == ChapterLoadState.Empty ? Visibility.Visible : Visibility.Collapsed;
-        ChapterFailedText.Visibility = state == ChapterLoadState.Failed ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private int GetChapterSyncSpine()

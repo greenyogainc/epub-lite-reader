@@ -57,7 +57,6 @@
   <data name="LoadingChapters" xml:space="preserve"><value>正在加载章节…</value></data>
   <data name="NoChapters" xml:space="preserve"><value>此书没有目录。</value></data>
   <data name="UntitledChapter" xml:space="preserve"><value>无标题章节</value></data>
-  <data name="ChapterLoadFailed" xml:space="preserve"><value>无法加载章节。</value></data>
   <data name="Bookmarks" xml:space="preserve"><value>书签</value></data>
   <data name="NoBookmarks" xml:space="preserve"><value>还没有书签。按 B 添加一个。</value></data>
   <data name="FontPublisher" xml:space="preserve"><value>出版商字体</value></data>

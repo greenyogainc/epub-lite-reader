@@ -57,7 +57,6 @@
   <data name="LoadingChapters" xml:space="preserve"><value>章を読み込んでいます…</value></data>
   <data name="NoChapters" xml:space="preserve"><value>この本には目次がありません。</value></data>
   <data name="UntitledChapter" xml:space="preserve"><value>無題の章</value></data>
-  <data name="ChapterLoadFailed" xml:space="preserve"><value>章を読み込めませんでした。</value></data>
   <data name="Bookmarks" xml:space="preserve"><value>しおり</value></data>
   <data name="NoBookmarks" xml:space="preserve"><value>しおりはまだありません。Bキーで追加できます。</value></data>
   <data name="FontPublisher" xml:space="preserve"><value>出版社指定のフォント</value></data>

@@ -17,6 +17,8 @@ internal sealed class StaReadingSession : IDisposable
 {
     private readonly string _dataDir;
     private readonly MainWindow _window;
+    private bool _ownsDataDir = true;
+    private bool _windowClosed;
 
     private StaReadingSession(string dataDir, string stateFile, string? bookPath, MainWindow window)
     {
@@ -26,11 +28,20 @@ internal sealed class StaReadingSession : IDisposable
         _window = window;
     }
 
+    /// <summary>Keeps the data folder after Dispose, for a later session that reuses it. The
+    /// caller then deletes it.</summary>
+    public bool KeepData { get; set; }
+
     public string StateFile { get; }
 
     public string? BookPath { get; }
 
     public string DataDir => _dataDir;
+
+    /// <summary>Where this window's error log goes (<see cref="App.LogPathOverride"/>).</summary>
+    public string LogPath => Path.Combine(_dataDir, "error.log");
+
+    public string ReadLog() => File.Exists(LogPath) ? File.ReadAllText(LogPath) : "";
 
     public IntPtr Handle { get; private set; }
 
@@ -56,20 +67,29 @@ internal sealed class StaReadingSession : IDisposable
     public static string SampleEpub => Path.Combine(RepoRoot, "tools", "fixtures", "sample.epub");
 
     /// <summary>Opens a window on a private copy of <paramref name="epub"/>, or with no book when null.</summary>
-    public static StaReadingSession Open(string? epub = null, Action<MainWindow>? beforeShow = null, params string[] extraArgs)
+    /// <param name="beforeShow">Runs on the app thread with the constructed, not yet shown window.</param>
+    /// <param name="beforeOpen">Runs once the data folder and the book copy exist, before the window is
+    /// built, so a test can pre-write settings or reading state. It receives the data folder.</param>
+    /// <param name="reuseDataDir">An earlier session's data folder (kept with <see cref="KeepData"/>), so
+    /// a second window can resume what the first saved. This session never deletes it.</param>
+    public static StaReadingSession Open(string? epub = null, Action<MainWindow>? beforeShow = null,
+        Action<string>? beforeOpen = null, string? reuseDataDir = null, params string[] extraArgs)
     {
         var dispatcher = ReaderApp.Dispatcher;
         ReaderApp.TakeUnhandled();
 
-        var dataDir = Path.Combine(Path.GetTempPath(), "elr-ui-" + Guid.NewGuid().ToString("N"));
+        var dataDir = reuseDataDir ?? Path.Combine(Path.GetTempPath(), "elr-ui-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dataDir);
         var stateFile = Path.Combine(dataDir, "state.json");
         string? bookPath = null;
         if (epub is not null)
         {
             bookPath = Path.Combine(dataDir, Path.GetFileName(epub));
-            File.Copy(epub, bookPath);
+            if (!File.Exists(bookPath))
+                File.Copy(epub, bookPath);
         }
+
+        beforeOpen?.Invoke(dataDir);
 
         var args = new List<string> { "--statefile=" + stateFile, "--datadir=" + dataDir };
         if (bookPath is not null)
@@ -80,6 +100,7 @@ internal sealed class StaReadingSession : IDisposable
         {
             // On the app thread, so a late timer tick cannot see half-applied statics.
             App.ApplyArgs(args.ToArray());
+            App.LogPathOverride = Path.Combine(dataDir, "error.log");
             var window = new MainWindow
             {
                 Left = 40,
@@ -87,7 +108,10 @@ internal sealed class StaReadingSession : IDisposable
                 WindowStartupLocation = WindowStartupLocation.Manual
             };
             beforeShow?.Invoke(window);
-            var session = new StaReadingSession(dataDir, stateFile, bookPath, window);
+            var session = new StaReadingSession(dataDir, stateFile, bookPath, window)
+            {
+                _ownsDataDir = reuseDataDir is null
+            };
             window.Show();
             session.Handle = new WindowInteropHelper(window).EnsureHandle();
             window.Activate();
@@ -169,6 +193,19 @@ internal sealed class StaReadingSession : IDisposable
     public bool IsRightPaneVisible() =>
         Invoke(window => window.WebRight.Visibility == Visibility.Visible);
 
+    /// <summary>Closes the window now, so its closing handler saves the reading state.</summary>
+    public void Close()
+    {
+        ReaderApp.Dispatcher.Invoke(() =>
+        {
+            foreach (Window owned in _window.OwnedWindows)
+                owned.Close();
+            _window.Close();
+            _windowClosed = true;
+        }, DispatcherPriority.Send, CancellationToken.None, TimeSpan.FromSeconds(10));
+        ThrowIfDispatcherFailed();
+    }
+
     public void Dispose()
     {
         NativeDialogs.CloseAll();
@@ -176,6 +213,8 @@ internal sealed class StaReadingSession : IDisposable
         {
             ReaderApp.Dispatcher.Invoke(() =>
             {
+                if (_windowClosed)
+                    return;
                 foreach (Window owned in _window.OwnedWindows)
                     owned.Close();
                 _window.Close();
@@ -191,22 +230,50 @@ internal sealed class StaReadingSession : IDisposable
         NativeDialogs.CloseAll();
         try
         {
-            if (Directory.Exists(_dataDir))
-                Directory.Delete(_dataDir, recursive: true);
+            ReaderApp.Dispatcher.Invoke(() => App.LogPathOverride = UiKit.DefaultLog,
+                DispatcherPriority.Send, CancellationToken.None, TimeSpan.FromSeconds(10));
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (TimeoutException)
         {
-            // A book's response stream or the state file can outlive the window briefly.
+            // The dispatcher is stuck; the stray-window check below reports what it is stuck on.
         }
+
+        if (!KeepData && _ownsDataDir)
+        {
+            try
+            {
+                if (Directory.Exists(_dataDir))
+                    Directory.Delete(_dataDir, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // A book's response stream or the state file can outlive the window briefly.
+            }
+        }
+
+        // A test must leave nothing behind for the next one: no window still open, and no failure from
+        // work it left running that would otherwise be blamed on whichever test runs next.
+        var deadline = DateTime.UtcNow.AddSeconds(3);
+        List<string> strays;
+        while ((strays = StrayWindows()).Count > 0 && DateTime.UtcNow < deadline)
+            Thread.Sleep(50);
+        if (strays.Count > 0)
+            throw new InvalidOperationException("The test left windows open: " + string.Join(", ", strays));
+        ThrowIfDispatcherFailed();
     }
 
-    private void ThrowIfDispatcherFailed()
+    private static List<string> StrayWindows() => NativeDialogs.TopLevelWindows(dialogsOnly: false)
+        .Where(hwnd => hwnd != ReaderApp.HolderHandle)
+        .Select(hwnd => $"'{NativeDialogs.Caption(hwnd)}' ({hwnd})")
+        .ToList();
+
+    private static void ThrowIfDispatcherFailed()
     {
         if (ReaderApp.TakeUnhandled() is Exception ex)
             ExceptionDispatchInfo.Capture(ex).Throw();
     }
 
-    private void Wait(Task task, int timeoutSec)
+    internal static void Wait(Task task, int timeoutSec)
     {
         try
         {
