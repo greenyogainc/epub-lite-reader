@@ -49,6 +49,25 @@ immediately — no library, no account, no distractions.
 | `Ctrl+0` | Reset text settings |
 | `B` | Add or remove bookmark |
 
+## What's new in 1.0.8
+
+- **Book security**: the Content-Security-Policy that stops book content running
+  script was not being applied, because books were served by a path that skipped
+  it. Every book document now carries it, so script that gets past the sanitizer
+  is blocked.
+- **Embedded objects**: as a result of that policy, a figure a book embeds with
+  `<object>` no longer displays. Images, fonts, SVG and audio are unaffected.
+- **Chapter jumps**: jumping between chapters in continuous view no longer leaves
+  the reader busy for 30 seconds.
+- **Switching books**: continuous view no longer keeps showing the previous book.
+- **First and last pages**: Next on the last page and Previous on the first stay
+  where you are instead of reloading the chapter at its top.
+- **Closing the window**: closing during a search no longer shows an error, and a
+  late bookmark cannot overwrite your saved position.
+- **Page box**: typing `B` or `Space` there no longer triggers a shortcut.
+- **Tidier temp files**: a previous book's extracted files are removed promptly,
+  and the error log restarts at 1 MiB instead of growing without limit.
+
 ## What's new in 1.0.7
 
 - **Native support**: contact Green Yoga from a keyboard-friendly form inside the
